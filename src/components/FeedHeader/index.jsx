@@ -39,7 +39,7 @@ export default function FeedHeader({ title, isLoggedIn = false, onCreateFeed }) 
   };
 
   return (
-    <header className="sticky top-0 z-20 backdrop-blur-md bg-white/80 dark:bg-zinc-950/80 border-b border-zinc-200/80 dark:border-zinc-800/80 px-4 py-3.5 transition-colors">
+    <header className="py-2 px-1 mb-2 select-none">
       <div className="flex items-center justify-between relative">
         {isLoggedIn ? (
           <div className="flex items-center gap-1.5 font-bold text-base text-black dark:text-white tracking-tight">
@@ -56,16 +56,16 @@ export default function FeedHeader({ title, isLoggedIn = false, onCreateFeed }) 
             <button
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+              className={`w-7 h-7 rounded-full border border-zinc-300 dark:border-zinc-700/80 flex items-center justify-center transition-colors cursor-pointer ${
                 isMenuOpen
                   ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white'
-                  : 'text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  : 'text-zinc-500 hover:text-black dark:text-zinc-300 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
               }`}
               title="Tùy chọn bảng tin"
               aria-label="Tùy chọn bảng tin"
               aria-expanded={isMenuOpen}
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-4 h-4 stroke-[2.2]" />
             </button>
 
             {/* Popover: 'Create new feed (+)' */}

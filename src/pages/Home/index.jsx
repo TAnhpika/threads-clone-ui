@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SquarePlus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import FeedHeader from '@/components/FeedHeader';
 import PostCard from '@/components/post/PostCard';
 import LoginPanel from '@/components/LoginPanel';
@@ -100,39 +100,70 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
   };
 
   return (
-    <div className={`flex justify-center items-start gap-6 w-full ${isAuthenticated ? 'max-w-2xl mx-auto' : ''}`}>
-      {/* Cột giữa: Feed chính chứa FeedHeader, Composer & danh sách PostCard */}
-      <section className="flex-1 max-w-160 min-w-0 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-3xl shadow-xs overflow-hidden transition-colors">
-        {/* Header của Feed: 'For you' khi đã đăng nhập, hoặc 'Trang chủ' khi chưa đăng nhập */}
+    <div className={`flex justify-center items-start gap-8 w-full ${isAuthenticated ? 'max-w-2xl mx-auto' : ''}`}>
+      {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}
+      <div className="flex-1 max-w-155 min-w-0">
+        {/* Header của Feed: 'For you' nằm riêng phía trên Card */}
         <FeedHeader
           title="Trang chủ"
           isLoggedIn={isAuthenticated}
           onCreateFeed={handleOpenCreateFeed}
         />
 
-        {/* Thanh soạn thảo 'What's new?' chỉ xuất hiện khi đã đăng nhập */}
-        {isAuthenticated && (
-          <CreatePostBox
-            user={currentUser}
-            onClick={() => {
-              setCreateModalPlacement('center');
-              setIsCreateModalOpen(true);
-            }}
-          />
-        )}
+        {/* Khối Card chính bo góc chứa Composer & Danh sách Post */}
+        <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
+          {/* Thanh soạn thảo 'What's new?' chỉ xuất hiện khi đã đăng nhập */}
+          {isAuthenticated && (
+            <CreatePostBox
+              user={currentUser}
+              onClick={() => {
+                setCreateModalPlacement('center');
+                setIsCreateModalOpen(true);
+              }}
+            />
+          )}
 
-        {/* Danh sách các bài viết */}
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-      </section>
+          {/* Dải phân cách '☆ First thread' */}
+          <div className="flex items-center gap-1.5 px-6 py-2.5 text-xs font-semibold text-zinc-500 border-b border-zinc-100 dark:border-zinc-800/80">
+            <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            <span>First thread</span>
+          </div>
+
+          {/* Danh sách các bài viết */}
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        </section>
+      </div>
 
       {/* Cột phải: LoginPanel mời đăng nhập (chỉ hiển thị khi CHƯA đăng nhập) */}
       {!isAuthenticated && <LoginPanel />}
 
-      {/* Nút nổi tạo bài viết nhanh [+] ở góc dưới bên phải khi đã đăng nhập */}
+      {/* 1. Nút outline sổ ghi chép [+] ở mép phải giữa màn hình */}
+      {isAuthenticated && (
+        <button
+          onClick={() => {
+            setCreateModalPlacement('bottom-right');
+            setIsCreateModalOpen(true);
+          }}
+          className="fixed right-6 sm:right-8 top-1/2 -translate-y-1/2 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors z-40 cursor-pointer hidden lg:block"
+          title="Tạo Thread mới"
+          aria-label="Tạo Thread mới"
+        >
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-[1.8]">
+            <rect x="3" y="3" width="18" height="18" rx="4" />
+            <path d="M8 3v18" />
+            <path d="M15 9v6" />
+            <path d="M12 12h6" />
+          </svg>
+        </button>
+      )}
+
+      {/* 2. Nút nổi vuông bo góc dấu cộng [+] ở góc dưới bên phải */}
       {isAuthenticated && (
         <button
           id="floating-new-thread-btn"
@@ -144,16 +175,11 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
               setIsCreateModalOpen(true);
             }
           }}
-          className="fixed bottom-6 right-6 sm:right-10 w-13 h-13 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/80 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+          className="fixed bottom-6 right-6 sm:right-8 w-14 h-14 rounded-2xl bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
           title="Tạo Thread mới"
           aria-label="Tạo Thread mới"
         >
-          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-[1.9]">
-            <rect x="3" y="3" width="18" height="18" rx="4" />
-            <path d="M8 3v18" />
-            <path d="M15 9v6" />
-            <path d="M12 12h6" />
-          </svg>
+          <Plus className="w-7 h-7 stroke-[2.2]" />
         </button>
       )}
 
