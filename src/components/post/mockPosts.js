@@ -1,0 +1,62 @@
+export const mockPosts = [
+  {
+    id: 'post-1',
+    author: {
+      name: 'littleveera1201',
+      username: 'littleveera1201',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+      isVerified: true,
+    },
+    tag: '傳說對決',
+    timestamp: '21 giờ',
+    content: '卡芬妮 | ECHO·琉金\n開場動畫 和 技能特效展示\n來源：Garena 傳說對決 Mobile ✨',
+    media: {
+      url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
+      alt: 'Game animation screenshot',
+    },
+    likes: 1200,
+    comments: 22,
+    reposts: 28,
+    shares: 354,
+  },
+  {
+    id: 'post-2',
+    author: {
+      name: 'Frontend Developer',
+      username: 'react_vietnam',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+      isVerified: true,
+    },
+    tag: 'Công nghệ & Lập trình',
+    timestamp: '2h',
+    content: 'Chính thức trải nghiệm React 19 + Tailwind CSS v4! 🚀 Tốc độ biên dịch cực nhanh với Vite 8 và React Compiler tự động tối ưu hóa useMemo/useCallback. Các bạn đã thử chưa?',
+    media: {
+      url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+      alt: 'Code aesthetic preview',
+    },
+    likes: 845,
+    comments: 64,
+    reposts: 42,
+    shares: 112,
+  },
+  {
+    id: 'post-3',
+    author: {
+      name: 'Threads Daily',
+      username: 'threadsdaily',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+      isVerified: false,
+    },
+    tag: 'Đời sống',
+    timestamp: '4h',
+    content: 'Một buổi chiều yên bình tại quán cà phê quen thuộc. Thỉnh thoảng tạm gác deadline lại và hít một hơi thật sâu cũng là một cách sạc lại năng lượng ☕️🌿',
+    media: {
+      url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80',
+      alt: 'Coffee afternoon',
+    },
+    likes: 356,
+    comments: 18,
+    reposts: 12,
+    shares: 45,
+  },
+];
