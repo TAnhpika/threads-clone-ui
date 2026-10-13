@@ -1,21 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { SquarePlus } from 'lucide-react';
 import FeedHeader from '@/components/FeedHeader';
 import PostCard from '@/components/post/PostCard';
 import LoginPanel from '@/components/LoginPanel';
 import CreatePostBox from '@/components/post/CreatePostBox';
 import CreatePostModal from '@/components/post/CreatePostModal';
+import CreateFeedModal from '@/components/feed/CreateFeedModal';
 import { mockPosts } from '@/components/post/mockPosts';
 import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/authSlice';
 
-export default function HomePage() {
+export default function HomePage({ defaultCreateFeedOpen = false }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const currentUser = useSelector(selectCurrentUser);
 
   const [posts, setPosts] = useState(mockPosts);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateFeedOpen, setIsCreateFeedOpen] = useState(
+    defaultCreateFeedOpen || location.pathname === '/custom_feed/create'
+  );
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Lắng nghe sự kiện mở Create Feed Modal từ header hoặc menu bài viết
+  useEffect(() => {
+    const handleOpenFeedModal = () => {
+      setIsCreateFeedOpen(true);
+      window.history.pushState({}, '', '/custom_feed/create');
+    };
+
+    window.addEventListener('open-create-feed', handleOpenFeedModal);
+    return () => window.removeEventListener('open-create-feed', handleOpenFeedModal);
+  }, []);
+
+  // Kiểm tra nếu route là /custom_feed/create thì tự động mở modal
+  useEffect(() => {
+    if (location.pathname === '/custom_feed/create') {
+      setIsCreateFeedOpen(true);
+    }
+  }, [location.pathname]);
+
+  const handleOpenCreateFeed = () => {
+    setIsCreateFeedOpen(true);
+    window.history.pushState({}, '', '/custom_feed/create');
+  };
+
+  const handleCloseCreateFeed = () => {
+    setIsCreateFeedOpen(false);
+    if (window.location.pathname === '/custom_feed/create') {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
+  const handleFeedCreated = (newFeed) => {
+    setToastMessage(`Đã tạo bảng tin "${newFeed.name}" thành công ✨`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   // Xử lý tạo bài viết mới từ modal
   const handleCreatePost = (newPostData) => {
@@ -49,7 +91,11 @@ export default function HomePage() {
       {/* Cột giữa: Feed chính chứa FeedHeader, Composer & danh sách PostCard */}
       <section className="flex-1 max-w-160 min-w-0 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-3xl shadow-xs overflow-hidden transition-colors">
         {/* Header của Feed: 'For you' khi đã đăng nhập, hoặc 'Trang chủ' khi chưa đăng nhập */}
-        <FeedHeader title="Trang chủ" isLoggedIn={isAuthenticated} />
+        <FeedHeader
+          title="Trang chủ"
+          isLoggedIn={isAuthenticated}
+          onCreateFeed={handleOpenCreateFeed}
+        />
 
         {/* Thanh soạn thảo 'What's new?' chỉ xuất hiện khi đã đăng nhập */}
         {isAuthenticated && (
@@ -90,6 +136,13 @@ export default function HomePage() {
         onSubmitPost={handleCreatePost}
       />
 
+      {/* Modal tạo bảng tin tùy chỉnh (threads.com/custom_feed/create) */}
+      <CreateFeedModal
+        isOpen={isCreateFeedOpen}
+        onClose={handleCloseCreateFeed}
+        onFeedCreated={handleFeedCreated}
+      />
+
       {/* Toast thông báo */}
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
@@ -99,3 +152,4 @@ export default function HomePage() {
     </div>
   );
 }
+

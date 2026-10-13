@@ -25,6 +25,7 @@ export default function AppRoutes() {
                 {/* Public Routes với DefaultLayout */}
                 <Route element={<DefaultLayout />}>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/custom_feed/create" element={<HomePage defaultCreateFeedOpen={true} />} />
 
                     {/* Protected Routes cần đăng nhập */}
                     <Route element={<PrivateRoute />}>

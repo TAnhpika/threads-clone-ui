@@ -20,8 +20,7 @@ export default function PostHeader({
       setToastMessage('Đã lưu bài viết');
       setTimeout(() => setToastMessage(null), 2500);
     } else if (action === 'create_feed') {
-      setToastMessage('Đang mở tạo bảng tin mới...');
-      setTimeout(() => setToastMessage(null), 2500);
+      window.dispatchEvent(new CustomEvent('open-create-feed'));
     }
   };
 
