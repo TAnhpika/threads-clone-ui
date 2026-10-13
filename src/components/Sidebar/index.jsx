@@ -16,6 +16,100 @@ import {
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
+// 1. Home Icons (Outline & Solid silhouette chuẩn Threads)
+function SolidHome({ className = 'w-5 h-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M2.5 10.2a2.4 2.4 0 0 1 1.25-2.06l6.6-3.48a3.5 3.5 0 0 1 3.3 0l6.6 3.48a2.4 2.4 0 0 1 1.25 2.06v8.6a2.2 2.2 0 0 1-2.2 2.2h-14.6a2.2 2.2 0 0 1-2.2-2.2v-8.6z" />
+    </svg>
+  );
+}
+
+function OutlineHome({ className = 'w-5 h-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M2.5 10.2a2.4 2.4 0 0 1 1.25-2.06l6.6-3.48a3.5 3.5 0 0 1 3.3 0l6.6 3.48a2.4 2.4 0 0 1 1.25 2.06v8.6a2.2 2.2 0 0 1-2.2 2.2h-14.6a2.2 2.2 0 0 1-2.2-2.2v-8.6z" />
+    </svg>
+  );
+}
+
+// 2. Solid Heart Icon
+function SolidHeart({ className = 'w-5 h-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  );
+}
+
+// 3. Solid User Icon
+function SolidUser({ className = 'w-5 h-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+    </svg>
+  );
+}
+
+// 4. Solid Mail Icon
+function SolidMail({ className = 'w-5 h-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4.25l-7.46 4.66a1 1 0 0 1-1.08 0L4 8.25V6l8 5 8-5v2.25z" />
+    </svg>
+  );
+}
+
+// 5. Insights / Chart Icon (Khung bo góc chứa biểu đồ cột chuẩn Mockup)
+function InsightsIcon({ className = 'w-5 h-5', active = false }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={active ? 2.5 : 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <path d="M8 17v-4" strokeWidth={active ? 3 : 2.2} />
+      <path d="M12 17v-8" strokeWidth={active ? 3 : 2.2} />
+      <path d="M16 17v-6" strokeWidth={active ? 3 : 2.2} />
+    </svg>
+  );
+}
+
 export default function Sidebar() {
   const location = useLocation();
   const { t } = useTranslation();
@@ -37,37 +131,44 @@ export default function Sidebar() {
     {
       label: t('nav.home', 'Trang chủ'),
       path: '/',
-      icon: Home,
+      outlineIcon: OutlineHome,
+      solidIcon: SolidHome,
     },
     {
       label: t('nav.create', 'Thread mới'),
       path: '/create',
-      icon: Plus,
+      outlineIcon: Plus,
+      solidIcon: ({ className }) => <Plus className={`${className} stroke-3`} />,
     },
     {
       label: t('nav.search', 'Tìm kiếm'),
       path: '/search',
-      icon: Search,
+      outlineIcon: Search,
+      solidIcon: ({ className }) => <Search className={`${className} stroke-3`} />,
     },
     {
       label: t('nav.messages', 'Tin nhắn'),
       path: '/messages',
-      icon: Mail,
+      outlineIcon: Mail,
+      solidIcon: SolidMail,
     },
     {
       label: t('nav.activity', 'Hoạt động'),
       path: '/activity',
-      icon: Heart,
+      outlineIcon: Heart,
+      solidIcon: SolidHeart,
     },
     {
       label: t('nav.profile', 'Trang cá nhân'),
       path: '/profile',
-      icon: User,
+      outlineIcon: User,
+      solidIcon: SolidUser,
     },
     {
       label: t('nav.insights', 'Thông tin chi tiết'),
       path: '/insights',
-      icon: BarChart3,
+      outlineIcon: InsightsIcon,
+      solidIcon: ({ className }) => <InsightsIcon className={className} active={true} />,
     },
   ];
 
@@ -82,40 +183,44 @@ export default function Sidebar() {
             className="flex items-center gap-2 px-3 py-2 text-black dark:text-white hover:opacity-85 transition-opacity group"
             title="Threads"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <svg
-                viewBox="0 0 192 192"
+                aria-label="Threads"
+                role="img"
+                viewBox="0 0 976.98 1082"
                 className="w-7 h-7 fill-current shrink-0 transition-transform group-hover:scale-105"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path d="M141.537 88.9883C140.71 88.5919 139.87 88.2104 139.019 87.8451C137.537 60.5382 122.616 44.905 97.5619 44.745C97.4484 44.7443 97.3355 44.7443 97.222 44.7443C82.2364 44.7443 69.7731 51.1409 62.102 62.7807L75.021 72.8105C80.4431 64.5889 88.6666 60.5382 97.222 60.5382C97.3061 60.5382 97.3908 60.5382 97.4749 60.5389C111.458 60.6277 121.218 69.8787 123.011 88.0837C114.86 86.8837 106.195 86.6433 97.1818 87.3697C69.0494 89.6206 51.9864 104.296 53.6496 125.04C54.4947 135.581 61.1687 144.331 71.8021 148.887C80.893 152.782 91.9567 153.111 101.996 149.778C114.735 145.549 123.473 136.37 127.329 123.238C134.426 128.878 143.181 133.518 152.923 135.981L156.402 120.672C147.962 118.536 140.404 114.498 134.197 109.313C137.954 99.8279 140.428 89.288 141.537 88.9883ZM99.9837 134.789C86.7578 139.184 70.3664 136.634 69.4147 124.757C68.5367 113.799 78.4328 103.774 98.4419 102.173C105.127 101.638 111.534 101.761 117.584 102.502C115.168 124.636 107.502 132.291 99.9837 134.789Z" />
+                <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
               </svg>
-              <span className="text-xl font-bold tracking-tight">threads</span>
+              <span className="text-[25px] font-bold italic tracking-tight leading-none">threads</span>
             </div>
           </Link>
 
           {/* Menu Navigation Items */}
           <nav className="space-y-1">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const isActive =
                 item.path === '/'
                   ? location.pathname === '/'
                   : location.pathname.startsWith(item.path);
 
+              // Chọn Solid Icon khi active, Outline Icon khi inactive
+              const IconComponent = isActive && item.solidIcon ? item.solidIcon : item.outlineIcon;
+
               return (
                 <Link
                   key={item.label}
                   to={item.path}
-                  className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm transition-all ${
+                  className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm transition-all ${
                     isActive
-                      ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-bold shadow-2xs'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white font-medium'
+                      ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white font-medium'
                   }`}
                 >
-                  <Icon
-                    className={`w-5 h-5 ${
-                      isActive ? 'stroke-current stroke-[2.4]' : 'stroke-current stroke-2'
+                  <IconComponent
+                    className={`w-5 h-5 shrink-0 ${
+                      isActive ? 'text-black dark:text-white' : 'stroke-current stroke-2'
                     }`}
                   />
                   <span>{item.label}</span>
@@ -128,14 +233,14 @@ export default function Sidebar() {
           <div className="pt-2">
             <Link
               to="/login"
-              className="w-full py-3 px-4 rounded-2xl bg-black text-white dark:bg-white dark:text-black font-bold text-sm text-center block hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-semibold text-sm text-center block hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
             >
               {t('nav.login', 'Đăng nhập')}
             </Link>
           </div>
         </div>
 
-        {/* Phần dưới: Nút Xem thêm & Tiện ích ThemeToggle / LanguageSwitcher */}
+        {/* Phần dưới: Nút Xem thêm */}
         <div className="relative pt-3 border-t border-zinc-100 dark:border-zinc-800" ref={moreMenuRef}>
           {/* Popup Menu khi bấm "Xem thêm" */}
           {showMoreMenu && (
