@@ -3,21 +3,16 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, logout } from '@/features/auth/authSlice';
+import { useTheme } from '@/components/ThemeProvider';
 import {
-  Home,
   Plus,
   Search,
-  Mail,
+  Send,
   Heart,
   User,
-  BarChart3,
-  Menu,
-  Settings,
-  HelpCircle,
-  LogOut,
+  Bookmark,
+  Lock,
 } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 // 1. Home Icons (Outline & Solid silhouette chuẩn Threads)
 function SolidHome({ className = 'w-5 h-5' }) {
@@ -50,49 +45,7 @@ function OutlineHome({ className = 'w-5 h-5' }) {
   );
 }
 
-// 2. Solid Heart Icon
-function SolidHeart({ className = 'w-5 h-5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-    </svg>
-  );
-}
-
-// 3. Solid User Icon
-function SolidUser({ className = 'w-5 h-5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-    </svg>
-  );
-}
-
-// 4. Solid Mail Icon
-function SolidMail({ className = 'w-5 h-5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4.25l-7.46 4.66a1 1 0 0 1-1.08 0L4 8.25V6l8 5 8-5v2.25z" />
-    </svg>
-  );
-}
-
-// 5. Insights / Chart Icon (Khung bo góc chứa biểu đồ cột chuẩn Mockup)
+// 2. Insights / Chart Icon
 function InsightsIcon({ className = 'w-5 h-5', active = false }) {
   return (
     <svg
@@ -113,120 +66,288 @@ function InsightsIcon({ className = 'w-5 h-5', active = false }) {
   );
 }
 
+// 3. Cute Ghost Icon (cho Ghost posts chuẩn hình mẫu)
+function GhostIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={className}
+    >
+      {/* Vòng tròn nét đứt có tai nhọn ở góc trên bên trái */}
+      <path
+        strokeDasharray="2.5 2"
+        strokeLinecap="round"
+        d="M6 7.5L3.5 5M6 7.5A8 8 0 1 1 5 14"
+      />
+      {/* Mắt */}
+      <circle cx="10.5" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
+      {/* Miệng cười */}
+      <path d="M11 14.5c.7.5 1.5.7 2.2.7s1.5-.2 2.2-.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function Sidebar() {
   const location = useLocation();
-  const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { isDark, setTheme } = useTheme();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const moreMenuRef = useRef(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  const menuRef = useRef(null);
 
-  // Đóng menu "Xem thêm" khi click ra ngoài
+  // Đóng dropdown menu khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
-      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
-        setShowMoreMenu(false);
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems = [
+  const handleOpenNewThread = () => {
+    window.dispatchEvent(
+      new CustomEvent('open-create-thread', { detail: { placement: 'center' } })
+    );
+  };
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const mainNavItems = [
     {
-      label: t('nav.home', 'Trang chủ'),
+      label: 'For you',
       path: '/',
       outlineIcon: OutlineHome,
       solidIcon: SolidHome,
+      isActive: location.pathname === '/' && !location.search,
     },
     {
-      label: t('nav.create', 'Thread mới'),
-      path: '/create',
+      label: 'New thread',
+      onClick: handleOpenNewThread,
       outlineIcon: Plus,
-      solidIcon: ({ className }) => <Plus className={`${className} stroke-3`} />,
+      solidIcon: Plus,
+      isButton: true,
     },
     {
-      label: t('nav.search', 'Tìm kiếm'),
+      label: 'Search',
       path: '/search',
       outlineIcon: Search,
-      solidIcon: ({ className }) => <Search className={`${className} stroke-3`} />,
+      solidIcon: Search,
+      isActive: location.pathname.startsWith('/search'),
     },
     {
-      label: t('nav.messages', 'Tin nhắn'),
+      label: 'Messages',
       path: '/messages',
-      outlineIcon: Mail,
-      solidIcon: SolidMail,
+      outlineIcon: Send,
+      solidIcon: Send,
+      isActive: location.pathname.startsWith('/messages'),
     },
     {
-      label: t('nav.activity', 'Hoạt động'),
+      label: 'Activity',
       path: '/activity',
       outlineIcon: Heart,
-      solidIcon: SolidHeart,
+      solidIcon: Heart,
+      isActive: location.pathname.startsWith('/activity'),
     },
     {
-      label: t('nav.profile', 'Trang cá nhân'),
+      label: 'Profile',
       path: '/profile',
       outlineIcon: User,
-      solidIcon: SolidUser,
+      solidIcon: User,
+      isActive: location.pathname.startsWith('/profile'),
     },
     {
-      label: t('nav.insights', 'Thông tin chi tiết'),
+      label: 'Insights',
       path: '/insights',
       outlineIcon: InsightsIcon,
       solidIcon: ({ className }) => <InsightsIcon className={className} active={true} />,
+      isActive: location.pathname.startsWith('/insights'),
+    },
+  ];
+
+  const otherFeeds = [
+    {
+      label: 'Following',
+      path: '/?feed=following',
+    },
+    {
+      label: 'Saved',
+      path: '/?feed=saved',
+      icon: Bookmark,
+    },
+    {
+      label: 'Liked',
+      path: '/?feed=liked',
+      icon: Heart,
+    },
+    {
+      label: 'Ghost posts',
+      path: '/?feed=ghost',
+      rightIcon: GhostIcon,
+    },
+    {
+      label: 'Archive',
+      path: '/?feed=archive',
+      icon: Lock,
     },
   ];
 
   return (
     <aside className="w-64 shrink-0 hidden md:block select-none">
-      <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 rounded-3xl shadow-xs transition-colors">
-        {/* Phần trên: Logo & Navigation */}
-        <div className="space-y-4">
-          {/* Logo @threads */}
-          <Link
-            to="/"
-            className="flex items-center gap-2 px-3 py-2 text-black dark:text-white hover:opacity-85 transition-opacity group"
-            title="Threads"
-          >
-            <div className="flex items-center gap-1.5">
-              <svg
-                aria-label="Threads"
-                role="img"
-                viewBox="0 0 976.98 1082"
-                className="w-7 h-7 fill-current shrink-0 transition-transform group-hover:scale-105"
-                xmlns="http://www.w3.org/2000/svg"
+      <div
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col justify-between p-3.5 bg-white dark:bg-[#101010] border border-zinc-200/90 dark:border-zinc-800 rounded-3xl shadow-xs transition-colors overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <div className="space-y-2.5">
+          {/* 1. Header: Logo @threads & Nút tròn menu [=] */}
+          <div className="flex items-center justify-between px-2 pt-1 pb-1 relative">
+            <Link
+              to="/"
+              className="flex items-center gap-2 text-black dark:text-white hover:opacity-85 transition-opacity group"
+              title="Threads"
+            >
+              <div className="flex items-center gap-1.5">
+                <svg
+                  aria-label="Threads"
+                  role="img"
+                  viewBox="0 0 976.98 1082"
+                  className="w-7 h-7 fill-current shrink-0 transition-transform group-hover:scale-105"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
+                </svg>
+                <span className="text-2xl font-bold italic tracking-tight leading-none">threads</span>
+              </div>
+            </Link>
+
+            {/* Nút tròn hai gạch menu [=] */}
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setShowMenu((prev) => !prev)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                  showMenu
+                    ? 'bg-zinc-800 text-white'
+                    : 'bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 text-zinc-700 dark:text-zinc-200'
+                }`}
+                title="Tùy chọn"
+                aria-label="Tùy chọn"
               >
-                <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
-              </svg>
-              <span className="text-[25px] font-bold italic tracking-tight leading-none">threads</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4 stroke-current stroke-2"
+                  fill="none"
+                >
+                  <line x1="5" y1="9" x2="19" y2="9" />
+                  <line x1="5" y1="15" x2="19" y2="15" />
+                </svg>
+              </button>
+
+              {/* Popover Menu: Appearance, Settings, Report a problem, Log out */}
+              {showMenu && (
+                <div
+                  className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-52 bg-white dark:bg-[#1c1c1c] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white rounded-2xl p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none"
+                  role="menu"
+                >
+                  {/* Appearance */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTheme(isDark ? 'light' : 'dark');
+                      setShowMenu(false);
+                      showToast(`Giao diện: ${isDark ? 'Sáng' : 'Tối'}`);
+                    }}
+                    className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
+                  >
+                    <span>Appearance</span>
+                  </button>
+
+                  {/* Settings */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false);
+                      showToast('Cài đặt tài khoản');
+                    }}
+                    className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
+                  >
+                    Settings
+                  </button>
+
+                  <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+
+                  {/* Report a problem */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false);
+                      showToast('Báo cáo sự cố');
+                    }}
+                    className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
+                  >
+                    Report a problem
+                  </button>
+
+                  {/* Log out (chữ đỏ) */}
+                  {isAuthenticated && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dispatch(logout());
+                        setShowMenu(false);
+                        showToast('Đã đăng xuất');
+                      }}
+                      className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
+                    >
+                      Log out
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-          </Link>
+          </div>
 
-          {/* Menu Navigation Items */}
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive =
-                item.path === '/'
-                  ? location.pathname === '/'
-                  : location.pathname.startsWith(item.path);
+          {/* 2. Menu Navigation chính: For you, New thread, Search, Messages, Activity, Profile, Insights */}
+          <nav className="space-y-0.5">
+            {mainNavItems.map((item) => {
+              const IconComponent = item.isActive ? item.solidIcon : item.outlineIcon;
 
-              // Chọn Solid Icon khi active, Outline Icon khi inactive
-              const IconComponent = isActive && item.solidIcon ? item.solidIcon : item.outlineIcon;
+              if (item.isButton) {
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={item.onClick}
+                    className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <IconComponent className="w-5 h-5 shrink-0 stroke-2" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              }
 
               return (
                 <Link
                   key={item.label}
                   to={item.path}
-                  onClick={item.onClick}
                   className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm transition-all ${
-                    isActive
+                    item.isActive
                       ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
                       : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white font-medium'
                   }`}
                 >
                   <IconComponent
                     className={`w-5 h-5 shrink-0 ${
-                      isActive ? 'text-black dark:text-white' : 'stroke-current stroke-2'
+                      item.isActive ? 'text-black dark:text-white' : 'stroke-current stroke-2'
                     }`}
                   />
                   <span>{item.label}</span>
@@ -235,88 +356,62 @@ export default function Sidebar() {
             })}
           </nav>
 
-          {/* Nút Đăng nhập hoặc Tạo bài viết */}
+          {/* 3. Section: Other feeds */}
           <div className="pt-2">
-            {isAuthenticated ? (
+            {/* Header: Other feeds & Edit */}
+            <div className="flex items-center justify-between px-3.5 py-1 mb-1">
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                Other feeds
+              </span>
               <button
                 type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-create-thread'))}
-                className="w-full py-2.5 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-semibold text-sm text-center block hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
+                onClick={() => showToast('Chỉnh sửa danh sách feeds')}
+                className="text-xs font-semibold text-zinc-500 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
               >
-                {t('nav.create', 'Thread mới')}
+                Edit
               </button>
-            ) : (
-              <Link
-                to="/login"
-                className="w-full py-2.5 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-semibold text-sm text-center block hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
-              >
-                {t('nav.login', 'Đăng nhập')}
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Phần dưới: Nút Xem thêm */}
-        <div className="relative pt-3 border-t border-zinc-100 dark:border-zinc-800" ref={moreMenuRef}>
-          {/* Popup Menu khi bấm "Xem thêm" */}
-          {showMoreMenu && (
-            <div className="absolute bottom-14 left-0 w-full p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-50 space-y-1 animate-in fade-in slide-in-from-bottom-2 duration-150">
-              <div className="px-3 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Tùy chọn
-              </div>
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-                <span className="flex items-center gap-2.5">
-                  <Settings className="w-4 h-4 text-zinc-500" />
-                  Giao diện
-                </span>
-                <ThemeToggle />
-              </div>
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-                <span className="flex items-center gap-2.5">
-                  <HelpCircle className="w-4 h-4 text-zinc-500" />
-                  Ngôn ngữ
-                </span>
-                <LanguageSwitcher />
-              </div>
-
-              {/* Tùy chọn Đăng xuất khi đã đăng nhập */}
-              {isAuthenticated && (
-                <>
-                  <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dispatch(logout());
-                      setShowMoreMenu(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2.5 font-medium">
-                      <LogOut className="w-4 h-4 text-red-500" />
-                      Đăng xuất
-                    </span>
-                  </button>
-                </>
-              )}
             </div>
-          )}
 
-          {/* Thanh chân Sidebar */}
-          <div>
-            <button
-              onClick={() => setShowMoreMenu((prev) => !prev)}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                showMoreMenu
-                  ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-              }`}
-              title="Xem thêm"
-            >
-              <Menu className="w-5 h-5" />
-              <span>Xem thêm</span>
-            </button>
+            {/* Danh sách Other feeds: Following & Ghost posts bắt đầu thẳng hàng với vị trí icon */}
+            <div className="space-y-0.5">
+              {otherFeeds.map((feed) => {
+                const IconComponent = feed.icon;
+                const RightIconComponent = feed.rightIcon;
+                const isActive = location.search === feed.path.replace('/', '');
+
+                return (
+                  <Link
+                    key={feed.label}
+                    to={feed.path}
+                    className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-sm transition-colors ${
+                      isActive
+                        ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
+                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-white font-medium'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      {IconComponent && (
+                        <IconComponent className="w-5 h-5 shrink-0 stroke-2" />
+                      )}
+                      <span>{feed.label}</span>
+                    </div>
+
+                    {RightIconComponent && (
+                      <RightIconComponent className="w-5 h-5 shrink-0 text-zinc-400" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
+
+        {/* Toast thông báo nhanh trong Sidebar */}
+        {toastMessage && (
+          <div className="mt-2 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-xl text-xs font-semibold text-center animate-in fade-in duration-100 shadow-md">
+            {toastMessage}
+          </div>
+        )}
       </div>
     </aside>
   );

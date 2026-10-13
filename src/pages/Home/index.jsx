@@ -19,10 +19,23 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
 
   const [posts, setPosts] = useState(mockPosts);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createModalPlacement, setCreateModalPlacement] = useState('center'); // 'center' | 'bottom-right'
   const [isCreateFeedOpen, setIsCreateFeedOpen] = useState(
     defaultCreateFeedOpen || location.pathname === '/custom_feed/create'
   );
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Lắng nghe sự kiện mở Create Post Modal từ sidebar
+  useEffect(() => {
+    const handleOpenThread = (e) => {
+      const placement = e?.detail?.placement || 'center';
+      setCreateModalPlacement(placement);
+      setIsCreateModalOpen(true);
+    };
+
+    window.addEventListener('open-create-thread', handleOpenThread);
+    return () => window.removeEventListener('open-create-thread', handleOpenThread);
+  }, []);
 
   // Lắng nghe sự kiện mở Create Feed Modal từ header hoặc menu bài viết
   useEffect(() => {
@@ -64,14 +77,14 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     const newPost = {
       id: `post-${Date.now()}`,
       author: {
-        name: currentUser?.name || 'Alexander Vance',
-        username: currentUser?.username || currentUser?.email?.split('@')[0] || 'alexander.sartorial',
+        name: currentUser?.name || 'tuananhpika',
+        username: currentUser?.username || currentUser?.email?.split('@')[0] || 'tuananhpika',
         avatar:
           currentUser?.avatar ||
           'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
         isVerified: true,
       },
-      tag: 'Old Money Aesthetic',
+      tag: newPostData.topic || 'Old Money Aesthetic',
       timestamp: 'Vừa xong',
       content: newPostData.content,
       media: newPostData.media || null,
@@ -101,7 +114,10 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
         {isAuthenticated && (
           <CreatePostBox
             user={currentUser}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setCreateModalPlacement('center');
+              setIsCreateModalOpen(true);
+            }}
           />
         )}
 
@@ -119,21 +135,35 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
       {/* Nút nổi tạo bài viết nhanh [+] ở góc dưới bên phải khi đã đăng nhập */}
       {isAuthenticated && (
         <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="fixed bottom-6 right-6 sm:right-10 w-13 h-13 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+          id="floating-new-thread-btn"
+          onClick={() => {
+            if (isCreateModalOpen && createModalPlacement === 'bottom-right') {
+              setIsCreateModalOpen(false);
+            } else {
+              setCreateModalPlacement('bottom-right');
+              setIsCreateModalOpen(true);
+            }
+          }}
+          className="fixed bottom-6 right-6 sm:right-10 w-13 h-13 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/80 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
           title="Tạo Thread mới"
           aria-label="Tạo Thread mới"
         >
-          <SquarePlus className="w-6 h-6 stroke-[1.8]" />
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-[1.9]">
+            <rect x="3" y="3" width="18" height="18" rx="4" />
+            <path d="M8 3v18" />
+            <path d="M15 9v6" />
+            <path d="M12 12h6" />
+          </svg>
         </button>
       )}
 
-      {/* Modal tạo bài viết */}
+      {/* Modal tạo bài viết (Hỗ trợ cả 'center' và 'bottom-right' góc phải) */}
       <CreatePostModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         currentUser={currentUser}
         onSubmitPost={handleCreatePost}
+        placement={createModalPlacement}
       />
 
       {/* Modal tạo bảng tin tùy chỉnh (threads.com/custom_feed/create) */}

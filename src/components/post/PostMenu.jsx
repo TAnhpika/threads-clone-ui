@@ -118,7 +118,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
           <div className="pt-0.5">
             <button
               onClick={() => handleItemClick('create_feed')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer group"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer group"
             >
               <span>{t('postMenu.createNewFeed', 'Create new feed')}</span>
               <PlusCircle className="w-5 h-5 text-zinc-700 dark:text-zinc-300 group-hover:scale-105 transition-transform stroke-2" />
@@ -132,7 +132,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
           <div className="space-y-0.5">
             <button
               onClick={handleCopyLink}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.copyLink', 'Copy link')}</span>
               <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
@@ -140,7 +140,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
 
             <button
               onClick={() => handleItemClick('embed')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.embed', 'Get embed code')}</span>
               <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
@@ -153,7 +153,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
           <div className="space-y-0.5">
             <button
               onClick={() => handleItemClick('save')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.save', 'Save')}</span>
               <Bookmark className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
@@ -161,7 +161,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
 
             <button
               onClick={() => handleItemClick('not_interested')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.notInterested', 'Not interested')}</span>
               <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
@@ -174,7 +174,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
           <div className="space-y-0.5">
             <button
               onClick={() => setView('add_to_feed')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.addToFeed', 'Add to feed')}</span>
               <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-[2.5]" />
@@ -182,7 +182,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
 
             <button
               onClick={() => handleItemClick('mute')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.mute', 'Mute')}</span>
               <UserX className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
@@ -190,7 +190,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
 
             <button
               onClick={() => handleItemClick('restrict')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.restrict', 'Restrict')}</span>
               <ShieldAlert className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
@@ -199,7 +199,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
             {/* Các mục cảnh báo màu đỏ */}
             <button
               onClick={() => handleItemClick('block')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.block', 'Block')}</span>
               <Ban className="w-5 h-5 text-red-500 stroke-[2.2]" />
@@ -207,7 +207,7 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
 
             <button
               onClick={() => handleItemClick('report')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.report', 'Report')}</span>
               <MessageCircleWarning className="w-5 h-5 text-red-500 stroke-[2.2]" />

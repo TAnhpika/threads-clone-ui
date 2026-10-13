@@ -141,7 +141,7 @@ export default function CreateFeedModal({ isOpen, onClose, onFeedCreated }) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Enter a brief description."
-                className="w-full bg-transparent text-zinc-300 placeholder-zinc-500 text-[14px] outline-none resize-none leading-relaxed"
+                className="w-full bg-transparent text-zinc-300 placeholder-zinc-500 text-sm outline-none resize-none leading-relaxed"
               />
             </div>
 
@@ -266,7 +266,7 @@ export default function CreateFeedModal({ isOpen, onClose, onFeedCreated }) {
           <button
             type="button"
             onClick={handleDone}
-            className="bg-white text-black font-bold text-[14px] px-6 py-2 rounded-full hover:bg-zinc-200 active:scale-95 transition-all cursor-pointer shadow-lg"
+            className="bg-white text-black font-bold text-sm px-6 py-2 rounded-full hover:bg-zinc-200 active:scale-95 transition-all cursor-pointer shadow-lg"
           >
             Done
           </button>

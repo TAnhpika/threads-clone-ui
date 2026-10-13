@@ -73,7 +73,7 @@ export default function RepostModal({
             if (onRepost) onRepost();
             onClose();
           }}
-          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-colors cursor-pointer ${
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
             isReposted
               ? 'text-red-500 hover:bg-red-500/10'
               : 'text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80'
@@ -97,7 +97,7 @@ export default function RepostModal({
             if (onQuote) onQuote();
             onClose();
           }}
-          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
         >
           <span>{t('repostModal.quote', 'Quote')}</span>
           <QuoteBubbleIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
