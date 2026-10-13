@@ -202,12 +202,12 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 shrink-0 hidden md:block select-none">
+    <aside className="w-60 shrink-0 hidden md:block select-none">
       <div
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col justify-between p-3.5 bg-white dark:bg-[#101010] border border-zinc-200/90 dark:border-zinc-800 rounded-3xl shadow-xs transition-colors overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col justify-between py-1 text-black dark:text-white overflow-y-auto scrollbar-none no-scrollbar"
       >
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {/* 1. Header: Logo @threads & Nút tròn menu [=] */}
           <div className="flex items-center justify-between px-2 pt-1 pb-1 relative">
             <Link
