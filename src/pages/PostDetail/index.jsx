@@ -28,9 +28,12 @@ export default function PostDetailPage() {
 
   // Tìm bài viết theo postId hoặc username hoặc dùng mặc định bài DeZUpPAj_q6
   const post = useMemo(() => {
+    const cleanUsername = username?.startsWith('@') ? username.slice(1) : username;
     return (
       mockPosts.find((p) => p.id === postId) ||
-      mockPosts.find((p) => p.author?.username === username) ||
+      mockPosts.find(
+        (p) => p.author?.username === cleanUsername || p.author?.username === username
+      ) ||
       mockPosts[0]
     );
   }, [postId, username]);
@@ -175,7 +178,7 @@ export default function PostDetailPage() {
                     className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
                   />
                   <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
-                    <Plus className="w-3 h-3 stroke-[3]" />
+                    <Plus className="w-3 h-3 stroke-3" />
                   </div>
                 </div>
 
@@ -466,9 +469,9 @@ function ReplyItem({ reply, onToast }) {
               alt={reply.author.username}
               className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
             />
-            <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
-              <Plus className="w-3 h-3 stroke-[3]" />
-            </div>
+              <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
+                <Plus className="w-3 h-3 stroke-3" />
+              </div>
           </div>
           {/* Đường chỉ dọc kết nối chuỗi thảo luận */}
           {reply.hasConnector && (

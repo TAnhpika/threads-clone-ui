@@ -1,9 +1,27 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function DefaultLayout() {
+  const location = useLocation();
+  const isMessagesPage = location.pathname.startsWith('/messages');
+
+  // Chế độ toàn màn hình không viền cho trang Tin nhắn (chuẩn giao diện Threads Web)
+  if (isMessagesPage) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-white dark:bg-black text-black dark:text-white flex">
+        {/* Sidebar thu gọn icon-rail */}
+        <Sidebar collapsed={true} />
+
+        {/* Khung nội dung Messages */}
+        <main className="flex-1 min-w-0 h-full overflow-hidden">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50/40 dark:bg-black text-black dark:text-white transition-colors">
       {/* Mobile Header (chỉ hiện trên màn hình nhỏ < md) */}

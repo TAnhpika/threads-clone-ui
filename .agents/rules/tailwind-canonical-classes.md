@@ -28,4 +28,10 @@ Always use canonical Tailwind CSS classes instead of arbitrary bracket notation 
    - `p-[16px]` -> `p-4`
    - `gap-[16px]` -> `gap-4`
 
+5. **Stroke Width Utilities**:
+   - `stroke-[1]` -> `stroke-1`
+   - `stroke-[2]` -> `stroke-2`
+   - `stroke-[3]` -> `stroke-3` (CRITICAL: NEVER write `stroke-[3]`, always write `stroke-3`)
+
 Always use standard Tailwind scale values and built-in canonical utilities directly rather than bracket notation `[...]`.
+
