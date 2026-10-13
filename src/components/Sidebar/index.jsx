@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, logout } from '@/features/auth/authSlice';
 import { useTheme } from '@/components/ThemeProvider';
@@ -59,9 +58,9 @@ function InsightsIcon({ className = 'w-5 h-5', active = false }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <rect x="3" y="3" width="18" height="18" rx="5" />
-      <path d="M8 17v-4" strokeWidth={active ? 3 : 2.2} />
-      <path d="M12 17v-8" strokeWidth={active ? 3 : 2.2} />
-      <path d="M16 17v-6" strokeWidth={active ? 3 : 2.2} />
+      <path d="M8 17v-4" strokeWidth={active ? 3 : 2} />
+      <path d="M12 17v-8" strokeWidth={active ? 3 : 2} />
+      <path d="M16 17v-6" strokeWidth={active ? 3 : 2} />
     </svg>
   );
 }
@@ -76,16 +75,13 @@ function GhostIcon({ className = 'w-5 h-5' }) {
       strokeWidth="2"
       className={className}
     >
-      {/* Vòng tròn nét đứt có tai nhọn ở góc trên bên trái */}
       <path
         strokeDasharray="2.5 2"
         strokeLinecap="round"
         d="M6 7.5L3.5 5M6 7.5A8 8 0 1 1 5 14"
       />
-      {/* Mắt */}
       <circle cx="10.5" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
       <circle cx="15" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
-      {/* Miệng cười */}
       <path d="M11 14.5c.7.5 1.5.7 2.2.7s1.5-.2 2.2-.7" strokeLinecap="round" />
     </svg>
   );
@@ -98,6 +94,7 @@ export default function Sidebar({ collapsed = false }) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [showMenu, setShowMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
   const menuRef = useRef(null);
 
   // Đóng dropdown menu khi click ra ngoài
@@ -201,170 +198,51 @@ export default function Sidebar({ collapsed = false }) {
     },
   ];
 
-  // Giao diện Sidebar thu gọn dạng Icon-Rail (cho trang Messages)
-  if (collapsed) {
-    return (
-      <aside className="w-18 shrink-0 hidden md:flex flex-col justify-between items-center py-4 border-r border-zinc-200 dark:border-zinc-800/80 h-screen select-none bg-white dark:bg-black z-30">
-        <div className="flex flex-col items-center gap-7 w-full">
-          {/* Logo @threads */}
+  // Trạng thái hiển thị menu chi tiết:
+  // - Nếu không collapsed (Home, Activity, Profile...): luôn luôn hiển thị đầy đủ
+  // - Nếu collapsed (chỉ Messages và Insights): hiển thị chi tiết khi isHovered === true
+  const isExpanded = !collapsed || isHovered;
+
+  // Render nội dung Sidebar với vị trí các Icon CỐ ĐỊNH HOÀN TOÀN (đứng yên tuyệt đối khi hover)
+  const renderSidebarBody = () => (
+    <div className="flex flex-col justify-between h-full select-none">
+      <div className="space-y-4 w-full">
+        {/* 1. Header: Logo @threads & Nút tròn menu [=] */}
+        <div className="flex items-center justify-between h-9 px-1 relative shrink-0">
           <Link
             to="/"
-            className="p-2 text-black dark:text-white hover:opacity-85 transition-opacity group"
+            className="flex items-center text-black dark:text-white hover:opacity-85 transition-opacity group"
             title="Threads"
           >
-            <svg
-              aria-label="Threads"
-              role="img"
-              viewBox="0 0 976.98 1082"
-              className="w-8 h-8 fill-current transition-transform group-hover:scale-105"
-              xmlns="http://www.w3.org/2000/svg"
+            {/* Khung icon @threads cố định tuyệt đối toạ độ */}
+            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+              <svg
+                aria-label="Threads"
+                role="img"
+                viewBox="0 0 976.98 1082"
+                className="w-7 h-7 fill-current shrink-0 transition-transform group-hover:scale-105"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
+              </svg>
+            </div>
+            {/* Chữ threads mượt mà mở rộng sang phải, không kéo lệch icon */}
+            <div
+              className={`overflow-hidden transition-all duration-200 ${
+                isExpanded
+                  ? 'max-w-40 opacity-100 ml-2'
+                  : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+              }`}
             >
-              <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
-            </svg>
+              <span className="text-2xl font-bold italic tracking-tight leading-none whitespace-nowrap">
+                threads
+              </span>
+            </div>
           </Link>
 
-          {/* Dãy icon điều hướng dọc */}
-          <nav className="flex flex-col items-center gap-2 w-full px-2">
-            {mainNavItems.map((item) => {
-              const IconComponent = item.isActive ? item.solidIcon : item.outlineIcon;
-
-              if (item.isButton) {
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={item.onClick}
-                    title={item.label}
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-                  >
-                    <IconComponent className="w-5 h-5 stroke-2" />
-                  </button>
-                );
-              }
-
-              return (
-                <Link
-                  key={item.label}
-                  to={item.path}
-                  title={item.label}
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
-                    item.isActive
-                      ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-bold'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white'
-                  }`}
-                >
-                  <IconComponent className="w-5 h-5 stroke-2" />
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Nút tuỳ chọn [=] ở dưới cùng */}
-        <div className="relative pb-1" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setShowMenu((prev) => !prev)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-              showMenu
-                ? 'bg-zinc-800 text-white'
-                : 'bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 text-zinc-700 dark:text-zinc-200'
-            }`}
-            title="Tùy chọn"
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current stroke-2" fill="none">
-              <line x1="5" y1="9" x2="19" y2="9" />
-              <line x1="5" y1="15" x2="19" y2="15" />
-            </svg>
-          </button>
-
-          {showMenu && (
-            <div
-              className="absolute left-full bottom-0 ml-3 w-52 bg-white dark:bg-[#1c1c1c] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white rounded-2xl p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none"
-              role="menu"
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setTheme(isDark ? 'light' : 'dark');
-                  setShowMenu(false);
-                  showToast(`Giao diện: ${isDark ? 'Sáng' : 'Tối'}`);
-                }}
-                className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-              >
-                <span>Appearance</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMenu(false);
-                  showToast('Cài đặt tài khoản');
-                }}
-                className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-              >
-                Settings
-              </button>
-              <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMenu(false);
-                  showToast('Báo cáo sự cố');
-                }}
-                className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-              >
-                Report a problem
-              </button>
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    dispatch(logout());
-                    setShowMenu(false);
-                    showToast('Đã đăng xuất');
-                  }}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
-                >
-                  Log out
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </aside>
-    );
-  }
-
-  return (
-    <aside className="w-60 shrink-0 hidden md:block select-none">
-      <div
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col justify-between py-1 text-black dark:text-white overflow-y-auto scrollbar-none no-scrollbar"
-      >
-        <div className="space-y-3">
-          {/* 1. Header: Logo @threads & Nút tròn menu [=] */}
-          <div className="flex items-center justify-between px-2 pt-1 pb-1 relative">
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-black dark:text-white hover:opacity-85 transition-opacity group"
-              title="Threads"
-            >
-              <div className="flex items-center gap-1.5">
-                <svg
-                  aria-label="Threads"
-                  role="img"
-                  viewBox="0 0 976.98 1082"
-                  className="w-7 h-7 fill-current shrink-0 transition-transform group-hover:scale-105"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
-                </svg>
-                <span className="text-2xl font-bold italic tracking-tight leading-none">threads</span>
-              </div>
-            </Link>
-
-            {/* Nút tròn hai gạch menu [=] */}
-            <div className="relative" ref={menuRef}>
+          {/* Nút tròn hai gạch menu [=] chỉ hiện khi mở rộng */}
+          {isExpanded && (
+            <div className="relative animate-in fade-in duration-150" ref={menuRef}>
               <button
                 type="button"
                 onClick={() => setShowMenu((prev) => !prev)}
@@ -376,11 +254,7 @@ export default function Sidebar({ collapsed = false }) {
                 title="Tùy chọn"
                 aria-label="Tùy chọn"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4 stroke-current stroke-2"
-                  fill="none"
-                >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current stroke-2" fill="none">
                   <line x1="5" y1="9" x2="19" y2="9" />
                   <line x1="5" y1="15" x2="19" y2="15" />
                 </svg>
@@ -392,7 +266,6 @@ export default function Sidebar({ collapsed = false }) {
                   className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-52 bg-white dark:bg-[#1c1c1c] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white rounded-2xl p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none"
                   role="menu"
                 >
-                  {/* Appearance */}
                   <button
                     type="button"
                     onClick={() => {
@@ -404,8 +277,6 @@ export default function Sidebar({ collapsed = false }) {
                   >
                     <span>Appearance</span>
                   </button>
-
-                  {/* Settings */}
                   <button
                     type="button"
                     onClick={() => {
@@ -416,10 +287,7 @@ export default function Sidebar({ collapsed = false }) {
                   >
                     Settings
                   </button>
-
                   <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
-
-                  {/* Report a problem */}
                   <button
                     type="button"
                     onClick={() => {
@@ -430,8 +298,6 @@ export default function Sidebar({ collapsed = false }) {
                   >
                     Report a problem
                   </button>
-
-                  {/* Log out (chữ đỏ) */}
                   {isAuthenticated && (
                     <button
                       type="button"
@@ -448,52 +314,78 @@ export default function Sidebar({ collapsed = false }) {
                 </div>
               )}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* 2. Menu Navigation chính: For you, New thread, Search, Messages, Activity, Profile, Insights */}
-          <nav className="space-y-0.5">
-            {mainNavItems.map((item) => {
-              const IconComponent = item.isActive ? item.solidIcon : item.outlineIcon;
+        {/* 2. Menu Navigation chính: Icon neo cố định ở lề trái (px-3), chỉ mở rộng chiều ngang */}
+        <nav className="space-y-1 w-full">
+          {mainNavItems.map((item) => {
+            const IconComponent = item.isActive ? item.solidIcon : item.outlineIcon;
 
-              if (item.isButton) {
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={item.onClick}
-                    className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white transition-colors cursor-pointer text-left"
-                  >
-                    <IconComponent className="w-5 h-5 shrink-0 stroke-2" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              }
+            // Luôn giữ px-3 và h-11, chỉ thay đổi width mà KHÔNG thay đổi vị trí của Icon
+            const itemBaseClass = `flex items-center h-11 px-3 rounded-2xl text-sm transition-[background-color,color,width] duration-150 ${
+              item.isActive
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
+                : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white font-medium'
+            } ${isExpanded ? 'w-full' : 'w-12'}`;
 
-              return (
-                <Link
-                  key={item.label}
-                  to={item.path}
-                  className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm transition-all ${
-                    item.isActive
-                      ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white font-medium'
+            const iconElement = (
+              <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                <IconComponent
+                  className={`w-5 h-5 shrink-0 stroke-2 ${
+                    item.isActive ? 'text-black dark:text-white' : ''
                   }`}
-                >
-                  <IconComponent
-                    className={`w-5 h-5 shrink-0 ${
-                      item.isActive ? 'text-black dark:text-white' : 'stroke-current stroke-2'
-                    }`}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+                />
+              </div>
+            );
 
-          {/* 3. Section: Other feeds */}
-          <div className="pt-2">
-            {/* Header: Other feeds & Edit */}
-            <div className="flex items-center justify-between px-3.5 py-1 mb-1">
+            const textElement = (
+              <div
+                className={`overflow-hidden transition-all duration-150 ${
+                  isExpanded
+                    ? 'max-w-40 opacity-100 ml-3.5'
+                    : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+                }`}
+              >
+                <span className="truncate whitespace-nowrap text-sm font-semibold">
+                  {item.label}
+                </span>
+              </div>
+            );
+
+            if (item.isButton) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={item.onClick}
+                  title={item.label}
+                  className={`${itemBaseClass} cursor-pointer text-left`}
+                >
+                  {iconElement}
+                  {textElement}
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={item.label}
+                to={item.path}
+                title={item.label}
+                className={itemBaseClass}
+              >
+                {iconElement}
+                {textElement}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* 3. Section: Other feeds - Chỉ hiển thị khi Sidebar ở chế độ mở rộng */}
+        {isExpanded && (
+          <div className="pt-2 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between px-3 py-1 mb-1">
               <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                 Other feeds
               </span>
@@ -505,31 +397,25 @@ export default function Sidebar({ collapsed = false }) {
                 Edit
               </button>
             </div>
-
-            {/* Danh sách Other feeds: Following & Ghost posts bắt đầu thẳng hàng với vị trí icon */}
             <div className="space-y-0.5">
               {otherFeeds.map((feed) => {
                 const IconComponent = feed.icon;
                 const RightIconComponent = feed.rightIcon;
                 const isActive = location.search === feed.path.replace('/', '');
-
                 return (
                   <Link
                     key={feed.label}
                     to={feed.path}
-                    className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-sm transition-colors ${
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors ${
                       isActive
                         ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
                         : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-white font-medium'
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
-                      {IconComponent && (
-                        <IconComponent className="w-5 h-5 shrink-0 stroke-2" />
-                      )}
+                      {IconComponent && <IconComponent className="w-5 h-5 shrink-0 stroke-2" />}
                       <span>{feed.label}</span>
                     </div>
-
                     {RightIconComponent && (
                       <RightIconComponent className="w-5 h-5 shrink-0 text-zinc-400" />
                     )}
@@ -538,14 +424,48 @@ export default function Sidebar({ collapsed = false }) {
               })}
             </div>
           </div>
-        </div>
-
-        {/* Toast thông báo nhanh trong Sidebar */}
-        {toastMessage && (
-          <div className="mt-2 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-xl text-xs font-semibold text-center animate-in fade-in duration-100 shadow-md">
-            {toastMessage}
-          </div>
         )}
+      </div>
+
+      {/* Toast thông báo nhanh (nếu có) */}
+      {toastMessage && (
+        <div className="mt-2 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-xl text-xs font-semibold text-center animate-in fade-in duration-100 shadow-md">
+          {toastMessage}
+        </div>
+      )}
+    </div>
+  );
+
+  // GIAO DIỆN KHI COLLAPSED (CHỈ CHO MESSAGES & INSIGHTS)
+  // Khung cha giữ nguyên w-18 cố định vị trí layout, menu mở rộng absolute đè lên mà không xô lệch icon
+  if (collapsed) {
+    return (
+      <aside
+        className="w-18 shrink-0 hidden md:block relative h-screen select-none z-50"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setShowMenu(false);
+        }}
+      >
+        <div
+          className={`h-screen border-r border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-black py-4 px-3 overflow-hidden transition-[width,box-shadow] duration-200 ease-out ${
+            isHovered
+              ? 'w-60 absolute left-0 top-0 shadow-2xl z-50 overflow-y-auto scrollbar-none no-scrollbar'
+              : 'w-18'
+          }`}
+        >
+          {renderSidebarBody()}
+        </div>
+      </aside>
+    );
+  }
+
+  // GIAO DIỆN CỐ ĐỊNH BÌNH THƯỜNG CHO CÁC TRANG CÒN LẠI (Home, Activity, Profile, PostDetail,...)
+  return (
+    <aside className="w-60 shrink-0 hidden md:block select-none">
+      <div className="sticky top-4 h-[calc(100vh-2rem)] py-1 overflow-y-auto scrollbar-none no-scrollbar">
+        {renderSidebarBody()}
       </div>
     </aside>
   );
