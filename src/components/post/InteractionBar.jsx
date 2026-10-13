@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
+import RepostModal from './RepostModal';
 
 export default function InteractionBar({
   initialLikes = 0,
@@ -11,6 +12,8 @@ export default function InteractionBar({
   const [isLiked, setIsLiked] = useState(false);
   const [reposts, setReposts] = useState(initialReposts);
   const [isReposted, setIsReposted] = useState(false);
+  const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
 
   const handleLike = () => {
     if (isLiked) {
@@ -22,14 +25,22 @@ export default function InteractionBar({
     }
   };
 
-  const handleRepost = () => {
+  const handleToggleRepost = () => {
     if (isReposted) {
       setReposts((prev) => prev - 1);
       setIsReposted(false);
+      setToastMessage('Đã hủy đăng lại');
     } else {
       setReposts((prev) => prev + 1);
       setIsReposted(true);
+      setToastMessage('Đã đăng lại bài viết');
     }
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleQuote = () => {
+    setToastMessage('Đang mở trích dẫn bài viết...');
+    setTimeout(() => setToastMessage(null), 2500);
   };
 
   // Hàm format số lượng hiển thị (1200 -> 1,2K)
@@ -41,7 +52,7 @@ export default function InteractionBar({
   };
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 mt-3 -ml-2 text-zinc-600 dark:text-zinc-400">
+    <div className="relative flex items-center gap-1 sm:gap-2 mt-3 -ml-2 text-zinc-600 dark:text-zinc-400">
       {/* 1. Like Button */}
       <button
         onClick={handleLike}
@@ -67,21 +78,33 @@ export default function InteractionBar({
         <span>{formatCount(initialComments)}</span>
       </button>
 
-      {/* 3. Repost Button */}
-      <button
-        onClick={handleRepost}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
-          isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
-        }`}
-        title="Đăng lại"
-      >
-        <Repeat2
-          className={`w-4 h-4 transition-transform group-hover:scale-110 ${
-            isReposted ? 'stroke-green-500 stroke-2' : ''
+      {/* 3. Repost Button & Modal */}
+      <div className="relative">
+        <button
+          onClick={() => setIsRepostModalOpen((prev) => !prev)}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+            isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
           }`}
+          title="Đăng lại"
+          aria-expanded={isRepostModalOpen}
+        >
+          <Repeat2
+            className={`w-4 h-4 transition-transform group-hover:scale-110 ${
+              isReposted ? 'stroke-green-500 stroke-2' : ''
+            }`}
+          />
+          <span>{formatCount(reposts)}</span>
+        </button>
+
+        {/* Modal Repost / Quote */}
+        <RepostModal
+          isOpen={isRepostModalOpen}
+          onClose={() => setIsRepostModalOpen(false)}
+          isReposted={isReposted}
+          onRepost={handleToggleRepost}
+          onQuote={handleQuote}
         />
-        <span>{formatCount(reposts)}</span>
-      </button>
+      </div>
 
       {/* 4. Share Button */}
       <button
@@ -91,6 +114,13 @@ export default function InteractionBar({
         <Send className="w-4 h-4 transition-transform group-hover:scale-110" />
         <span>{formatCount(initialShares)}</span>
       </button>
+
+      {/* Toast thông báo nhanh */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-150">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

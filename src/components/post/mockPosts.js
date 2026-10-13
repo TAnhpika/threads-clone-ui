@@ -15,7 +15,7 @@ export const mockPosts = [
     timestamp: '30 phút',
     content: 'The golden rule of Old Money style: No flashy logos, just impeccable tailoring and quiet confidence.\n\nHôm nay xuống phố với navy unstructured blazer phối cùng knit polo trắng ngà, quần âu Gurkha màu beige và kết thúc bằng đôi dark brown suede loafers 👞✨',
     media: {
-      url: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=900&auto=format&fit=crop&q=80',
+      url: 'https://www.uniqlo.com/vn/vi/news/sp/topics/2026081704/img/299T_260817Bd6y6e.png',
       alt: 'Men smart casual navy blazer with beige trousers',
     },
     likes: 3840,
