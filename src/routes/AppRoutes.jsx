@@ -6,6 +6,7 @@ import PrivateRoute from "@/components/PrivateRoute";
 
 // Code Splitting / Lazy Loading các Pages
 const HomePage = lazy(() => import("@/pages/Home"));
+const PostDetailPage = lazy(() => import("@/pages/PostDetail"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
 const LoginPage = lazy(() => import("@/pages/Auth/Login"));
 const NotFoundPage = lazy(() => import("@/pages/NotFound"));
@@ -26,6 +27,8 @@ export default function AppRoutes() {
                 <Route element={<DefaultLayout />}>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/custom_feed/create" element={<HomePage defaultCreateFeedOpen={true} />} />
+                    <Route path="/@:username/post/:postId" element={<PostDetailPage />} />
+                    <Route path="/post/:postId" element={<PostDetailPage />} />
 
                     {/* Protected Routes cần đăng nhập */}
                     <Route element={<PrivateRoute />}>
