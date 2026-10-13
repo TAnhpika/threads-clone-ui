@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectIsAuthenticated, logout } from '@/features/auth/authSlice';
 import {
   Home,
   Plus,
@@ -12,6 +14,7 @@ import {
   Menu,
   Settings,
   HelpCircle,
+  LogOut,
 } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -113,6 +116,8 @@ function InsightsIcon({ className = 'w-5 h-5', active = false }) {
 export default function Sidebar() {
   const location = useLocation();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
 
@@ -212,6 +217,7 @@ export default function Sidebar() {
                 <Link
                   key={item.label}
                   to={item.path}
+                  onClick={item.onClick}
                   className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm transition-all ${
                     isActive
                       ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
@@ -229,14 +235,24 @@ export default function Sidebar() {
             })}
           </nav>
 
-          {/* Nút Đăng nhập */}
+          {/* Nút Đăng nhập hoặc Tạo bài viết */}
           <div className="pt-2">
-            <Link
-              to="/login"
-              className="w-full py-2.5 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-semibold text-sm text-center block hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
-            >
-              {t('nav.login', 'Đăng nhập')}
-            </Link>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-create-thread'))}
+                className="w-full py-2.5 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-semibold text-sm text-center block hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
+              >
+                {t('nav.create', 'Thread mới')}
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="w-full py-2.5 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-semibold text-sm text-center block hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
+              >
+                {t('nav.login', 'Đăng nhập')}
+              </Link>
+            )}
           </div>
         </div>
 
@@ -262,6 +278,26 @@ export default function Sidebar() {
                 </span>
                 <LanguageSwitcher />
               </div>
+
+              {/* Tùy chọn Đăng xuất khi đã đăng nhập */}
+              {isAuthenticated && (
+                <>
+                  <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dispatch(logout());
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2.5 font-medium">
+                      <LogOut className="w-4 h-4 text-red-500" />
+                      Đăng xuất
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           )}
 

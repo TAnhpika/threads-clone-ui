@@ -39,7 +39,13 @@ export default function LoginPage() {
             // Lưu kết quả vào Redux Store
             dispatch(
                 loginSuccess({
-                    user: { id: "1", name: "Demo User", email: data.email },
+                    user: {
+                        id: "1",
+                        name: "Alexander Vance",
+                        username: "alexander.sartorial",
+                        email: data.email,
+                        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80",
+                    },
                     accessToken: "mock_access_token_123",
                     refreshToken: "mock_refresh_token_456",
                 }),
