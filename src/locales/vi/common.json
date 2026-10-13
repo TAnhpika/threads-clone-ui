@@ -1,0 +1,33 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "profile": "Hồ sơ",
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất"
+  },
+  "home": {
+    "welcome": "Chào mừng đến với BaseApp! 🚀",
+    "description": "Dự án đã được cấu hình đầy đủ: Tailwind CSS v4, Redux Toolkit Persist, Axios Silent Refresh Token, Error Boundary và Đa ngôn ngữ react-i18next.",
+    "loggedInAs": "Đang đăng nhập dưới tên: {{email}}",
+    "notLoggedIn": "Bạn chưa đăng nhập. Hãy truy cập trang Đăng nhập để trải nghiệm luồng xác thực."
+  },
+  "auth": {
+    "loginTitle": "Đăng nhập tài khoản",
+    "loginSubtitle": "Nhập thông tin bên dưới để tiếp tục trải nghiệm",
+    "emailLabel": "Địa chỉ Email",
+    "passwordLabel": "Mật khẩu",
+    "submitBtn": "Đăng nhập",
+    "submitting": "Đang xử lý..."
+  },
+  "common": {
+    "theme": "Giao diện",
+    "language": "Ngôn ngữ"
+  },
+  "theme": {
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Hệ thống",
+    "switchToLight": "Chuyển sang giao diện Sáng",
+    "switchToDark": "Chuyển sang giao diện Tối"
+  }
+}

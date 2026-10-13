@@ -1,0 +1,33 @@
+{
+  "nav": {
+    "home": "Home",
+    "profile": "Profile",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "home": {
+    "welcome": "Welcome to BaseApp! 🚀",
+    "description": "Fully configured with Tailwind CSS v4, Redux Toolkit Persist, Axios Silent Refresh Token, Error Boundary, and Multi-language react-i18next.",
+    "loggedInAs": "Logged in as: {{email}}",
+    "notLoggedIn": "You are not logged in. Please visit the Login page to test authentication flow."
+  },
+  "auth": {
+    "loginTitle": "Sign in to account",
+    "loginSubtitle": "Enter your credentials below to continue",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "submitBtn": "Sign In",
+    "submitting": "Processing..."
+  },
+  "common": {
+    "theme": "Theme",
+    "language": "Language"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switchToLight": "Switch to Light theme",
+    "switchToDark": "Switch to Dark theme"
+  }
+}

@@ -1,0 +1,45 @@
+import { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
+import DefaultLayout from "@/layouts/DefaultLayout";
+import AuthLayout from "@/layouts/AuthLayout";
+import PrivateRoute from "@/components/PrivateRoute";
+
+// Code Splitting / Lazy Loading các Pages
+const HomePage = lazy(() => import("@/pages/Home"));
+const ProfilePage = lazy(() => import("@/pages/Profile"));
+const LoginPage = lazy(() => import("@/pages/Auth/Login"));
+const NotFoundPage = lazy(() => import("@/pages/NotFound"));
+
+function PageLoader() {
+    return (
+        <div className="flex items-center justify-center min-h-75">
+            <div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin dark:border-zinc-700 dark:border-t-white" />
+        </div>
+    );
+}
+
+export default function AppRoutes() {
+    return (
+        <Suspense fallback={<PageLoader />}>
+            <Routes>
+                {/* Public Routes với DefaultLayout */}
+                <Route element={<DefaultLayout />}>
+                    <Route path="/" element={<HomePage />} />
+
+                    {/* Protected Routes cần đăng nhập */}
+                    <Route element={<PrivateRoute />}>
+                        <Route path="/profile" element={<ProfilePage />} />
+                    </Route>
+                </Route>
+
+                {/* Auth Routes với AuthLayout */}
+                <Route element={<AuthLayout />}>
+                    <Route path="/login" element={<LoginPage />} />
+                </Route>
+
+                {/* 404 Not Found Route */}
+                <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+        </Suspense>
+    );
+}
