@@ -9,6 +9,7 @@ const HomePage = lazy(() => import("@/pages/Home"));
 const PostDetailPage = lazy(() => import("@/pages/PostDetail"));
 const MessagesPage = lazy(() => import("@/pages/Messages"));
 const ActivityPage = lazy(() => import("@/pages/Activity"));
+const InsightsPage = lazy(() => import("@/pages/Insights"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
 const LoginPage = lazy(() => import("@/pages/Auth/Login"));
 const NotFoundPage = lazy(() => import("@/pages/NotFound"));
@@ -34,6 +35,7 @@ export default function AppRoutes() {
                     <Route path="/post/:postId" element={<PostDetailPage />} />
                     <Route path="/messages" element={<MessagesPage />} />
                     <Route path="/activity" element={<ActivityPage />} />
+                    <Route path="/insights" element={<InsightsPage />} />
 
                     {/* Protected Routes cần đăng nhập */}
                     <Route element={<PrivateRoute />}>

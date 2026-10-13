@@ -5,16 +5,18 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 export default function DefaultLayout() {
   const location = useLocation();
-  const isMessagesPage = location.pathname.startsWith('/messages');
+  const isCollapsedLayout =
+    location.pathname.startsWith('/messages') ||
+    location.pathname.startsWith('/insights');
 
-  // Chế độ toàn màn hình không viền cho trang Tin nhắn (chuẩn giao diện Threads Web)
-  if (isMessagesPage) {
+  // Chế độ toàn màn hình không viền cho trang Tin nhắn & Insights (chuẩn giao diện Threads Web)
+  if (isCollapsedLayout) {
     return (
       <div className="h-screen w-screen overflow-hidden bg-white dark:bg-black text-black dark:text-white flex">
         {/* Sidebar thu gọn icon-rail */}
         <Sidebar collapsed={true} />
 
-        {/* Khung nội dung Messages */}
+        {/* Khung nội dung toàn màn hình */}
         <main className="flex-1 min-w-0 h-full overflow-hidden">
           <Outlet />
         </main>
