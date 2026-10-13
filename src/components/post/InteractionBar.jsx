@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
 import RepostModal from './RepostModal';
+import ShareModal from './ShareModal';
 
 export default function InteractionBar({
   initialLikes = 0,
@@ -13,6 +14,7 @@ export default function InteractionBar({
   const [reposts, setReposts] = useState(initialReposts);
   const [isReposted, setIsReposted] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   const handleLike = () => {
@@ -40,6 +42,11 @@ export default function InteractionBar({
 
   const handleQuote = () => {
     setToastMessage('Đang mở trích dẫn bài viết...');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleFeedback = (msg) => {
+    setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
   };
 
@@ -106,14 +113,24 @@ export default function InteractionBar({
         />
       </div>
 
-      {/* 4. Share Button */}
-      <button
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
-        title="Chia sẻ"
-      >
-        <Send className="w-4 h-4 transition-transform group-hover:scale-110" />
-        <span>{formatCount(initialShares)}</span>
-      </button>
+      {/* 4. Share Button & Modal */}
+      <div className="relative">
+        <button
+          onClick={() => setIsShareModalOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
+          title="Chia sẻ"
+        >
+          <Send className="w-4 h-4 transition-transform group-hover:scale-110" />
+          <span>{formatCount(initialShares)}</span>
+        </button>
+
+        {/* Modal Share Post */}
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          onActionFeedback={handleFeedback}
+        />
+      </div>
 
       {/* Toast thông báo nhanh */}
       {toastMessage && (
