@@ -1,14 +1,32 @@
+import { useState } from 'react';
 import { MoreHorizontal, CheckCircle2 } from 'lucide-react';
+import PostMenu from './PostMenu';
 
 export default function PostHeader({
   author = {},
   timestamp = '2h',
   tag,
+  postId,
 }) {
   const { name = 'Anonymous', username = 'user', avatar, isVerified = false } = author;
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const handleAction = (action) => {
+    if (action === 'copy_link') {
+      setToastMessage('Đã sao chép liên kết vào bộ nhớ tạm');
+      setTimeout(() => setToastMessage(null), 2500);
+    } else if (action === 'save') {
+      setToastMessage('Đã lưu bài viết');
+      setTimeout(() => setToastMessage(null), 2500);
+    } else if (action === 'create_feed') {
+      setToastMessage('Đang mở tạo bảng tin mới...');
+      setTimeout(() => setToastMessage(null), 2500);
+    }
+  };
 
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-3 relative">
       {/* Thông tin tác giả & thời gian */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Avatar */}
@@ -44,14 +62,37 @@ export default function PostHeader({
         </div>
       </div>
 
-      {/* Nút tùy chọn More (...) */}
-      <button
-        className="p-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
-        title="Tùy chọn"
-        aria-label="Tùy chọn bài viết"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
+      {/* Nút tùy chọn More (...) & Menu Modal */}
+      <div className="relative shrink-0">
+        <button
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+          className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+            isMenuOpen
+              ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+              : 'text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+          }`}
+          title="Tùy chọn"
+          aria-label="Tùy chọn bài viết"
+          aria-expanded={isMenuOpen}
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+
+        {/* Post Menu Modal / Dropdown */}
+        <PostMenu
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          onAction={handleAction}
+        />
+      </div>
+
+      {/* Toast thông báo tương tác nhanh */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-150">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }
+
