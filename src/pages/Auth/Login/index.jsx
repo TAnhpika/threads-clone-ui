@@ -115,7 +115,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col justify-between items-center bg-[#0a0a0a] text-white overflow-hidden select-none px-4 py-6">
+    <div className="relative min-h-screen w-full flex flex-col justify-between items-center bg-white dark:bg-[#0a0a0a] text-black dark:text-white overflow-hidden select-none px-4 py-6 transition-colors duration-200">
       {/* 1. HỌA TIẾT BACKGROUND CHUẨN THREADS (Canonical classes: w-446.25, h-127.5, -mt-67) */}
       <div className="absolute top-0 -mt-67 left-1/2 -translate-x-1/2 w-446.25 h-127.5 max-w-none pointer-events-none select-none z-0">
         <picture className="w-446.25 h-127.5 block">
@@ -140,7 +140,7 @@ export default function LoginPage() {
       {/* 2. KHUNG FORM ĐĂNG NHẬP CHÍNH */}
       <div className="w-full max-w-92.5 z-20 flex flex-col items-center pt-24 sm:pt-28 md:pt-32 my-auto">
         {/* Tiêu đề */}
-        <h1 className="text-sm sm:text-base font-bold text-white text-center mb-4 tracking-tight">
+        <h1 className="text-sm sm:text-base font-bold text-black dark:text-white text-center mb-4 tracking-tight">
           Log in with your Instagram account
         </h1>
 
@@ -152,7 +152,7 @@ export default function LoginPage() {
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="Username, phone or email"
-              className="w-full h-13.5 px-4.5 rounded-2xl bg-[#141414] border border-zinc-800 text-white placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-500 transition-colors"
+              className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
             />
           </div>
 
@@ -163,7 +163,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full h-13.5 px-4.5 rounded-2xl bg-[#141414] border border-zinc-800 text-white placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-500 transition-colors"
+              className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
             />
           </div>
 
@@ -171,7 +171,7 @@ export default function LoginPage() {
           <div className="pt-1">
             <button
               type="submit"
-              className="w-full h-13.5 rounded-2xl bg-white text-black font-bold text-sm sm:text-base hover:bg-zinc-200 active:scale-99 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+              className="w-full h-13.5 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm sm:text-base active:scale-99 transition-all cursor-pointer flex items-center justify-center shadow-lg"
             >
               Log in
             </button>
@@ -182,23 +182,23 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => showToast("Tính năng khôi phục mật khẩu")}
-          className="text-xs text-zinc-500 hover:text-zinc-400 text-center block mt-3.5 transition-colors cursor-pointer"
+          className="text-xs text-zinc-500 hover:text-black dark:hover:text-zinc-300 text-center block mt-3.5 transition-colors cursor-pointer"
         >
           Forgot password?
         </button>
 
         {/* Đường phân cách or */}
         <div className="w-full flex items-center gap-4 my-5.5">
-          <div className="h-px bg-zinc-800/80 flex-1" />
-          <span className="text-xs text-zinc-600 font-semibold lowercase">or</span>
-          <div className="h-px bg-zinc-800/80 flex-1" />
+          <div className="h-px bg-zinc-200 dark:bg-zinc-800/80 flex-1" />
+          <span className="text-xs text-zinc-400 dark:text-zinc-600 font-semibold lowercase">or</span>
+          <div className="h-px bg-zinc-200 dark:bg-zinc-800/80 flex-1" />
         </div>
 
         {/* Thẻ đăng nhập nhanh qua Instagram */}
         <button
           type="button"
           onClick={handleInstagramLogin}
-          className="w-full p-4 rounded-2xl border border-zinc-800/80 bg-[#141414] hover:bg-[#1a1a1a] transition-all cursor-pointer flex items-center justify-between group shadow-sm"
+          className="w-full p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white hover:bg-zinc-50 dark:bg-[#141414] dark:hover:bg-[#1a1a1a] transition-all cursor-pointer flex items-center justify-between group shadow-xs dark:shadow-sm"
         >
           <div className="flex items-center gap-3.5">
             {/* Logo Gradient Instagram */}
@@ -206,37 +206,37 @@ export default function LoginPage() {
               <InstagramGlyph className="w-5.5 h-5.5 text-white" />
             </div>
             <div className="text-left">
-              <span className="text-xs font-semibold text-zinc-400 block">
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 block">
                 Continue with Instagram
               </span>
-              <span className="text-sm font-bold text-white block tracking-tight">
+              <span className="text-sm font-bold text-black dark:text-white block tracking-tight">
                 tuananhpika
               </span>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
+          <ChevronRight className="w-4 h-4 text-zinc-400 dark:text-zinc-600 group-hover:text-black dark:group-hover:text-zinc-300 transition-colors shrink-0" />
         </button>
       </div>
 
-      {/* 3. KHỐI QUÉT MÃ QR APP Ở GÓC PHẢI DƯỚI MÀN HÌNH (To gấp 1.5x: button w-44 h-44, QR w-36 h-36) */}
+      {/* 3. KHỐI QUÉT MÃ QR APP Ở GÓC PHẢI DƯỚI MÀN HÌNH */}
       <div className="fixed right-8 bottom-8 hidden lg:flex flex-col items-center z-20 select-none">
-        <span className="text-xs text-zinc-500 font-medium mb-3">
+        <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mb-3">
           Scan to get the app
         </span>
         <button
           type="button"
           onClick={() => setIsQrModalOpen(true)}
-          className="w-44 h-44 rounded-4xl bg-[#141414] border border-zinc-800/80 p-4 flex items-center justify-center shadow-2xl hover:border-zinc-700 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer group"
+          className="w-44 h-44 rounded-4xl bg-white dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800/80 p-4 flex items-center justify-center shadow-xl dark:shadow-2xl hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer group"
           title="Scan to get the app"
         >
-          <ThreadsQRCode className="w-36 h-36 text-white transition-transform duration-200 group-hover:scale-102" />
+          <ThreadsQRCode className="w-36 h-36 text-black dark:text-white transition-transform duration-200 group-hover:scale-102" />
         </button>
       </div>
 
-      {/* MODAL PHÓNG TO QR SCAN KHI CLICK (To gấp 1.5x: QR w-84 h-84 sm:w-96 sm:h-96) */}
+      {/* MODAL PHÓNG TO QR SCAN KHI CLICK */}
       {isQrModalOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
+          className="fixed inset-0 z-50 bg-black/60 dark:bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
           onClick={() => setIsQrModalOpen(false)}
         >
           {/* Nút đóng tròn ở góc trên bên trái */}
@@ -244,18 +244,18 @@ export default function LoginPage() {
             type="button"
             onClick={() => setIsQrModalOpen(false)}
             aria-label="Close"
-            className="absolute top-6 left-6 w-11 h-11 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-white flex items-center justify-center cursor-pointer transition-colors shadow-lg border border-zinc-800"
+            className="absolute top-6 left-6 w-11 h-11 rounded-full bg-white dark:bg-zinc-900/90 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-black dark:text-white flex items-center justify-center cursor-pointer transition-colors shadow-lg border border-zinc-200 dark:border-zinc-800"
           >
-            <X className="w-5 h-5 text-zinc-300 hover:text-white" />
+            <X className="w-5 h-5 text-zinc-600 dark:text-zinc-300 hover:text-black dark:hover:text-white" />
           </button>
 
           {/* Hộp QR phóng to trung tâm */}
           <div
-            className="rounded-4xl bg-[#141414] border border-zinc-800/80 p-8 sm:p-10 flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-200"
+            className="rounded-4xl bg-white dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800/80 p-8 sm:p-10 flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <ThreadsQRCode className="w-56 h-56 sm:w-64 sm:h-64 text-white" />
-            <span className="mt-6 text-base font-bold text-white tracking-tight">
+            <ThreadsQRCode className="w-56 h-56 sm:w-64 sm:h-64 text-black dark:text-white" />
+            <span className="mt-6 text-base font-bold text-black dark:text-white tracking-tight">
               Get the app
             </span>
           </div>
@@ -264,33 +264,33 @@ export default function LoginPage() {
 
       {/* 4. FOOTER CÁC ĐIỀU KHOẢN DƯỚI CÙNG TRANG */}
       <footer className="w-full z-20 pt-8 pb-2">
-        <div className="flex items-center justify-center gap-3.5 text-xs text-zinc-600 font-normal flex-wrap">
+        <div className="flex items-center justify-center gap-3.5 text-xs text-zinc-400 dark:text-zinc-600 font-normal flex-wrap">
           <span>© 2026</span>
           <button
             type="button"
             onClick={() => showToast("Threads Terms")}
-            className="hover:underline transition-all cursor-pointer"
+            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
           >
             Threads Terms
           </button>
           <button
             type="button"
             onClick={() => showToast("Privacy Policy")}
-            className="hover:underline transition-all cursor-pointer"
+            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
           >
             Privacy Policy
           </button>
           <button
             type="button"
             onClick={() => showToast("Cookies Policy")}
-            className="hover:underline transition-all cursor-pointer"
+            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
           >
             Cookies Policy
           </button>
           <button
             type="button"
             onClick={() => showToast("Report a problem")}
-            className="hover:underline transition-all cursor-pointer"
+            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
           >
             Report a problem
           </button>
@@ -299,7 +299,7 @@ export default function LoginPage() {
 
       {/* Toast thông báo */}
       {toastMessage && (
-        <div className="fixed bottom-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-zinc-800 text-white border border-zinc-700 rounded-xl text-xs font-semibold shadow-2xl z-50 animate-in fade-in duration-150">
+        <div className="fixed bottom-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black border border-zinc-800 dark:border-zinc-200 rounded-xl text-xs font-semibold shadow-2xl z-50 animate-in fade-in duration-150">
           {toastMessage}
         </div>
       )}
