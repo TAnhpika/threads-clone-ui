@@ -45,8 +45,16 @@ httpClient.interceptors.response.use(
     },
     async (error) => {
         const originalRequest = error.config;
+        const isAuthRequest =
+            originalRequest?.url?.includes("/auth/login") ||
+            originalRequest?.url?.includes("/auth/register");
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Không áp dụng refresh token hoặc redirect nếu chính request đăng nhập/đăng ký bị 401
+        if (
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !isAuthRequest
+        ) {
             if (isRefreshing) {
                 // Đã có request trước đó kích hoạt refresh -> đưa request này vào hàng đợi
                 return new Promise((resolve, reject) => {
@@ -64,10 +72,12 @@ httpClient.interceptors.response.use(
 
             const refreshToken = localStorage.getItem("refreshToken");
             if (!refreshToken) {
-                // Không có refresh token -> xóa cache và đá về login
+                // Không có refresh token -> xóa cache và chỉ redirect nếu không ở trang login
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("refreshToken");
-                window.location.href = `/login?continue=${encodeURIComponent(window.location.pathname)}`;
+                if (window.location.pathname !== "/login") {
+                    window.location.href = `/login?continue=${encodeURIComponent(window.location.pathname)}`;
+                }
                 return Promise.reject(error);
             }
 

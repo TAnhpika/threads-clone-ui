@@ -1,11 +1,26 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { ChevronRight, X } from "lucide-react";
 import { loginSuccess, selectIsAuthenticated } from "@/features/auth/authSlice";
 import * as authService from "@/services/authService";
 import userAvatar from "@/assets/images/ava.png";
 import threadsLoginBg from "@/assets/images/threads-login-bg.webp";
+
+// Schema validation kiểm tra form với Yup
+const loginSchema = yup.object().shape({
+  identifier: yup
+    .string()
+    .trim()
+    .required("Vui lòng nhập Username, phone hoặc email"),
+  password: yup
+    .string()
+    .required("Vui lòng nhập mật khẩu")
+    .min(6, "Mật khẩu tối thiểu 6 ký tự"),
+});
 
 // SVG Biểu tượng Instagram chuẩn với gradient rực rỡ
 function InstagramGlyph({ className = "w-5 h-5 text-white" }) {
@@ -57,11 +72,22 @@ export default function LoginPage() {
   const continueUrl = searchParams.get("continue") || "/profile";
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  // Cấu hình React Hook Form kết hợp Yup Resolver
+  const {
+    register,
+    handleSubmit,
+    setValue,
+  } = useForm({
+    resolver: yupResolver(loginSchema),
+    defaultValues: {
+      identifier: "",
+      password: "",
+    },
+  });
 
   // Nếu đã đăng nhập thì tự động chuyển tiếp tới continueUrl
   useEffect(() => {
@@ -87,26 +113,24 @@ export default function LoginPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // 1. Submit form đăng nhập: Gọi API "Login", lưu token và dispatch API "Get User Info"
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    if (!identifier.trim()) {
-      showToast("Vui lòng nhập Username, phone hoặc email");
-      return;
+  // Xử lý khi Yup validation ở client phát hiện lỗi
+  const onInvalid = (errors) => {
+    const firstError = errors.identifier?.message || errors.password?.message;
+    if (firstError) {
+      showToast(firstError);
     }
-    if (!password.trim()) {
-      showToast("Vui lòng nhập mật khẩu");
-      return;
-    }
+  };
 
+  // 1. Submit form đăng nhập: Gọi API "Login", lưu token và dispatch API "Get User Info"
+  const onSubmit = async (data) => {
     try {
       setIsLoading(true);
       const payload = {
-        email: identifier.trim(),
-        password: password.trim(),
+        email: data.identifier.trim(),
+        password: data.password.trim(),
       };
-      if (!identifier.includes("@")) {
-        payload.username = identifier.trim();
+      if (!data.identifier.includes("@")) {
+        payload.username = data.identifier.trim();
       }
 
       // Gọi API Login
@@ -130,12 +154,19 @@ export default function LoginPage() {
       navigate(decodeURIComponent(continueUrl), { replace: true });
     } catch (error) {
       console.error("Login failed:", error);
-      // Xử lý hiển thị lỗi, kiểm tra response chi tiết từ server
+      // Xử lý hiển thị lỗi tài khoản / mật khẩu không đúng từ response server
       const resData = error.response?.data;
-      let errorMsg = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
-      if (resData?.message) {
+      let errorMsg = "Tài khoản hoặc mật khẩu không chính xác!";
+
+      if (error.response?.status === 401) {
+        errorMsg = "Tài khoản hoặc mật khẩu không chính xác!";
+      } else if (resData?.message) {
         if (typeof resData.message === "string") {
-          errorMsg = resData.message;
+          if (resData.message.toLowerCase().includes("invalid credentials")) {
+            errorMsg = "Tài khoản hoặc mật khẩu không chính xác!";
+          } else {
+            errorMsg = resData.message;
+          }
         } else if (typeof resData.message === "object") {
           errorMsg = Object.values(resData.message).flat().join(" - ");
         }
@@ -144,6 +175,7 @@ export default function LoginPage() {
       } else if (error.message) {
         errorMsg = error.message;
       }
+
       showToast(errorMsg);
     } finally {
       setIsLoading(false);
@@ -151,36 +183,13 @@ export default function LoginPage() {
   };
 
   // 2. Đăng nhập nhanh qua Instagram (tài khoản F8 demo)
-  const handleInstagramLogin = async () => {
-    try {
-      setIsLoading(true);
-      const response = await authService.login({
-        email: "anhpika123456@gmail.com",
-        password: "123123123",
-      });
-      const resData = response?.data || response;
-      const accessToken = resData?.access_token || resData?.accessToken;
-      const refreshToken = resData?.refresh_token || resData?.refreshToken;
-
-      if (accessToken) localStorage.setItem("accessToken", accessToken);
-      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
-
-      await dispatch(authService.getCurrentUser()).unwrap();
-      showToast("Đăng nhập thành công!");
-      navigate(decodeURIComponent(continueUrl), { replace: true });
-    } catch (error) {
-      console.warn("Instagram login API fallback:", error);
-      const resData = error.response?.data;
-      let errorMsg = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
-      if (resData?.message) {
-        errorMsg = typeof resData.message === "string" ? resData.message : Object.values(resData.message).flat().join(" - ");
-      } else if (error.message) {
-        errorMsg = error.message;
-      }
-      showToast(errorMsg);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleInstagramLogin = () => {
+    setValue("identifier", "anhpika123456@gmail.com");
+    setValue("password", "123123123");
+    onSubmit({
+      identifier: "anhpika123456@gmail.com",
+      password: "123123123",
+    });
   };
 
   return (
@@ -213,15 +222,13 @@ export default function LoginPage() {
           Log in with your Instagram account
         </h1>
 
-        <form onSubmit={handleFormSubmit} className="w-full space-y-2.5">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="w-full space-y-2.5">
           {/* Input Identifier */}
           <div>
             <input
               type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              {...register("identifier")}
               placeholder="Username, phone or email"
-              required
               className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
             />
           </div>
@@ -230,10 +237,8 @@ export default function LoginPage() {
           <div>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register("password")}
               placeholder="Password"
-              required
               className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
             />
           </div>
@@ -373,9 +378,9 @@ export default function LoginPage() {
         </div>
       </footer>
 
-      {/* Toast thông báo */}
+      {/* Toast thông báo phong cách Threads */}
       {toastMessage && (
-        <div className="fixed bottom-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black border border-zinc-800 dark:border-zinc-200 rounded-xl text-xs font-semibold shadow-2xl z-50 animate-in fade-in duration-150">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4.5 py-2.5 bg-black/95 dark:bg-white text-white dark:text-black border border-zinc-800/80 dark:border-zinc-200 rounded-2xl text-xs font-semibold shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
           {toastMessage}
         </div>
       )}
