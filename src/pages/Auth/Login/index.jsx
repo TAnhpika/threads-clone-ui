@@ -69,7 +69,11 @@ export default function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const continueUrl = searchParams.get("continue") || "/profile";
+  const rawContinue = searchParams.get("continue");
+  const continueUrl =
+    rawContinue && rawContinue !== "/login" && rawContinue !== "%2Flogin"
+      ? decodeURIComponent(rawContinue)
+      : "/";
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -89,10 +93,10 @@ export default function LoginPage() {
     },
   });
 
-  // Nếu đã đăng nhập thì tự động chuyển tiếp tới continueUrl
+  // Nếu đã đăng nhập thì tự động chuyển tiếp tới continueUrl (mặc định vào Home "/")
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(decodeURIComponent(continueUrl), { replace: true });
+      navigate(continueUrl, { replace: true });
     }
   }, [isAuthenticated, navigate, continueUrl]);
 
@@ -151,7 +155,7 @@ export default function LoginPage() {
       await dispatch(authService.getCurrentUser()).unwrap();
 
       showToast("Đăng nhập thành công!");
-      navigate(decodeURIComponent(continueUrl), { replace: true });
+      navigate(continueUrl, { replace: true });
     } catch (error) {
       console.error("Login failed:", error);
       // Xử lý hiển thị lỗi tài khoản / mật khẩu không đúng từ response server
