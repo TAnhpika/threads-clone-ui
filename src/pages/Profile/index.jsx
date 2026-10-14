@@ -16,6 +16,7 @@ import {
   Copy,
   ArrowLeft,
   ArrowRight,
+  ChevronRight,
 } from 'lucide-react';
 import { selectCurrentUser, updateCurrentUser } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
@@ -114,7 +115,11 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState(currentUser?.name || 'Tuan Anh');
   const [editBio, setEditBio] = useState(currentUser?.bio || '');
   const [editLink, setEditLink] = useState(currentUser?.link || '');
-  const [isPrivate, setIsPrivate] = useState(currentUser?.isPrivate || false);
+  const [isPrivate, setIsPrivate] = useState(currentUser?.isPrivate ?? true);
+  const [showInstagramBadge, setShowInstagramBadge] = useState(true);
+  const [showRecentViews, setShowRecentViews] = useState(true);
+  const [interests, setInterests] = useState('');
+  const [podcast, setPodcast] = useState('');
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -257,14 +262,16 @@ export default function ProfilePage() {
                   alt={name}
                   className="w-20 h-20 rounded-full object-cover border border-zinc-200 dark:border-zinc-800 shadow-xs"
                 />
-                <button
-                  type="button"
-                  onClick={() => window.open('https://instagram.com', '_blank')}
-                  className="mt-3 text-black dark:text-white hover:opacity-75 transition-opacity cursor-pointer p-1"
-                  title="Instagram"
-                >
-                  <InstagramIcon className="w-5 h-5" />
-                </button>
+                {showInstagramBadge && (
+                  <button
+                    type="button"
+                    onClick={() => window.open('https://instagram.com', '_blank')}
+                    className="mt-3 text-black dark:text-white hover:opacity-75 transition-opacity cursor-pointer p-1"
+                    title="Instagram"
+                  >
+                    <InstagramIcon className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -525,101 +532,188 @@ export default function ProfilePage() {
         </section>
       </div>
 
-      {/* 3. MODAL EDIT PROFILE CHUẨN THREADS */}
+      {/* 3. MODAL EDIT PROFILE CHUẨN THREADS WEB */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
-              <h2 className="font-bold text-lg text-black dark:text-white">
-                Edit profile
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              {/* Name */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white text-sm outline-none focus:border-black dark:focus:border-white transition-colors"
-                  placeholder="Your display name"
-                />
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsEditModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+        >
+          <div className="w-full max-w-125 bg-[#181818] border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-150">
+            {/* Nội dung các hàng thông tin có thể scroll */}
+            <div className="overflow-y-auto no-scrollbar scrollbar-none flex-1 divide-y divide-zinc-800/80">
+              {/* Row 1: Name & Avatar */}
+              <div className="flex items-center justify-between px-6 py-4.5">
+                <div className="flex-1 pr-4">
+                  <label className="text-sm font-bold text-white block">Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full bg-transparent text-sm text-zinc-300 outline-none pt-0.5 placeholder:text-zinc-600 font-normal"
+                    placeholder="Tuan Anh"
+                  />
+                </div>
+                <div className="relative shrink-0">
+                  <img
+                    src={avatar}
+                    alt={name}
+                    className="w-13 h-13 rounded-full object-cover border border-zinc-700/60 shadow-md"
+                  />
+                </div>
               </div>
 
-              {/* Bio */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                  Bio
-                </label>
+              {/* Row 2: Username */}
+              <div className="px-6 py-4.5">
+                <span className="text-sm font-bold text-white block">Username</span>
+                <span className="text-sm text-zinc-400 block pt-0.5 font-normal">
+                  {username}
+                </span>
+              </div>
+
+              {/* Row 3: Bio */}
+              <div className="px-6 py-4.5">
+                <label className="text-sm font-bold text-white block">Bio</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white text-sm outline-none focus:border-black dark:focus:border-white transition-colors resize-none"
                   placeholder="+ Write bio"
+                  className="w-full bg-transparent text-sm text-zinc-300 placeholder:text-zinc-500 outline-none pt-0.5 resize-none font-normal"
                 />
               </div>
 
-              {/* Link */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                  Link
-                </label>
+              {/* Row 4: Interests */}
+              <div
+                onClick={() => {
+                  const val = prompt('Thêm sở thích của bạn:', interests);
+                  if (val !== null) setInterests(val.trim());
+                }}
+                className="flex items-center justify-between px-6 py-4.5 cursor-pointer hover:bg-zinc-800/30 transition-colors group"
+              >
+                <div>
+                  <span className="text-sm font-bold text-white block">Interests</span>
+                  <span className="text-sm text-zinc-500 block pt-0.5 font-normal">
+                    {interests || 'Add interests'}
+                  </span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors shrink-0" />
+              </div>
+
+              {/* Row 5: Links */}
+              <div className="px-6 py-4.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-white block">Links</span>
+                  <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />
+                </div>
                 <input
                   type="text"
                   value={editLink}
                   onChange={(e) => setEditLink(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-black dark:text-white text-sm outline-none focus:border-black dark:focus:border-white transition-colors"
                   placeholder="+ Add link"
+                  className="w-full bg-transparent text-sm text-zinc-300 placeholder:text-zinc-500 outline-none pt-0.5 font-normal"
                 />
               </div>
 
-              {/* Private profile switch */}
-              <div className="flex items-center justify-between pt-2">
+              {/* Row 6: Podcast */}
+              <div
+                onClick={() => {
+                  const val = prompt('Link podcast của bạn:', podcast);
+                  if (val !== null) setPodcast(val.trim());
+                }}
+                className="flex items-center justify-between px-6 py-4.5 cursor-pointer hover:bg-zinc-800/30 transition-colors group"
+              >
                 <div>
-                  <span className="font-semibold text-sm text-black dark:text-white block">
-                    Private profile
-                  </span>
-                  <span className="text-xs text-zinc-500">
-                    If you turn this on, only approved followers can see your posts.
+                  <span className="text-sm font-bold text-white block">Podcast</span>
+                  <span className="text-sm text-zinc-500 block pt-0.5 font-normal">
+                    {podcast || '+ Link to your podcast'}
                   </span>
                 </div>
+                <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors shrink-0" />
+              </div>
+
+              {/* Row 7: Show Instagram badge */}
+              <div className="flex items-center justify-between px-6 py-4.5">
+                <span className="text-sm font-bold text-white">Show Instagram badge</span>
                 <button
                   type="button"
-                  onClick={() => setIsPrivate(!isPrivate)}
-                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                    isPrivate ? 'bg-black dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-700'
+                  onClick={() => setShowInstagramBadge((prev) => !prev)}
+                  className={`w-12 h-6.5 rounded-full p-0.5 transition-colors cursor-pointer border-2 flex items-center ${
+                    showInstagramBadge
+                      ? 'border-white bg-black'
+                      : 'border-zinc-700 bg-zinc-900'
                   }`}
+                  aria-label="Toggle Instagram badge"
                 >
                   <div
-                    className={`bg-white dark:bg-black w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                      isPrivate ? 'translate-x-5' : 'translate-x-0'
+                    className={`w-4 h-4 rounded-full transition-transform ${
+                      showInstagramBadge
+                        ? 'bg-white translate-x-5.5'
+                        : 'bg-zinc-600 translate-x-0.5'
                     }`}
                   />
                 </button>
               </div>
 
-              {/* Done button */}
-              <div className="pt-2">
+              {/* Row 8: Show recent views */}
+              <div className="flex items-start justify-between gap-4 px-6 py-4.5">
+                <div className="space-y-0.5">
+                  <span className="text-sm font-bold text-white block">Show recent views</span>
+                  <p className="text-xs text-zinc-500 leading-relaxed font-normal">
+                    This will be public on your profile when you get 1K+ recent views.
+                  </p>
+                </div>
                 <button
-                  type="submit"
-                  className="w-full py-2.5 bg-black dark:bg-white text-white dark:text-black font-bold text-sm rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+                  type="button"
+                  onClick={() => setShowRecentViews((prev) => !prev)}
+                  className={`w-12 h-6.5 rounded-full p-0.5 transition-colors cursor-pointer border-2 flex items-center shrink-0 mt-0.5 ${
+                    showRecentViews
+                      ? 'border-white bg-black'
+                      : 'border-zinc-700 bg-zinc-900'
+                  }`}
+                  aria-label="Toggle Recent views"
                 >
-                  Done
+                  <div
+                    className={`w-4 h-4 rounded-full transition-transform ${
+                      showRecentViews
+                        ? 'bg-white translate-x-5.5'
+                        : 'bg-zinc-600 translate-x-0.5'
+                    }`}
+                  />
                 </button>
               </div>
-            </form>
+
+              {/* Row 9: Profile privacy */}
+              <div
+                onClick={() => setIsPrivate((prev) => !prev)}
+                className="flex items-start justify-between gap-4 px-6 py-4.5 cursor-pointer hover:bg-zinc-800/30 transition-colors group"
+              >
+                <div className="space-y-0.5">
+                  <span className="text-sm font-bold text-white block">Profile privacy</span>
+                  <p className="text-xs text-zinc-500 leading-relaxed font-normal">
+                    {isPrivate
+                      ? 'Only approved followers can see your threads and replies.'
+                      : 'If you switch to public, anyone can see your threads and replies.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-zinc-400 shrink-0 mt-0.5 group-hover:text-zinc-200 transition-colors font-normal">
+                  <span>{isPrivate ? 'Private' : 'Public'}</span>
+                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300" />
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Done button */}
+            <div className="p-6 pt-5">
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                className="w-full py-3.5 bg-white text-black font-bold text-[15px] rounded-2xl hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer shadow-xl flex items-center justify-center"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
