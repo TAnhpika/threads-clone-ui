@@ -17,8 +17,9 @@ import {
   ArrowLeft,
   ArrowRight,
   ChevronRight,
+  LogOut,
 } from 'lucide-react';
-import { selectCurrentUser, updateCurrentUser } from '@/features/auth/authSlice';
+import { selectCurrentUser, updateCurrentUser, logout } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
 import CreatePostBox from '@/components/post/CreatePostBox';
 import CreatePostModal from '@/components/post/CreatePostModal';
@@ -51,6 +52,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('threads');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('center');
   const [toastMessage, setToastMessage] = useState(null);
@@ -226,6 +228,18 @@ export default function ProfilePage() {
                 >
                   <Share2 className="w-4 h-4" />
                   <span>Chia sẻ trang cá nhân</span>
+                </button>
+                <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMoreMenuOpen(false);
+                    setIsLogoutModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Đăng xuất</span>
                 </button>
               </div>
             )}
@@ -822,6 +836,50 @@ export default function ProfilePage() {
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-xl text-xs font-semibold shadow-lg z-50 animate-in fade-in duration-150">
           {toastMessage}
+        </div>
+      )}
+
+      {/* 6. MODAL XÁC NHẬN ĐĂNG XUẤT */}
+      {isLogoutModalOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsLogoutModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+          <div className="w-full max-w-sm bg-white dark:bg-[#1e1e1e] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl text-center space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 mx-auto flex items-center justify-center">
+              <LogOut className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-bold text-base text-black dark:text-white">
+                Đăng xuất khỏi @{username}?
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Bạn có thể đăng nhập lại bất kỳ lúc nào để tiếp tục sử dụng.
+              </p>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 font-semibold text-sm text-black dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch(logout());
+                  setIsLogoutModalOpen(false);
+                  navigate('/login', { replace: true });
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors cursor-pointer shadow-md"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

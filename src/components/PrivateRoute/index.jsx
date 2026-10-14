@@ -2,12 +2,14 @@ import { useSelector } from "react-redux";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import {
     selectCurrentUser,
+    selectIsAuthenticated,
     selectAuthFetching,
 } from "@/features/auth/authSlice";
 
 export default function PrivateRoute() {
     const location = useLocation();
     const currentUser = useSelector(selectCurrentUser);
+    const isAuthenticated = useSelector(selectIsAuthenticated);
     const fetching = useSelector(selectAuthFetching);
 
     if (fetching && !currentUser) {
@@ -18,7 +20,7 @@ export default function PrivateRoute() {
         );
     }
 
-    if (!currentUser) {
+    if (!isAuthenticated || !currentUser) {
         // Lưu lại pathname hiện tại để sau khi đăng nhập có thể quay lại đúng trang
         return (
             <Navigate

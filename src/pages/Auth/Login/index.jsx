@@ -42,8 +42,8 @@ export default function LoginPage() {
                 loginSuccess({
                     user: {
                         id: "1",
-                        name: "Alexander Vance",
-                        username: "alexander.sartorial",
+                        name: "Tuan Anh",
+                        username: "tuananhpika",
                         email: data.email,
                         avatar: userAvatar,
                     },

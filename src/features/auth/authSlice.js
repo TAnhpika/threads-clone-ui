@@ -81,7 +81,8 @@ export const {
 
 // Selectors
 export const selectCurrentUser = (state) => {
-    const user = state.auth.currentUser || defaultUser;
+    if (!state.auth.isAuthenticated || !state.auth.currentUser) return null;
+    const user = state.auth.currentUser;
     return {
         ...defaultUser,
         ...user,

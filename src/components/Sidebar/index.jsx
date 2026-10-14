@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, logout } from '@/features/auth/authSlice';
 import { useTheme } from '@/components/ThemeProvider';
@@ -89,6 +89,7 @@ function GhostIcon({ className = 'w-5 h-5' }) {
 
 export default function Sidebar({ collapsed = false }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { isDark, setTheme } = useTheme();
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -334,7 +335,8 @@ export default function Sidebar({ collapsed = false }) {
                       onClick={() => {
                         dispatch(logout());
                         setShowMenu(false);
-                        showToast('Đã đăng xuất');
+                        navigate('/login');
+                        showToast('Đã đăng xuất thành công');
                       }}
                       className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
                     >
