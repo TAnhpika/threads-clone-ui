@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_BASE_API || "http://localhost:3000/api";
+const baseURL = import.meta.env.VITE_BASE_API || "https://api01.f8team.dev/api";
 
 export const httpClient = axios.create({
     baseURL,

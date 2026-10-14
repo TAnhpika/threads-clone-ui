@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import userAvatar from "@/assets/images/ava.png";
+import { getCurrentUser } from "@/services/authService";
 
 const defaultUser = {
     id: "1",
@@ -25,20 +26,25 @@ export const authSlice = createSlice({
     initialState,
     reducers: {
         loginSuccess: (state, action) => {
+            const user = action.payload?.user || action.payload?.data || action.payload;
             state.currentUser = {
                 ...defaultUser,
-                ...action.payload.user,
-                avatar: userAvatar,
+                ...user,
+                avatar: user?.avatar || userAvatar,
             };
             state.isAuthenticated = true;
             state.error = null;
-            if (action.payload.accessToken) {
-                localStorage.setItem("accessToken", action.payload.accessToken);
+            state.fetching = false;
+            if (action.payload?.accessToken || action.payload?.access_token) {
+                localStorage.setItem(
+                    "accessToken",
+                    action.payload.accessToken || action.payload.access_token
+                );
             }
-            if (action.payload.refreshToken) {
+            if (action.payload?.refreshToken || action.payload?.refresh_token) {
                 localStorage.setItem(
                     "refreshToken",
-                    action.payload.refreshToken,
+                    action.payload.refreshToken || action.payload.refresh_token
                 );
             }
         },
@@ -46,6 +52,7 @@ export const authSlice = createSlice({
             state.currentUser = null;
             state.isAuthenticated = false;
             state.error = null;
+            state.fetching = false;
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
         },
@@ -60,19 +67,45 @@ export const authSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase("persist/REHYDRATE", (state, action) => {
-            if (action.payload?.auth?.currentUser && action.payload?.auth?.isAuthenticated) {
+        builder
+            // Xử lý API "Get User Info"
+            .addCase(getCurrentUser.pending, (state) => {
+                state.fetching = true;
+                state.error = null;
+            })
+            .addCase(getCurrentUser.fulfilled, (state, action) => {
+                const user = action.payload?.user || action.payload?.data || action.payload;
                 state.currentUser = {
                     ...defaultUser,
-                    ...action.payload.auth.currentUser,
-                    avatar: userAvatar,
+                    ...user,
+                    avatar: user?.avatar || userAvatar,
                 };
                 state.isAuthenticated = true;
-            } else if (action.payload?.auth?.isAuthenticated === false) {
+                state.fetching = false;
+                state.error = null;
+            })
+            .addCase(getCurrentUser.rejected, (state, action) => {
+                state.fetching = false;
+                state.error = action.payload;
                 state.currentUser = null;
                 state.isAuthenticated = false;
-            }
-        });
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+            })
+            // Xử lý redux-persist rehydrate
+            .addCase("persist/REHYDRATE", (state, action) => {
+                if (action.payload?.auth?.currentUser && action.payload?.auth?.isAuthenticated) {
+                    state.currentUser = {
+                        ...defaultUser,
+                        ...action.payload.auth.currentUser,
+                        avatar: userAvatar,
+                    };
+                    state.isAuthenticated = true;
+                } else if (action.payload?.auth?.isAuthenticated === false) {
+                    state.currentUser = null;
+                    state.isAuthenticated = false;
+                }
+            });
     },
 });
 

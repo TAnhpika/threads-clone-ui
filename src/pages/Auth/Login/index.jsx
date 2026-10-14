@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, X } from "lucide-react";
-import { loginSuccess } from "@/features/auth/authSlice";
+import { loginSuccess, selectIsAuthenticated } from "@/features/auth/authSlice";
+import * as authService from "@/services/authService";
 import userAvatar from "@/assets/images/ava.png";
 import threadsLoginBg from "@/assets/images/threads-login-bg.webp";
 
@@ -54,11 +55,20 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const continueUrl = searchParams.get("continue") || "/profile";
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  // Nếu đã đăng nhập thì tự động chuyển tiếp tới continueUrl
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(decodeURIComponent(continueUrl), { replace: true });
+    }
+  }, [isAuthenticated, navigate, continueUrl]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -74,44 +84,103 @@ export default function LoginPage() {
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const executeLogin = (userData) => {
-    dispatch(
-      loginSuccess({
-        user: {
-          id: "1",
-          name: userData?.name || "Tuan Anh",
-          username: userData?.username || "tuananhpika",
-          email: userData?.email || "tuananhpika@threads.net",
-          avatar: userAvatar,
-        },
-        accessToken: "threads_access_token_" + Date.now(),
-        refreshToken: "threads_refresh_token_" + Date.now(),
-      })
-    );
-    navigate(decodeURIComponent(continueUrl), { replace: true });
-  };
-
-  const handleFormSubmit = (e) => {
+  // 1. Submit form đăng nhập: Gọi API "Login", lưu token và dispatch API "Get User Info"
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!identifier.trim()) {
       showToast("Vui lòng nhập Username, phone hoặc email");
       return;
     }
-    executeLogin({
-      username: identifier.trim(),
-      email: identifier.includes("@") ? identifier.trim() : "tuananhpika@threads.net",
-    });
+    if (!password.trim()) {
+      showToast("Vui lòng nhập mật khẩu");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const payload = {
+        email: identifier.trim(),
+        password: password.trim(),
+      };
+      if (!identifier.includes("@")) {
+        payload.username = identifier.trim();
+      }
+
+      // Gọi API Login
+      const response = await authService.login(payload);
+      const resData = response?.data || response;
+      const accessToken = resData?.access_token || resData?.accessToken;
+      const refreshToken = resData?.refresh_token || resData?.refreshToken;
+
+      // Lưu access_token và refresh_token vào localStorage
+      if (accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+      }
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
+
+      // Gọi API "Get User Info" để lấy thông tin người dùng đang đăng nhập và lưu vào global state
+      await dispatch(authService.getCurrentUser()).unwrap();
+
+      showToast("Đăng nhập thành công!");
+      navigate(decodeURIComponent(continueUrl), { replace: true });
+    } catch (error) {
+      console.error("Login failed:", error);
+      // Xử lý hiển thị lỗi, kiểm tra response chi tiết từ server
+      const resData = error.response?.data;
+      let errorMsg = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
+      if (resData?.message) {
+        if (typeof resData.message === "string") {
+          errorMsg = resData.message;
+        } else if (typeof resData.message === "object") {
+          errorMsg = Object.values(resData.message).flat().join(" - ");
+        }
+      } else if (resData?.error) {
+        errorMsg = typeof resData.error === "string" ? resData.error : JSON.stringify(resData.error);
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      showToast(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleInstagramLogin = () => {
-    executeLogin({
-      name: "Tuan Anh",
-      username: "tuananhpika",
-      email: "tuananhpika@threads.net",
-    });
+  // 2. Đăng nhập nhanh qua Instagram (tài khoản F8 demo)
+  const handleInstagramLogin = async () => {
+    try {
+      setIsLoading(true);
+      const response = await authService.login({
+        email: "anhpika123456@gmail.com",
+        password: "123123123",
+      });
+      const resData = response?.data || response;
+      const accessToken = resData?.access_token || resData?.accessToken;
+      const refreshToken = resData?.refresh_token || resData?.refreshToken;
+
+      if (accessToken) localStorage.setItem("accessToken", accessToken);
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+
+      await dispatch(authService.getCurrentUser()).unwrap();
+      showToast("Đăng nhập thành công!");
+      navigate(decodeURIComponent(continueUrl), { replace: true });
+    } catch (error) {
+      console.warn("Instagram login API fallback:", error);
+      const resData = error.response?.data;
+      let errorMsg = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
+      if (resData?.message) {
+        errorMsg = typeof resData.message === "string" ? resData.message : Object.values(resData.message).flat().join(" - ");
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      showToast(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -152,6 +221,7 @@ export default function LoginPage() {
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="Username, phone or email"
+              required
               className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
             />
           </div>
@@ -163,6 +233,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
+              required
               className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
             />
           </div>
@@ -171,9 +242,14 @@ export default function LoginPage() {
           <div className="pt-1">
             <button
               type="submit"
-              className="w-full h-13.5 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm sm:text-base active:scale-99 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+              disabled={isLoading}
+              className="w-full h-13.5 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm sm:text-base active:scale-99 transition-all cursor-pointer flex items-center justify-center shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Log in
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white dark:border-black/30 dark:border-t-black rounded-full animate-spin" />
+              ) : (
+                "Log in"
+              )}
             </button>
           </div>
         </form>
