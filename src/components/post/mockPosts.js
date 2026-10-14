@@ -1,3 +1,5 @@
+import userAvatar from '@/assets/images/ava.png';
+
 /**
  * Mock Posts API: Chủ đề Fashion for Men - Smart Casual & Old Money Aesthetic
  * Phong cách quý ông lịch lãm, tinh tế, Quiet Luxury, không logo phô trương
@@ -77,7 +79,7 @@ export const mockPosts = [
     author: {
       name: 'Alexander Vance',
       username: 'alexander.sartorial',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+      avatar: userAvatar,
       isVerified: true,
     },
     tag: 'Old Money Aesthetic',

@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next';
+import userAvatar from '@/assets/images/ava.png';
 
 export default function CreatePostBox({ user, onClick }) {
   const { t } = useTranslation();
-  const avatarUrl =
-    user?.avatar ||
-    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80';
+  const avatarUrl = user?.avatar || userAvatar;
 
   return (
     <div

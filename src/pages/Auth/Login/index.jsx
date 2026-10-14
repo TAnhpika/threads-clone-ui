@@ -4,6 +4,7 @@ import * as yup from "yup";
 import { useDispatch } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { loginSuccess } from "@/features/auth/authSlice";
+import userAvatar from "@/assets/images/ava.png";
 
 const loginSchema = yup.object().shape({
     email: yup
@@ -44,7 +45,7 @@ export default function LoginPage() {
                         name: "Alexander Vance",
                         username: "alexander.sartorial",
                         email: data.email,
-                        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80",
+                        avatar: userAvatar,
                     },
                     accessToken: "mock_access_token_123",
                     refreshToken: "mock_refresh_token_456",

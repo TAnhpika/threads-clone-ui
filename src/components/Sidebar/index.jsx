@@ -96,6 +96,7 @@ export default function Sidebar({ collapsed = false }) {
   const [toastMessage, setToastMessage] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
   const menuRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
 
   // Đóng dropdown menu khi click ra ngoài
   useEffect(() => {
@@ -107,6 +108,34 @@ export default function Sidebar({ collapsed = false }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Dọn dẹp timer khi unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    // Buffer 80ms ngăn giật / nhấp nháy khi rê chuột qua biên
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+      setShowMenu(false);
+    }, 80);
+  };
 
   const handleOpenNewThread = () => {
     window.dispatchEvent(
@@ -160,7 +189,7 @@ export default function Sidebar({ collapsed = false }) {
       path: '/profile',
       outlineIcon: User,
       solidIcon: User,
-      isActive: location.pathname.startsWith('/profile'),
+      isActive: location.pathname.startsWith('/profile') || location.pathname.startsWith('/@'),
     },
     {
       label: 'Insights',
@@ -203,19 +232,20 @@ export default function Sidebar({ collapsed = false }) {
   // - Nếu collapsed (chỉ Messages và Insights): hiển thị chi tiết khi isHovered === true
   const isExpanded = !collapsed || isHovered;
 
-  // Render nội dung Sidebar với vị trí các Icon CỐ ĐỊNH HOÀN TOÀN (đứng yên tuyệt đối khi hover)
+  // Render nội dung Sidebar:
+  // Toàn bộ các icon (Logo Threads và 7 Main Nav Icons) nằm trong khung cố định w-12 có tâm x = 36px bất biến
   const renderSidebarBody = () => (
     <div className="flex flex-col justify-between h-full select-none">
       <div className="space-y-4 w-full">
         {/* 1. Header: Logo @threads & Nút tròn menu [=] */}
-        <div className="flex items-center justify-between h-9 px-1 relative shrink-0">
+        <div className="flex items-center justify-between h-9 w-full relative shrink-0">
           <Link
             to="/"
             className="flex items-center text-black dark:text-white hover:opacity-85 transition-opacity group"
             title="Threads"
           >
-            {/* Khung icon @threads cố định tuyệt đối toạ độ */}
-            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+            {/* Khung icon @threads cố định w-12, tâm tại x = 36px cùng trục với tất cả các icons */}
+            <div className="w-12 h-9 flex items-center justify-center shrink-0">
               <svg
                 aria-label="Threads"
                 role="img"
@@ -226,11 +256,11 @@ export default function Sidebar({ collapsed = false }) {
                 <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
               </svg>
             </div>
-            {/* Chữ threads mượt mà mở rộng sang phải, không kéo lệch icon */}
+            {/* Chữ threads chỉ hiện khi mở rộng, tuyệt đối không đẩy lệch logo icon */}
             <div
               className={`overflow-hidden transition-all duration-200 ${
                 isExpanded
-                  ? 'max-w-40 opacity-100 ml-2'
+                  ? 'max-w-32 opacity-100 ml-1'
                   : 'max-w-0 opacity-0 ml-0 pointer-events-none'
               }`}
             >
@@ -317,20 +347,22 @@ export default function Sidebar({ collapsed = false }) {
           )}
         </div>
 
-        {/* 2. Menu Navigation chính: Icon neo cố định ở lề trái (px-3), chỉ mở rộng chiều ngang */}
+        {/* 2. Menu Navigation chính: Icon cố định trong khung w-12, tâm x = 36px ĐỨNG YÊN TUYỆT ĐỐI */}
         <nav className="space-y-1 w-full">
           {mainNavItems.map((item) => {
             const IconComponent = item.isActive ? item.solidIcon : item.outlineIcon;
 
-            // Luôn giữ px-3 và h-11, chỉ thay đổi width mà KHÔNG thay đổi vị trí của Icon
-            const itemBaseClass = `flex items-center h-11 px-3 rounded-2xl text-sm transition-[background-color,color,width] duration-150 ${
+            // w-full tự động ăn theo chiều rộng khung chứa (48px khi thu gọn, 216px khi mở rộng)
+            // Không áp transition trên width để tránh gây xê dịch hay trễ layout
+            const itemBaseClass = `flex items-center h-11 rounded-2xl w-full text-sm font-semibold transition-colors duration-150 overflow-hidden ${
               item.isActive
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                 : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-black dark:hover:text-white font-medium'
-            } ${isExpanded ? 'w-full' : 'w-12'}`;
+            }`;
 
+            // Khung icon cố định kích thước w-12 h-11 với tâm x = 36px từ mép ngoài sidebar
             const iconElement = (
-              <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+              <div className="w-12 h-11 shrink-0 flex items-center justify-center">
                 <IconComponent
                   className={`w-5 h-5 shrink-0 stroke-2 ${
                     item.isActive ? 'text-black dark:text-white' : ''
@@ -339,11 +371,12 @@ export default function Sidebar({ collapsed = false }) {
               </div>
             );
 
+            // Text label xuất hiện mượt mà sang bên phải mà KHÔNG làm di chuyển icon
             const textElement = (
               <div
-                className={`overflow-hidden transition-all duration-150 ${
+                className={`overflow-hidden transition-all duration-200 ${
                   isExpanded
-                    ? 'max-w-40 opacity-100 ml-3.5'
+                    ? 'max-w-40 opacity-100 ml-1'
                     : 'max-w-0 opacity-0 ml-0 pointer-events-none'
                 }`}
               >
@@ -382,7 +415,7 @@ export default function Sidebar({ collapsed = false }) {
           })}
         </nav>
 
-        {/* 3. Section: Other feeds - Chỉ hiển thị khi Sidebar ở chế độ mở rộng */}
+        {/* 3. Section: Other feeds - Chỉ hiện ra khi hover / mở rộng */}
         {isExpanded && (
           <div className="pt-2 animate-in fade-in duration-200">
             <div className="flex items-center justify-between px-3 py-1 mb-1">
@@ -414,7 +447,7 @@ export default function Sidebar({ collapsed = false }) {
                   >
                     <div className="flex items-center gap-3.5">
                       {IconComponent && <IconComponent className="w-5 h-5 shrink-0 stroke-2" />}
-                      <span>{feed.label}</span>
+                      <span className="truncate whitespace-nowrap">{feed.label}</span>
                     </div>
                     {RightIconComponent && (
                       <RightIconComponent className="w-5 h-5 shrink-0 text-zinc-400" />
@@ -440,19 +473,14 @@ export default function Sidebar({ collapsed = false }) {
   // Khung cha giữ nguyên w-18 cố định vị trí layout, menu mở rộng absolute đè lên mà không xô lệch icon
   if (collapsed) {
     return (
-      <aside
-        className="w-18 shrink-0 hidden md:block relative h-screen select-none z-50"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          setShowMenu(false);
-        }}
-      >
+      <aside className="w-18 shrink-0 hidden md:block relative h-screen select-none z-50">
         <div
-          className={`h-screen border-r border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-black py-4 px-3 overflow-hidden transition-[width,box-shadow] duration-200 ease-out ${
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className={`absolute top-0 left-0 h-screen border-r border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-black py-4 px-3 select-none transition-[width,box-shadow] duration-200 ease-out z-50 scrollbar-none no-scrollbar ${
             isHovered
-              ? 'w-60 absolute left-0 top-0 shadow-2xl z-50 overflow-y-auto scrollbar-none no-scrollbar'
-              : 'w-18'
+              ? 'w-60 shadow-2xl overflow-y-auto'
+              : 'w-18 overflow-hidden'
           }`}
         >
           {renderSidebarBody()}

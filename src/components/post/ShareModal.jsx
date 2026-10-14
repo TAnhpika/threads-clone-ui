@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, Link2, Image, Globe } from 'lucide-react';
+import userAvatar from '@/assets/images/ava.png';
 
 // Icon Instagram Story với dải gradient đặc trưng
 function InstagramStoryIcon({ className = 'w-6 h-6' }) {
@@ -44,7 +45,7 @@ const defaultProfiles = [
     id: 'user-2',
     username: 'alexander.sartorial',
     name: 'Alexander Vance',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    avatar: userAvatar,
   },
   {
     id: 'user-3',

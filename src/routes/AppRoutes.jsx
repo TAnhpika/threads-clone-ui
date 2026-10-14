@@ -40,6 +40,7 @@ export default function AppRoutes() {
                     {/* Protected Routes cần đăng nhập */}
                     <Route element={<PrivateRoute />}>
                         <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/@:username" element={<ProfilePage />} />
                     </Route>
                 </Route>
 

@@ -10,6 +10,7 @@ import CreatePostModal from '@/components/post/CreatePostModal';
 import CreateFeedModal from '@/components/feed/CreateFeedModal';
 import { mockPosts } from '@/components/post/mockPosts';
 import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/authSlice';
+import userAvatar from '@/assets/images/ava.png';
 
 export default function HomePage({ defaultCreateFeedOpen = false }) {
   const location = useLocation();
@@ -79,9 +80,7 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
       author: {
         name: currentUser?.name || 'tuananhpika',
         username: currentUser?.username || currentUser?.email?.split('@')[0] || 'tuananhpika',
-        avatar:
-          currentUser?.avatar ||
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+        avatar: currentUser?.avatar || userAvatar,
         isVerified: true,
       },
       tag: newPostData.topic || 'Old Money Aesthetic',

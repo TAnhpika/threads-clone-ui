@@ -1,3 +1,5 @@
+import userAvatar from '@/assets/images/ava.png';
+
 export const initialConversations = [
   {
     id: 'conv-1',
@@ -62,7 +64,7 @@ export const initialConversations = [
     user: {
       name: 'Alexander Vance',
       username: 'alexander.sartorial',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+      avatar: userAvatar,
       isVerified: true,
     },
     lastMessage: 'Chiếc blazer navy đợt trước anh may ở đâu vậy ạ?',

@@ -12,6 +12,7 @@ import {
   Check,
 } from 'lucide-react';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
+import userAvatar from '@/assets/images/ava.png';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
 // Meta Infinity SVG icon
@@ -100,7 +101,7 @@ const mockActivities = [
     user: {
       name: 'Alexander Vance',
       username: 'alexander.sartorial',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+      avatar: userAvatar,
     },
     actionText: 'đã nhắc đến bạn trong một bài viết về phong cách quý ông.',
     timestamp: '2d',

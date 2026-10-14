@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import userAvatar from '@/assets/images/ava.png';
 import {
   X,
   Image,
@@ -35,9 +36,7 @@ export default function CreatePostModal({
 
   const isCorner = placement === 'bottom-right';
 
-  const avatarUrl =
-    currentUser?.avatar ||
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80';
+  const avatarUrl = currentUser?.avatar || userAvatar;
   const username = currentUser?.username || currentUser?.name || 'tuananhpika';
 
   const availableTopics = [

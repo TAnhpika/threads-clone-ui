@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { mockPosts } from '@/components/post/mockPosts';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
+import userAvatar from '@/assets/images/ava.png';
 import PostMenu from '@/components/post/PostMenu';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
@@ -98,9 +99,7 @@ export default function PostDetailPage() {
       author: {
         name: currentUser?.name || 'tuananhpika',
         username: currentUser?.username || 'tuananhpika',
-        avatar:
-          currentUser?.avatar ||
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+        avatar: currentUser?.avatar || userAvatar,
         isVerified: false,
       },
       timestamp: 'Vừa xong',
@@ -310,10 +309,7 @@ export default function PostDetailPage() {
           <div className="px-4 sm:px-5 pb-3">
             <div className="flex items-center gap-3 bg-zinc-100/90 dark:bg-[#1c1c1c] border border-zinc-200/80 dark:border-zinc-800/90 rounded-full px-4 py-2 transition-colors focus-within:border-zinc-400 dark:focus-within:border-zinc-600">
               <img
-                src={
-                  currentUser?.avatar ||
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
-                }
+                src={currentUser?.avatar || userAvatar}
                 alt="user"
                 className="w-7 h-7 rounded-full object-cover shrink-0 border border-zinc-300 dark:border-zinc-700"
               />

@@ -1,8 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit";
+import userAvatar from "@/assets/images/ava.png";
+
+const defaultUser = {
+    id: "1",
+    name: "Tuan Anh",
+    username: "tuananhpika",
+    email: "tuananhpika@threads.net",
+    avatar: userAvatar,
+    bio: "",
+    followers: 0,
+};
 
 const initialState = {
-    currentUser: null,
-    isAuthenticated: !!localStorage.getItem("accessToken"),
+    currentUser: defaultUser,
+    isAuthenticated: true,
     fetching: false,
     error: null,
 };
@@ -12,7 +23,11 @@ export const authSlice = createSlice({
     initialState,
     reducers: {
         loginSuccess: (state, action) => {
-            state.currentUser = action.payload.user;
+            state.currentUser = {
+                ...defaultUser,
+                ...action.payload.user,
+                avatar: userAvatar,
+            };
             state.isAuthenticated = true;
             state.error = null;
             if (action.payload.accessToken) {
@@ -42,6 +57,18 @@ export const authSlice = createSlice({
             state.currentUser = { ...state.currentUser, ...action.payload };
         },
     },
+    extraReducers: (builder) => {
+        builder.addCase("persist/REHYDRATE", (state, action) => {
+            if (action.payload?.auth?.currentUser) {
+                state.currentUser = {
+                    ...defaultUser,
+                    ...action.payload.auth.currentUser,
+                    avatar: userAvatar,
+                };
+                state.isAuthenticated = true;
+            }
+        });
+    },
 });
 
 export const {
@@ -53,7 +80,16 @@ export const {
 } = authSlice.actions;
 
 // Selectors
-export const selectCurrentUser = (state) => state.auth.currentUser;
+export const selectCurrentUser = (state) => {
+    const user = state.auth.currentUser || defaultUser;
+    return {
+        ...defaultUser,
+        ...user,
+        name: user.name && user.name !== "Alexander Vance" ? user.name : "Tuan Anh",
+        username: user.username && user.username !== "alexander.sartorial" ? user.username : "tuananhpika",
+        avatar: userAvatar,
+    };
+};
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthFetching = (state) => state.auth.fetching;
 
