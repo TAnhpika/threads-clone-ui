@@ -12,6 +12,9 @@ import {
   Bookmark,
   Lock,
 } from 'lucide-react';
+import CollapsibleSidebar from './CollapsibleSidebar';
+
+export { CollapsibleSidebar };
 
 // 1. Home Icons (Outline & Solid silhouette chuẩn Threads)
 function SolidHome({ className = 'w-5 h-5' }) {
@@ -87,7 +90,7 @@ function GhostIcon({ className = 'w-5 h-5' }) {
   );
 }
 
-export default function Sidebar({ collapsed = false }) {
+export default function Sidebar({ collapsed = false, miniOnly = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -471,24 +474,9 @@ export default function Sidebar({ collapsed = false }) {
     </div>
   );
 
-  // GIAO DIỆN KHI COLLAPSED (CHỈ CHO MESSAGES & INSIGHTS)
-  // Khung cha giữ nguyên w-18 cố định vị trí layout, menu mở rộng absolute đè lên mà không xô lệch icon
-  if (collapsed) {
-    return (
-      <aside className="w-18 shrink-0 hidden md:block relative h-screen select-none z-50">
-        <div
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          className={`absolute top-0 left-0 h-screen border-r border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-black py-4 px-3 select-none transition-[width,box-shadow] duration-200 ease-out z-50 scrollbar-none no-scrollbar ${
-            isHovered
-              ? 'w-60 shadow-2xl overflow-y-auto'
-              : 'w-18 overflow-hidden'
-          }`}
-        >
-          {renderSidebarBody()}
-        </div>
-      </aside>
-    );
+  // GIAO DIỆN COLLAPSED / MINI SIDEBAR: TÁI SỬ DỤNG CollapsibleSidebar
+  if (collapsed || miniOnly) {
+    return <CollapsibleSidebar />;
   }
 
   // GIAO DIỆN CỐ ĐỊNH BÌNH THƯỜNG CHO CÁC TRANG CÒN LẠI (Home, Activity, Profile, PostDetail,...)

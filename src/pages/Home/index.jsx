@@ -98,6 +98,39 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Khi CHƯA ĐĂNG NHẬP: Layout chuẩn mẫu Threads - Header 'Home' trên cột Posts, Block Log in ngang height với Posts
+  if (!isAuthenticated) {
+    return (
+      <div className="w-full flex justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_350px] gap-x-8 gap-y-3 w-full max-w-260 justify-center items-start">
+          {/* Row 1, Col 1: Tiêu đề 'Home' */}
+          <div className="col-span-1 px-1">
+            <h1 className="text-xl font-bold text-black dark:text-white tracking-tight">
+              Home
+            </h1>
+          </div>
+
+          {/* Row 1, Col 2: Khoảng trống tương ứng của tiêu đề */}
+          <div className="hidden lg:block" />
+
+          {/* Row 2, Col 1: Khối Posts Feed */}
+          <div className="w-full min-w-0">
+            <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
+              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                {posts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
+            </section>
+          </div>
+
+          {/* Row 2, Col 2: Block Log in nằm ngang height với Posts */}
+          <LoginPanel />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex justify-center items-start gap-8 w-full ${isAuthenticated ? 'max-w-2xl mx-auto' : ''}`}>
       {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}

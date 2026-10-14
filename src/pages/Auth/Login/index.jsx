@@ -218,22 +218,22 @@ export default function LoginPage() {
         </button>
       </div>
 
-      {/* 3. KHỐI QUÉT MÃ QR APP Ở GÓC PHẢI DƯỚI MÀN HÌNH (Hover scale + Click mở modal) */}
+      {/* 3. KHỐI QUÉT MÃ QR APP Ở GÓC PHẢI DƯỚI MÀN HÌNH (To gấp 1.5x: button w-44 h-44, QR w-36 h-36) */}
       <div className="fixed right-8 bottom-8 hidden lg:flex flex-col items-center z-20 select-none">
-        <span className="text-xs text-zinc-500 font-medium mb-2.5">
+        <span className="text-xs text-zinc-500 font-medium mb-3">
           Scan to get the app
         </span>
         <button
           type="button"
           onClick={() => setIsQrModalOpen(true)}
-          className="w-32 h-32 rounded-3xl bg-[#141414] border border-zinc-800/80 p-3 flex items-center justify-center shadow-2xl hover:border-zinc-700 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer group"
+          className="w-44 h-44 rounded-4xl bg-[#141414] border border-zinc-800/80 p-4 flex items-center justify-center shadow-2xl hover:border-zinc-700 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer group"
           title="Scan to get the app"
         >
-          <ThreadsQRCode className="w-24 h-24 text-white transition-transform duration-200 group-hover:scale-102" />
+          <ThreadsQRCode className="w-36 h-36 text-white transition-transform duration-200 group-hover:scale-102" />
         </button>
       </div>
 
-      {/* MODAL PHÓNG TO QR SCAN KHI CLICK (Chuẩn Threads Web) */}
+      {/* MODAL PHÓNG TO QR SCAN KHI CLICK (To gấp 1.5x: QR w-84 h-84 sm:w-96 sm:h-96) */}
       {isQrModalOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
@@ -251,11 +251,11 @@ export default function LoginPage() {
 
           {/* Hộp QR phóng to trung tâm */}
           <div
-            className="rounded-4xl bg-[#141414] border border-zinc-800/80 p-9 flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-200"
+            className="rounded-4xl bg-[#141414] border border-zinc-800/80 p-8 sm:p-10 flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <ThreadsQRCode className="w-56 h-56 sm:w-64 sm:h-64 text-white" />
-            <span className="mt-5 text-sm font-bold text-white tracking-tight">
+            <span className="mt-6 text-base font-bold text-white tracking-tight">
               Get the app
             </span>
           </div>

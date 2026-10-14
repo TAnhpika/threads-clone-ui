@@ -11,9 +11,11 @@ const defaultUser = {
     followers: 0,
 };
 
+const hasToken = typeof window !== "undefined" && Boolean(localStorage.getItem("accessToken"));
+
 const initialState = {
-    currentUser: defaultUser,
-    isAuthenticated: true,
+    currentUser: hasToken ? defaultUser : null,
+    isAuthenticated: hasToken,
     fetching: false,
     error: null,
 };
@@ -59,13 +61,16 @@ export const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase("persist/REHYDRATE", (state, action) => {
-            if (action.payload?.auth?.currentUser) {
+            if (action.payload?.auth?.currentUser && action.payload?.auth?.isAuthenticated) {
                 state.currentUser = {
                     ...defaultUser,
                     ...action.payload.auth.currentUser,
                     avatar: userAvatar,
                 };
                 state.isAuthenticated = true;
+            } else if (action.payload?.auth?.isAuthenticated === false) {
+                state.currentUser = null;
+                state.isAuthenticated = false;
             }
         });
     },
