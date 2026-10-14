@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -8,11 +8,14 @@ import {
   SquarePen,
   UserPlus,
   Pencil,
+  Check,
   X,
   Lock,
   Globe,
   Share2,
   Copy,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { selectCurrentUser, updateCurrentUser } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
@@ -50,6 +53,59 @@ export default function ProfilePage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('center');
   const [toastMessage, setToastMessage] = useState(null);
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
+  const [followedIds, setFollowedIds] = useState([]);
+
+  // Carousel Slider state cho khối 'Finish your profile' (0: 3 thẻ đầu, 1: 3 thẻ sau)
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  const suggestedProfiles = [
+    {
+      id: 'p-1',
+      name: 'm.ylittlesecret_',
+      username: 'm.ylittlesecret_',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+      bio: 'Architecture & Design inspiration',
+    },
+    {
+      id: 'p-2',
+      name: 'Miniature Station',
+      username: 'miniature.station',
+      avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=120&auto=format&fit=crop&q=80',
+      bio: 'Vintage aesthetic & scale models',
+    },
+    {
+      id: 'p-3',
+      name: 'Hai KTS',
+      username: 'haikts2000yahoocom',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+      bio: 'Architect & modern photography',
+    },
+    {
+      id: 'p-4',
+      name: 'The Gentleman Archive',
+      username: 'the.gentleman.archive',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
+      bio: 'Classic tailoring & Sartorial style',
+    },
+    {
+      id: 'p-5',
+      name: 'Luca Moretti',
+      username: 'luca_menswear',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80',
+      bio: 'Smart Casual & Italian Sprezzatura',
+    },
+  ];
+
+  const handleToggleFollow = (id, username) => {
+    if (followedIds.includes(id)) {
+      setFollowedIds((prev) => prev.filter((i) => i !== id));
+      showToast(`Đã bỏ theo dõi @${username}`);
+    } else {
+      setFollowedIds((prev) => [...prev, id]);
+      showToast(`Đang theo dõi @${username}`);
+    }
+  };
 
   // Danh sách bài viết của user trên trang profile
   const [userPosts, setUserPosts] = useState([]);
@@ -267,90 +323,173 @@ export default function ProfilePage() {
                 }}
               />
 
-              {/* Khối 'Finish your profile' (3 left) */}
+              {/* Khối 'Finish your profile' (3 left) có slider Next / Back */}
               <div className="border-b border-zinc-100 dark:border-zinc-800/80">
-                <div className="flex items-center justify-between px-6 pt-5 pb-3">
-                  <span className="font-bold text-sm text-black dark:text-white">
+                <div className="flex items-center justify-between px-6 pt-5 pb-3.5">
+                  <span className="font-bold text-[15px] text-black dark:text-white">
                     Finish your profile
                   </span>
-                  <span className="text-xs font-semibold text-zinc-500">
+                  <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
                     3 left
                   </span>
                 </div>
 
-                {/* 3 Thẻ hành động thiết lập hồ sơ */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 px-6 pb-6">
-                  {/* Card 1: Create thread */}
-                  <div className="bg-zinc-100/80 dark:bg-[#1a1a1a] rounded-2xl p-4 flex flex-col justify-between border border-zinc-200/50 dark:border-zinc-800/60">
-                    <div>
-                      <div className="w-10 h-10 rounded-full bg-zinc-200/90 dark:bg-zinc-800 flex items-center justify-center text-black dark:text-white mb-3">
-                        <SquarePen className="w-5 h-5 stroke-2" />
+                {/* Container Carousel có nút Back & Continue */}
+                <div className="relative px-6 pb-6 group/carousel">
+                  {/* Nút Back (trượt về trước) */}
+                  {slideIndex > 0 && (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 -mt-3 z-30 group/btn">
+                      <button
+                        type="button"
+                        onClick={() => setSlideIndex(0)}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/95 dark:bg-[#121212] border border-zinc-700/90 flex items-center justify-center text-white shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                        aria-label="Back"
+                      >
+                        <ArrowLeft className="w-4 h-4 stroke-2" />
+                      </button>
+                      {/* Tooltip 'Back' có khung viền trắng chuẩn screenshot */}
+                      <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-0.5 bg-black text-white text-[11px] font-medium rounded border border-white/80 shadow-lg opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-40">
+                        Back
                       </div>
-                      <h3 className="font-bold text-sm text-black dark:text-white mb-1">
-                        Create thread
-                      </h3>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                        Say what's on your mind or share a recent highlight.
-                      </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreateModalPlacement('center');
-                        setIsCreateModalOpen(true);
-                      }}
-                      className="mt-4 w-full py-2 bg-black dark:bg-white text-white dark:text-black font-bold text-xs rounded-xl hover:opacity-90 transition-opacity cursor-pointer text-center"
-                    >
-                      Create
-                    </button>
-                  </div>
+                  )}
 
-                  {/* Card 2: Follow 10 profiles */}
-                  <div className="bg-zinc-100/80 dark:bg-[#1a1a1a] rounded-2xl p-4 flex flex-col justify-between border border-zinc-200/50 dark:border-zinc-800/60">
-                    <div>
-                      <div className="w-10 h-10 rounded-full bg-zinc-200/90 dark:bg-zinc-800 flex items-center justify-center text-black dark:text-white mb-3">
-                        <UserPlus className="w-5 h-5 stroke-2" />
+                  {/* Nút Next / Continue (trượt tiếp) */}
+                  {slideIndex === 0 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 -mt-3 z-30 group/btn">
+                      <button
+                        type="button"
+                        onClick={() => setSlideIndex(1)}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/95 dark:bg-[#121212] border border-zinc-700/90 flex items-center justify-center text-white shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                        aria-label="Continue"
+                      >
+                        <ArrowRight className="w-4 h-4 stroke-2" />
+                      </button>
+                      {/* Tooltip 'Continue' có khung viền trắng chuẩn screenshot */}
+                      <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-0.5 bg-black text-white text-[11px] font-medium rounded border border-white/80 shadow-lg opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-40">
+                        Continue
                       </div>
-                      <h3 className="font-bold text-sm text-black dark:text-white mb-1">
-                        Follow 10 profiles
-                      </h3>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                        Fill your feed with threads that interest you.
-                      </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => navigate('/search')}
-                      className="mt-4 w-full py-2 bg-black dark:bg-white text-white dark:text-black font-bold text-xs rounded-xl hover:opacity-90 transition-opacity cursor-pointer text-center"
-                    >
-                      See profiles
-                    </button>
-                  </div>
+                  )}
 
-                  {/* Card 3: Add bio */}
-                  <div className="bg-zinc-100/80 dark:bg-[#1a1a1a] rounded-2xl p-4 flex flex-col justify-between border border-zinc-200/50 dark:border-zinc-800/60">
-                    <div>
-                      <div className="w-10 h-10 rounded-full bg-zinc-200/90 dark:bg-zinc-800 flex items-center justify-center text-black dark:text-white mb-3">
-                        <Pencil className="w-5 h-5 stroke-2" />
-                      </div>
-                      <h3 className="font-bold text-sm text-black dark:text-white mb-1">
-                        Add bio
-                      </h3>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                        Introduce yourself and tell people what you're into.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditName(name);
-                        setEditBio(currentUser?.bio || '');
-                        setIsEditModalOpen(true);
+                  {/* 4 Thẻ được bọc trong overflow-hidden để cắt gọn hoàn toàn item thứ 4 */}
+                  <div className="overflow-hidden w-full">
+                    <div
+                      className="flex gap-3 transition-transform duration-300 ease-out select-none"
+                      style={{
+                        transform:
+                          slideIndex === 0
+                            ? 'translateX(0%)'
+                            : 'translateX(calc(-1 * (100% + 12px) / 3))',
                       }}
-                      className="mt-4 w-full py-2 bg-black dark:bg-white text-white dark:text-black font-bold text-xs rounded-xl hover:opacity-90 transition-opacity cursor-pointer text-center"
                     >
-                      Add
-                    </button>
+                      {/* Card 1: Create thread */}
+                      <div
+                        data-card="true"
+                        className="shrink-0 w-[calc((100%-24px)/3)] bg-zinc-100/90 dark:bg-[#1e1e1e] rounded-2xl p-5 flex flex-col justify-between items-center text-center border border-zinc-200/60 dark:border-zinc-800/40"
+                      >
+                        <div className="flex flex-col items-center w-full">
+                          <div className="w-14 h-14 rounded-full bg-zinc-200 dark:bg-[#121212] flex items-center justify-center text-black dark:text-white mb-3.5">
+                            <SquarePen className="w-5 h-5 stroke-2" />
+                          </div>
+                          <h3 className="font-bold text-sm text-black dark:text-white mb-1.5">
+                            Create thread
+                          </h3>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4 min-h-8">
+                            Say what's on your mind or share a recent highlight.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreateModalPlacement('center');
+                            setIsCreateModalOpen(true);
+                          }}
+                          className="w-full h-9.5 bg-black dark:bg-white text-white dark:text-black font-bold text-xs sm:text-sm rounded-xl hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center"
+                        >
+                          Create
+                        </button>
+                      </div>
+
+                      {/* Card 2: Follow 10 profiles */}
+                      <div
+                        data-card="true"
+                        className="shrink-0 w-[calc((100%-24px)/3)] bg-zinc-100/90 dark:bg-[#1e1e1e] rounded-2xl p-5 flex flex-col justify-between items-center text-center border border-zinc-200/60 dark:border-zinc-800/40"
+                      >
+                        <div className="flex flex-col items-center w-full">
+                          <div className="w-14 h-14 rounded-full bg-zinc-200 dark:bg-[#121212] flex items-center justify-center text-black dark:text-white mb-3.5">
+                            <UserPlus className="w-5 h-5 stroke-2" />
+                          </div>
+                          <h3 className="font-bold text-sm text-black dark:text-white mb-1.5">
+                            Follow 10 profiles
+                          </h3>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4 min-h-8">
+                            Fill your feed with threads that interest you.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsFollowModalOpen(true)}
+                          className="w-full h-9.5 bg-black dark:bg-white text-white dark:text-black font-bold text-xs sm:text-sm rounded-xl hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center"
+                        >
+                          See profiles
+                        </button>
+                      </div>
+
+                      {/* Card 3: Add bio */}
+                      <div
+                        data-card="true"
+                        className="shrink-0 w-[calc((100%-24px)/3)] bg-zinc-100/90 dark:bg-[#1e1e1e] rounded-2xl p-5 flex flex-col justify-between items-center text-center border border-zinc-200/60 dark:border-zinc-800/40"
+                      >
+                        <div className="flex flex-col items-center w-full">
+                          <div className="w-14 h-14 rounded-full bg-zinc-200 dark:bg-[#121212] flex items-center justify-center text-black dark:text-white mb-3.5">
+                            <Pencil className="w-5 h-5 stroke-2" />
+                          </div>
+                          <h3 className="font-bold text-sm text-black dark:text-white mb-1.5">
+                            Add bio
+                          </h3>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4 min-h-8">
+                            Introduce yourself and tell people what you’re into.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditName(name);
+                            setEditBio(currentUser?.bio || '');
+                            setIsEditModalOpen(true);
+                          }}
+                          className="w-full h-9.5 bg-black dark:bg-white text-white dark:text-black font-bold text-xs sm:text-sm rounded-xl hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center"
+                        >
+                          Add
+                        </button>
+                      </div>
+
+                      {/* Card 4: Add profile photo */}
+                      <div
+                        data-card="true"
+                        className="shrink-0 w-[calc((100%-24px)/3)] bg-zinc-100/90 dark:bg-[#1e1e1e] rounded-2xl p-5 flex flex-col justify-between items-center text-center border border-zinc-200/60 dark:border-zinc-800/40"
+                      >
+                        <div className="flex flex-col items-center w-full">
+                          <div className="w-14 h-14 rounded-full bg-zinc-200 dark:bg-[#121212] flex items-center justify-center text-black dark:text-white mb-3.5">
+                            <Check className="w-5 h-5 stroke-2" />
+                          </div>
+                          <h3 className="font-bold text-sm text-black dark:text-white mb-1.5">
+                            Add profile photo
+                          </h3>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4 min-h-8">
+                            Make it easier for people to recognize you.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full h-9.5 bg-zinc-200/40 dark:bg-[#161616] border border-zinc-300/60 dark:border-zinc-800 text-zinc-400 dark:text-[#666666] font-bold text-xs sm:text-sm rounded-xl cursor-default flex items-center justify-center"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -485,7 +624,84 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* 4. MODAL TẠO BÀI VIẾT (CreatePostModal) */}
+      {/* 4. MODAL FOLLOW PROFILES (Gợi ý theo dõi) */}
+      {isFollowModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+              <h2 className="font-bold text-lg text-black dark:text-white">
+                Follow profiles
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsFollowModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Gợi ý các tài khoản nổi bật phù hợp với phong cách của bạn:
+            </p>
+
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80 max-h-80 overflow-y-auto no-scrollbar scrollbar-none">
+              {suggestedProfiles.map((profile) => {
+                const isFollowing = followedIds.includes(profile.id);
+                return (
+                  <div
+                    key={profile.id}
+                    className="py-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={profile.avatar}
+                        alt={profile.name}
+                        className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <span className="font-bold text-sm text-black dark:text-white truncate block">
+                          {profile.name}
+                        </span>
+                        <span className="text-xs text-zinc-500 truncate block">
+                          @{profile.username}
+                        </span>
+                        <span className="text-[11px] text-zinc-400 truncate block">
+                          {profile.bio}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFollow(profile.id, profile.username)}
+                      className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-colors shrink-0 cursor-pointer ${
+                        isFollowing
+                          ? 'border border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:text-red-500 hover:border-red-500'
+                          : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
+                      }`}
+                    >
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsFollowModalOpen(false)}
+                className="w-full py-2.5 bg-black dark:bg-white text-white dark:text-black font-bold text-sm rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL TẠO BÀI VIẾT (CreatePostModal) */}
       <CreatePostModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
