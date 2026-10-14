@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-function InstagramGlyph({ className = 'w-5 h-5 text-white' }) {
+function InstagramGlyph({ className = 'w-5 h-5 text-black dark:text-white' }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -22,22 +22,22 @@ export default function LoginPanel() {
   return (
     <aside className="w-87.5 shrink-0 hidden lg:block select-none">
       <div className="sticky top-4 space-y-4">
-        {/* Card Đăng nhập */}
-        <div className="p-7 bg-[#141414] border border-zinc-800/80 rounded-3xl shadow-xs text-center transition-colors">
-          <h2 className="text-lg font-bold text-white tracking-tight mb-2">
+        {/* Card Đăng nhập hỗ trợ đầy đủ cả Light Mode và Dark Mode */}
+        <div className="p-7 bg-white dark:bg-[#141414] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs text-center transition-colors">
+          <h2 className="text-lg font-bold text-black dark:text-white tracking-tight mb-2">
             Log in or sign up for Threads
           </h2>
 
-          <p className="text-xs text-zinc-400 mb-6 leading-relaxed">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed">
             See what people are talking about and join the conversation.
           </p>
 
           {/* Nút Tiếp tục bằng Instagram */}
           <Link
             to="/login"
-            className="w-full py-3.5 px-4 rounded-2xl bg-[#1c1c1c] hover:bg-[#242424] border border-zinc-800 text-white font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-xs group"
+            className="w-full py-3.5 px-4 rounded-2xl bg-zinc-50 hover:bg-zinc-100 dark:bg-[#1c1c1c] dark:hover:bg-[#242424] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-xs group"
           >
-            <InstagramGlyph className="w-5 h-5 text-white group-hover:scale-105 transition-transform" />
+            <InstagramGlyph className="w-5 h-5 text-black dark:text-white group-hover:scale-105 transition-transform" />
             <span>Continue with Instagram</span>
           </Link>
 
@@ -45,7 +45,7 @@ export default function LoginPanel() {
           <div className="mt-5">
             <Link
               to="/login"
-              className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors block hover:underline"
+              className="text-xs font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-300 transition-colors block hover:underline"
             >
               Log in with username instead
             </Link>
@@ -53,18 +53,18 @@ export default function LoginPanel() {
         </div>
 
         {/* Footer Bản quyền & Điều khoản chuẩn mẫu */}
-        <div className="px-2 text-[11px] text-zinc-600 leading-relaxed text-center space-y-1">
+        <div className="px-2 text-[11px] text-zinc-400 dark:text-zinc-600 leading-relaxed text-center space-y-1">
           <p className="flex items-center justify-center gap-1.5 flex-wrap">
             <span>© 2026</span>
-            <Link to="/login" className="hover:underline">Threads Terms</Link>
-            <Link to="/login" className="hover:underline">Privacy Policy</Link>
-            <Link to="/login" className="hover:underline">Cookies Policy</Link>
+            <Link to="/login" className="hover:underline hover:text-black dark:hover:text-zinc-300">Threads Terms</Link>
+            <Link to="/login" className="hover:underline hover:text-black dark:hover:text-zinc-300">Privacy Policy</Link>
+            <Link to="/login" className="hover:underline hover:text-black dark:hover:text-zinc-300">Cookies Policy</Link>
           </p>
           <p>
             <button
               type="button"
               onClick={() => window.alert('Report a problem')}
-              className="hover:underline cursor-pointer"
+              className="hover:underline cursor-pointer hover:text-black dark:hover:text-zinc-300"
             >
               Report a problem
             </button>

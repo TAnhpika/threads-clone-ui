@@ -97,6 +97,8 @@ export default function CollapsibleSidebar({ className = '' }) {
     };
   }, []);
 
+  const isExpanded = isHovered || showMenu;
+
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -111,7 +113,6 @@ export default function CollapsibleSidebar({ className = '' }) {
     }
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
-      setShowMenu(false);
     }, 80);
   };
 
@@ -202,7 +203,7 @@ export default function CollapsibleSidebar({ className = '' }) {
     const iconElement = (
       <div className="w-12 h-12 shrink-0 flex items-center justify-center">
         {/* Khi collapsed và đang active ở Home, hiển thị khung đen/trắng bo góc đặc trưng */}
-        {!isHovered && item.isActive && isHome ? (
+        {!isExpanded && item.isActive && isHome ? (
           <div className="w-10 h-10 rounded-2xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center shadow-xs">
             <SolidHome className="w-5.5 h-5.5 fill-current" />
           </div>
@@ -220,7 +221,7 @@ export default function CollapsibleSidebar({ className = '' }) {
     const textElement = (
       <div
         className={`overflow-hidden transition-all duration-200 ${
-          isHovered
+          isExpanded
             ? 'max-w-40 opacity-100 ml-1'
             : 'max-w-0 opacity-0 ml-0 pointer-events-none'
         }`}
@@ -267,7 +268,7 @@ export default function CollapsibleSidebar({ className = '' }) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={`absolute top-0 left-0 h-screen border-r border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-black py-5 px-3 select-none transition-[width,box-shadow] duration-200 ease-out z-50 scrollbar-none no-scrollbar flex flex-col justify-between ${
-          isHovered ? 'w-60 shadow-2xl overflow-y-auto' : 'w-18 overflow-hidden'
+          isExpanded ? 'w-60 shadow-2xl overflow-y-auto' : 'w-18 overflow-hidden'
         }`}
       >
         {/* Phần trên: Logo + Navigation Links + Nút Log in (khi chưa đăng nhập) */}
@@ -294,7 +295,7 @@ export default function CollapsibleSidebar({ className = '' }) {
               {/* Chữ threads xuất hiện khi mở rộng */}
               <div
                 className={`overflow-hidden transition-all duration-200 ${
-                  isHovered
+                  isExpanded
                     ? 'max-w-32 opacity-100 ml-1'
                     : 'max-w-0 opacity-0 ml-0 pointer-events-none'
                 }`}
@@ -322,7 +323,7 @@ export default function CollapsibleSidebar({ className = '' }) {
           {!isAuthenticated && (
             <div
               className={`pt-2 transition-all duration-200 ${
-                isHovered
+                isExpanded
                   ? 'opacity-100 max-h-16'
                   : 'opacity-0 max-h-0 pointer-events-none overflow-hidden'
               }`}
@@ -337,12 +338,70 @@ export default function CollapsibleSidebar({ className = '' }) {
           )}
         </div>
 
-        {/* Phần dưới: Nút tròn hoặc menu [= More] và Popover */}
+        {/* Phần dưới: Nút tròn hoặc menu [= More] và Popover nằm bên trong Sidebar */}
         <div className="w-full relative mt-auto pt-4" ref={menuRef}>
+          {/* Popover Menu: Appearance, Settings, Report a problem, Log out - NẰM TRỌN BÊN TRONG SIDEBAR */}
+          {showMenu && (
+            <div
+              className="absolute left-0 right-0 bottom-full mb-2 w-full bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white rounded-2xl p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none"
+              role="menu"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme(isDark ? 'light' : 'dark');
+                  setShowMenu(false);
+                  showToast(`Giao diện: ${isDark ? 'Sáng' : 'Tối'}`);
+                }}
+                className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
+              >
+                <span>Appearance</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMenu(false);
+                  showToast('Cài đặt');
+                }}
+                className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
+              >
+                Settings
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMenu(false);
+                  showToast('Báo cáo sự cố');
+                }}
+                className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
+              >
+                Report a problem
+              </button>
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dispatch(logout());
+                    setShowMenu(false);
+                    navigate('/login');
+                    showToast('Đã đăng xuất thành công');
+                  }}
+                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
+                >
+                  Log out
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setShowMenu((prev) => !prev)}
-            className="w-full h-12 rounded-xl flex items-center px-0 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 hover:text-black dark:hover:text-white transition-colors cursor-pointer select-none"
+            className={`w-full h-12 rounded-2xl flex items-center px-0 transition-colors cursor-pointer select-none ${
+              showMenu
+                ? 'bg-zinc-200 dark:bg-[#1e1e1e] text-black dark:text-white'
+                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 hover:text-black dark:hover:text-white'
+            }`}
             title="More"
             aria-label="More"
           >
@@ -357,7 +416,7 @@ export default function CollapsibleSidebar({ className = '' }) {
             {/* Chữ 'More' xuất hiện khi mở rộng */}
             <div
               className={`overflow-hidden transition-all duration-200 ${
-                isHovered
+                isExpanded
                   ? 'max-w-28 opacity-100 ml-1'
                   : 'max-w-0 opacity-0 ml-0 pointer-events-none'
               }`}
@@ -367,61 +426,6 @@ export default function CollapsibleSidebar({ className = '' }) {
               </span>
             </div>
           </button>
-
-          {/* Popover Menu: Appearance, Settings, Report a problem, Log out */}
-          {showMenu && (
-            <div
-              className="absolute left-0 bottom-full mb-2 w-52 bg-white dark:bg-[#1c1c1c] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white rounded-2xl p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none"
-              role="menu"
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setTheme(isDark ? 'light' : 'dark');
-                  setShowMenu(false);
-                  showToast(`Giao diện: ${isDark ? 'Sáng' : 'Tối'}`);
-                }}
-                className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-              >
-                <span>Appearance</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMenu(false);
-                  showToast('Cài đặt');
-                }}
-                className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-              >
-                Settings
-              </button>
-              <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMenu(false);
-                  showToast('Báo cáo sự cố');
-                }}
-                className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-              >
-                Report a problem
-              </button>
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    dispatch(logout());
-                    setShowMenu(false);
-                    navigate('/login');
-                    showToast('Đã đăng xuất thành công');
-                  }}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
-                >
-                  Log out
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Toast thông báo nhanh (nếu có) */}
