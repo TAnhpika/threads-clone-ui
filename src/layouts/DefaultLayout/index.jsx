@@ -9,13 +9,14 @@ export default function DefaultLayout() {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isHome = location.pathname === '/' || location.pathname === '/custom_feed/create';
+  const isSearch = location.pathname.startsWith('/search');
   const isCollapsedLayout =
     location.pathname.startsWith('/messages') ||
     location.pathname.startsWith('/insights');
 
-  // Khi chưa đăng nhập: CHỈ hiển thị mini sidebar khi đang ở home. Ở các trang khác không hiện sidebar.
-  const showSidebar = isAuthenticated || isHome;
-  const isMiniSidebar = !isAuthenticated && isHome;
+  // Khi chưa đăng nhập: Hiển thị mini sidebar khi đang ở home hoặc search.
+  const showSidebar = isAuthenticated || isHome || isSearch;
+  const isMiniSidebar = !isAuthenticated && (isHome || isSearch);
 
   // Chế độ toàn màn hình không viền cho trang Tin nhắn & Insights (chuẩn giao diện Threads Web)
   if (isCollapsedLayout && isAuthenticated) {
