@@ -1,40 +1,80 @@
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import Sidebar, { CollapsibleSidebar } from '@/components/Sidebar';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import SignUpToPostModal from '@/components/auth/SignUpToPostModal';
 
 export default function DefaultLayout() {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isHome = location.pathname === '/' || location.pathname === '/custom_feed/create';
-  const isSearch = location.pathname.startsWith('/search');
+  const [authModal, setAuthModal] = useState({
+    isOpen: false,
+    type: 'post', // 'post' | 'say_more'
+  });
+
+  // Lắng nghe sự kiện click thêm thread hoặc các nút trên slider khi chưa đăng nhập
+  useEffect(() => {
+    const handleOpenSignUp = () => {
+      setAuthModal({ isOpen: true, type: 'post' });
+    };
+    const handleOpenSayMore = () => {
+      setAuthModal({ isOpen: true, type: 'say_more' });
+    };
+    const handleOpenAuthPrompt = (e) => {
+      setAuthModal({
+        isOpen: true,
+        type: e?.detail?.type || 'say_more',
+      });
+    };
+    const handleOpenCreateThread = () => {
+      if (!isAuthenticated) {
+        setAuthModal({ isOpen: true, type: 'post' });
+      }
+    };
+
+    window.addEventListener('open-signup-to-post', handleOpenSignUp);
+    window.addEventListener('open-say-more', handleOpenSayMore);
+    window.addEventListener('open-auth-prompt', handleOpenAuthPrompt);
+    window.addEventListener('open-create-thread', handleOpenCreateThread);
+    return () => {
+      window.removeEventListener('open-signup-to-post', handleOpenSignUp);
+      window.removeEventListener('open-say-more', handleOpenSayMore);
+      window.removeEventListener('open-auth-prompt', handleOpenAuthPrompt);
+      window.removeEventListener('open-create-thread', handleOpenCreateThread);
+    };
+  }, [isAuthenticated]);
+
   const isCollapsedLayout =
     location.pathname.startsWith('/messages') ||
     location.pathname.startsWith('/insights');
 
-  // Khi chưa đăng nhập: Hiển thị mini sidebar khi đang ở home hoặc search.
-  const showSidebar = isAuthenticated || isHome || isSearch;
-  const isMiniSidebar = !isAuthenticated && (isHome || isSearch);
-
-  // Chế độ toàn màn hình không viền cho trang Tin nhắn & Insights (chuẩn giao diện Threads Web)
-  if (isCollapsedLayout && isAuthenticated) {
+  // 1. Chế độ toàn màn hình cho trang Tin nhắn & Insights (chuẩn giao diện Threads Web: luôn luôn hiển thị CollapsibleSidebar bên trái)
+  if (isCollapsedLayout) {
     return (
       <div className="h-screen w-screen overflow-hidden bg-white dark:bg-black text-black dark:text-white flex">
-        {/* Sidebar thu gọn icon-rail tái sử dụng */}
+        {/* Sidebar thu gọn icon-rail cố định */}
         <CollapsibleSidebar />
 
         {/* Khung nội dung toàn màn hình */}
         <main className="flex-1 min-w-0 h-full overflow-hidden">
           <Outlet />
         </main>
+
+        {/* Modal thông báo Sign up to post / Say more khi chưa đăng nhập */}
+        <SignUpToPostModal
+          isOpen={authModal.isOpen}
+          type={authModal.type}
+          onClose={() => setAuthModal((prev) => ({ ...prev, isOpen: false }))}
+        />
       </div>
     );
   }
 
-  // Chế độ Unauthenticated Home: Sidebar sát lề trái, Content căn giữa toàn màn hình
-  if (isMiniSidebar) {
+  // 2. Khi chưa đăng nhập ở các trang còn lại: CollapsibleSidebar cố định bên trái, content căn giữa
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-black dark:text-white transition-colors relative">
         {/* Mobile Header (chỉ hiện trên màn hình nhỏ < md) */}
@@ -72,10 +112,18 @@ export default function DefaultLayout() {
         <main className="w-full min-h-screen md:pl-18 py-6 px-4 flex justify-center">
           <Outlet />
         </main>
+
+        {/* Modal thông báo Sign up to post / Say more khi chưa đăng nhập */}
+        <SignUpToPostModal
+          isOpen={authModal.isOpen}
+          type={authModal.type}
+          onClose={() => setAuthModal((prev) => ({ ...prev, isOpen: false }))}
+        />
       </div>
     );
   }
 
+  // 3. Khi đã đăng nhập ở các trang thông thường (Home, Search, Activity, Profile, PostDetail,...)
   return (
     <div className="min-h-screen bg-gray-50/40 dark:bg-black text-black dark:text-white transition-colors">
       {/* Mobile Header (chỉ hiện trên màn hình nhỏ < md) */}
@@ -105,17 +153,21 @@ export default function DefaultLayout() {
       </header>
 
       {/* Main Container: Sidebar cố định bên trái + Khu vực nội dung chính bên phải */}
-      <div className={`mx-auto flex justify-center gap-6 px-4 py-4 sm:px-6 ${
-        isMiniSidebar ? 'w-full max-w-7xl' : 'max-w-7xl'
-      }`}>
-        {/* Sidebar bên trái: chỉ hiện khi đã đăng nhập HOẶC khi đang ở Home */}
-        {showSidebar && (isMiniSidebar ? <CollapsibleSidebar /> : <Sidebar />)}
+      <div className="mx-auto flex justify-center gap-6 px-4 py-4 sm:px-6 max-w-7xl">
+        <Sidebar />
 
         {/* Khu vực nội dung chính bên phải */}
         <main className="flex-1 min-w-0 max-w-5xl">
           <Outlet />
         </main>
       </div>
+
+      {/* Modal thông báo Sign up to post / Say more khi chưa đăng nhập */}
+      <SignUpToPostModal
+        isOpen={authModal.isOpen}
+        type={authModal.type}
+        onClose={() => setAuthModal((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

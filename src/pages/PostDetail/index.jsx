@@ -279,7 +279,13 @@ export default function PostDetailPage() {
 
               {/* Share */}
               <button
-                onClick={() => showToast('Đã sao chép liên kết để chia sẻ')}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    window.dispatchEvent(new CustomEvent('open-say-more'));
+                    return;
+                  }
+                  showToast('Đã sao chép liên kết để chia sẻ');
+                }}
                 className="flex items-center gap-1.5 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
               >
                 <Send className="w-4.5 h-4.5 transition-transform group-hover:scale-110" />
@@ -578,7 +584,13 @@ function ReplyItem({ reply, onToast }) {
             </button>
 
             <button
-              onClick={() => onToast('Đã sao chép liên kết để chia sẻ')}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  window.dispatchEvent(new CustomEvent('open-say-more'));
+                  return;
+                }
+                onToast('Đã sao chép liên kết để chia sẻ');
+              }}
               className="flex items-center gap-1 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
             >
               <Send className="w-4 h-4 transition-transform group-hover:scale-110" />

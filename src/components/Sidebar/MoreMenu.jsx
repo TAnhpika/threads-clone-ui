@@ -187,10 +187,7 @@ export default function MoreMenu({
           <div className="bg-zinc-100 dark:bg-[#101010] p-1 rounded-2xl flex items-center justify-between gap-1 border border-zinc-200/80 dark:border-zinc-800/60">
             <button
               type="button"
-              onClick={() => {
-                setTheme('light');
-                showToast('Giao diện: Sáng');
-              }}
+              onClick={() => setTheme('light')}
               className={`flex-1 h-9.5 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                 theme === 'light'
                   ? 'bg-white dark:bg-[#262626] text-black dark:text-white shadow-xs font-semibold'
@@ -203,10 +200,7 @@ export default function MoreMenu({
             </button>
             <button
               type="button"
-              onClick={() => {
-                setTheme('dark');
-                showToast('Giao diện: Tối');
-              }}
+              onClick={() => setTheme('dark')}
               className={`flex-1 h-9.5 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                 theme === 'dark'
                   ? 'bg-white dark:bg-[#262626] text-black dark:text-white shadow-xs font-semibold'
@@ -219,10 +213,7 @@ export default function MoreMenu({
             </button>
             <button
               type="button"
-              onClick={() => {
-                setTheme('system');
-                showToast('Giao diện: Tự động');
-              }}
+              onClick={() => setTheme('system')}
               className={`flex-1 h-9.5 flex items-center justify-center rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 theme === 'system'
                   ? 'bg-white dark:bg-[#262626] text-black dark:text-white shadow-xs'

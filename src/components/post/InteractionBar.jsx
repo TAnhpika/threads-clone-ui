@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
+import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import RepostModal from './RepostModal';
 import ShareModal from './ShareModal';
 
@@ -9,6 +11,7 @@ export default function InteractionBar({
   initialReposts = 0,
   initialShares = 0,
 }) {
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(false);
   const [reposts, setReposts] = useState(initialReposts);
@@ -18,6 +21,10 @@ export default function InteractionBar({
   const [toastMessage, setToastMessage] = useState(null);
 
   const handleLike = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-say-more'));
+      return;
+    }
     if (isLiked) {
       setLikes((prev) => prev - 1);
       setIsLiked(false);
@@ -27,7 +34,26 @@ export default function InteractionBar({
     }
   };
 
+  const handleComment = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-say-more'));
+      return;
+    }
+  };
+
+  const handleRepostClick = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-say-more'));
+      return;
+    }
+    setIsRepostModalOpen((prev) => !prev);
+  };
+
   const handleToggleRepost = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-say-more'));
+      return;
+    }
     if (isReposted) {
       setReposts((prev) => prev - 1);
       setIsReposted(false);
@@ -38,6 +64,14 @@ export default function InteractionBar({
       setToastMessage('Đã đăng lại bài viết');
     }
     setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleShareClick = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-say-more'));
+      return;
+    }
+    setIsShareModalOpen(true);
   };
 
   const handleQuote = () => {
@@ -78,6 +112,7 @@ export default function InteractionBar({
 
       {/* 2. Comment Button */}
       <button
+        onClick={handleComment}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
         title="Bình luận"
       >
@@ -88,7 +123,7 @@ export default function InteractionBar({
       {/* 3. Repost Button & Modal */}
       <div className="relative">
         <button
-          onClick={() => setIsRepostModalOpen((prev) => !prev)}
+          onClick={handleRepostClick}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
             isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
           }`}
@@ -104,19 +139,21 @@ export default function InteractionBar({
         </button>
 
         {/* Modal Repost / Quote */}
-        <RepostModal
-          isOpen={isRepostModalOpen}
-          onClose={() => setIsRepostModalOpen(false)}
-          isReposted={isReposted}
-          onRepost={handleToggleRepost}
-          onQuote={handleQuote}
-        />
+        {isAuthenticated && (
+          <RepostModal
+            isOpen={isRepostModalOpen}
+            onClose={() => setIsRepostModalOpen(false)}
+            isReposted={isReposted}
+            onRepost={handleToggleRepost}
+            onQuote={handleQuote}
+          />
+        )}
       </div>
 
       {/* 4. Share Button & Modal */}
       <div className="relative">
         <button
-          onClick={() => setIsShareModalOpen(true)}
+          onClick={handleShareClick}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
           title="Chia sẻ"
         >
@@ -125,11 +162,13 @@ export default function InteractionBar({
         </button>
 
         {/* Modal Share Post */}
-        <ShareModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          onActionFeedback={handleFeedback}
-        />
+        {isAuthenticated && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            onActionFeedback={handleFeedback}
+          />
+        )}
       </div>
 
       {/* Toast thông báo nhanh */}

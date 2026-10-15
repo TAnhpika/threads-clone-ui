@@ -112,12 +112,17 @@ export default function CollapsibleSidebar({ className = '' }) {
 
   const handleOpenNewThread = () => {
     if (!isAuthenticated) {
-      navigate('/login?continue=/');
+      window.dispatchEvent(new CustomEvent('open-signup-to-post'));
       return;
     }
     window.dispatchEvent(
       new CustomEvent('open-create-thread', { detail: { placement: 'center' } })
     );
+  };
+
+  const handleOpenSayMore = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    window.dispatchEvent(new CustomEvent('open-say-more'));
   };
 
   // Danh sách các icon nhóm 1 (Home, New thread, Search)
@@ -180,6 +185,7 @@ export default function CollapsibleSidebar({ className = '' }) {
   const renderNavItem = (item) => {
     const IconComponent = item.isActive ? item.solidIcon : item.outlineIcon;
     const isHome = item.label === 'Home';
+    const isSearch = item.label === 'Search';
 
     // Item wrapper styling (gọn gàng chuẩn threads mẫu)
     const baseItemClass = `w-full h-11 rounded-2xl flex items-center px-0 transition-all select-none ${
@@ -225,6 +231,22 @@ export default function CollapsibleSidebar({ className = '' }) {
           key={item.label}
           type="button"
           onClick={item.onClick}
+          title={item.label}
+          className={`${baseItemClass} cursor-pointer text-left`}
+        >
+          {iconElement}
+          {textElement}
+        </button>
+      );
+    }
+
+    // Khi CHƯA ĐĂNG NHẬP: Trừ Search và Home, click các nút khác ở slider sẽ hiện SayMore modal
+    if (!isAuthenticated && !isHome && !isSearch) {
+      return (
+        <button
+          key={item.label}
+          type="button"
+          onClick={handleOpenSayMore}
           title={item.label}
           className={`${baseItemClass} cursor-pointer text-left`}
         >

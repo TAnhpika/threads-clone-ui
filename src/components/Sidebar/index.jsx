@@ -142,9 +142,18 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
   };
 
   const handleOpenNewThread = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-signup-to-post'));
+      return;
+    }
     window.dispatchEvent(
       new CustomEvent('open-create-thread', { detail: { placement: 'center' } })
     );
+  };
+
+  const handleOpenSayMore = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    window.dispatchEvent(new CustomEvent('open-say-more'));
   };
 
   const showToast = (msg) => {
@@ -350,12 +359,31 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
               </div>
             );
 
+            const isHome = item.label === 'For you' || item.label === 'Home';
+            const isSearch = item.label === 'Search';
+
             if (item.isButton) {
               return (
                 <button
                   key={item.label}
                   type="button"
                   onClick={item.onClick}
+                  title={item.label}
+                  className={`${itemBaseClass} cursor-pointer text-left`}
+                >
+                  {iconElement}
+                  {textElement}
+                </button>
+              );
+            }
+
+            // Khi CHƯA ĐĂNG NHẬP: Trừ Search và Home/For you, click các nút khác ở slider sẽ hiện SayMore modal
+            if (!isAuthenticated && !isHome && !isSearch) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={handleOpenSayMore}
                   title={item.label}
                   className={`${itemBaseClass} cursor-pointer text-left`}
                 >
@@ -399,6 +427,26 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
                 const IconComponent = feed.icon;
                 const RightIconComponent = feed.rightIcon;
                 const isActive = location.search === feed.path.replace('/', '');
+
+                if (!isAuthenticated) {
+                  return (
+                    <button
+                      key={feed.label}
+                      type="button"
+                      onClick={handleOpenSayMore}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-white font-medium cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        {IconComponent && <IconComponent className="w-5 h-5 shrink-0 stroke-2" />}
+                        <span className="truncate whitespace-nowrap">{feed.label}</span>
+                      </div>
+                      {RightIconComponent && (
+                        <RightIconComponent className="w-5 h-5 shrink-0 text-zinc-400" />
+                      )}
+                    </button>
+                  );
+                }
+
                 return (
                   <Link
                     key={feed.label}
