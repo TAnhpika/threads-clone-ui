@@ -167,22 +167,55 @@
   scrollbar-width: none !important;
 }
 
-/* Ẩn hoàn toàn scrollbar toàn bộ website */
-* {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
+/* ===== Custom Threads Web Scrollbar ===== */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
-*::-webkit-scrollbar {
+
+html:not(.dark) {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Loại bỏ hoàn toàn 2 nút mũi tên lên/xuống mặc định trên Windows */
+::-webkit-scrollbar-button {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
-html, body {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
-html::-webkit-scrollbar, body::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+
+/* Scrollbar cho chế độ Light Mode */
+:root:not(.dark) ::-webkit-scrollbar-thumb,
+.light ::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover,
+.light ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.35);
 }
