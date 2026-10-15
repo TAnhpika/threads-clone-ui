@@ -62,6 +62,10 @@ export default function PostDetailPage() {
   };
 
   const handleLikePost = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
+      return;
+    }
     if (isLiked) {
       setLikes((prev) => prev - 1);
       setIsLiked(false);
@@ -72,6 +76,10 @@ export default function PostDetailPage() {
   };
 
   const handleRepostPost = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
+      return;
+    }
     if (isReposted) {
       setReposts((prev) => prev - 1);
       setIsReposted(false);
@@ -253,6 +261,10 @@ export default function PostDetailPage() {
               {/* Comment */}
               <button
                 onClick={() => {
+                  if (!isAuthenticated) {
+                    window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } }));
+                    return;
+                  }
                   const input = document.getElementById('thread-reply-input');
                   input?.focus();
                 }}
@@ -326,6 +338,12 @@ export default function PostDetailPage() {
                 value={replyInput}
                 onChange={(e) => setReplyInput(e.target.value)}
                 onKeyDown={handleAddReply}
+                onFocus={(e) => {
+                  if (!isAuthenticated) {
+                    e.target.blur();
+                    window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } }));
+                  }
+                }}
                 className="flex-1 bg-transparent text-sm text-black dark:text-white placeholder-zinc-500 outline-none"
               />
               <div className="flex items-center gap-3 text-zinc-400 shrink-0">
@@ -367,6 +385,7 @@ export default function PostDetailPage() {
                 key={reply.id}
                 reply={reply}
                 onToast={showToast}
+                isAuthenticated={isAuthenticated}
               />
             ))}
           </div>
@@ -431,7 +450,7 @@ export default function PostDetailPage() {
 }
 
 // Component từng dòng Reply trong chuỗi phản hồi
-function ReplyItem({ reply, onToast }) {
+function ReplyItem({ reply, onToast, isAuthenticated }) {
   const [likes, setLikes] = useState(reply.likes || 0);
   const [isLiked, setIsLiked] = useState(false);
   const [reposts, setReposts] = useState(reply.reposts || 0);
@@ -439,6 +458,10 @@ function ReplyItem({ reply, onToast }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLike = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
+      return;
+    }
     if (isLiked) {
       setLikes((prev) => prev - 1);
       setIsLiked(false);
@@ -449,6 +472,10 @@ function ReplyItem({ reply, onToast }) {
   };
 
   const handleRepost = () => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
+      return;
+    }
     if (isReposted) {
       setReposts((prev) => prev - 1);
       setIsReposted(false);
@@ -560,6 +587,10 @@ function ReplyItem({ reply, onToast }) {
 
             <button
               onClick={() => {
+                if (!isAuthenticated) {
+                  window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } }));
+                  return;
+                }
                 const input = document.getElementById('thread-reply-input');
                 input?.focus();
               }}

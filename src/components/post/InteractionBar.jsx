@@ -22,7 +22,7 @@ export default function InteractionBar({
 
   const handleLike = () => {
     if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-say-more'));
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
       return;
     }
     if (isLiked) {
@@ -36,14 +36,14 @@ export default function InteractionBar({
 
   const handleComment = () => {
     if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-say-more'));
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } }));
       return;
     }
   };
 
   const handleRepostClick = () => {
     if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-say-more'));
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
       return;
     }
     setIsRepostModalOpen((prev) => !prev);
@@ -51,7 +51,7 @@ export default function InteractionBar({
 
   const handleToggleRepost = () => {
     if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-say-more'));
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
       return;
     }
     if (isReposted) {
