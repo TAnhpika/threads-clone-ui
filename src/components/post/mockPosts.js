@@ -95,6 +95,36 @@ export const mockPosts = [
     shares: 620,
   },
   {
+    id: 'post-fidsulaiman9',
+    author: {
+      name: 'fidsulaiman9',
+      username: 'fidsulaiman9',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+      isVerified: false,
+    },
+    timestamp: '13h',
+    content: 'Why is fried rice in Vietnam so freaking good?! 😭',
+    likes: 3,
+    comments: 5,
+    reposts: 0,
+    shares: 1,
+  },
+  {
+    id: 'post-idreisss',
+    author: {
+      name: 'idreisss',
+      username: 'idreisss',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+      isVerified: false,
+    },
+    timestamp: '40m',
+    content: 'Genuinely asking, is it bad that i prefer to work alone rather than having a work mate?',
+    likes: 13,
+    comments: 3,
+    reposts: 0,
+    shares: 1,
+  },
+  {
     id: 'post-oldmoney-2',
     author: {
       name: 'The Gentleman Archive',

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Paperclip, X, Check, Loader2 } from 'lucide-react';
 
 export default function ReportProblemModal({
@@ -28,7 +28,7 @@ export default function ReportProblemModal({
     return () => window.removeEventListener('open-report-problem', handleOpen);
   }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (isControlled && controlledOnClose) {
       controlledOnClose();
     } else {
@@ -41,7 +41,7 @@ export default function ReportProblemModal({
       setIsSubmitting(false);
       setIsSuccess(false);
     }, 200);
-  };
+  }, [isControlled, controlledOnClose]);
 
   // Khóa scroll body khi modal mở & xử lý phím Escape
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function ReportProblemModal({
       clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);

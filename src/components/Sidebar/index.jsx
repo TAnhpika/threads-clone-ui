@@ -293,10 +293,10 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
             <button
               type="button"
               onClick={() => setShowMenu((prev) => !prev)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer group border ${
                 showMenu
-                  ? 'bg-zinc-800 text-white dark:bg-zinc-200 dark:text-black'
-                  : 'bg-zinc-100 dark:bg-zinc-850 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+                  ? 'bg-zinc-200 text-black border-zinc-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700'
+                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-black border-transparent dark:bg-[#181818] dark:hover:bg-zinc-800 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-800/80'
               }`}
               title="More"
               aria-label="More"
