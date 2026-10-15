@@ -10,28 +10,73 @@ import SignUpToPostModal from '@/components/auth/SignUpToPostModal';
 export default function DefaultLayout() {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const [authModal, setAuthModal] = useState({
-    isOpen: false,
-    type: 'post', // 'post' | 'say_more'
-  });
+  const [authModal, setAuthModal] = useState(() => ({
+    isOpen: !isAuthenticated,
+    type: 'say_more', // 'post' | 'say_more' | 'like' | 'comment' | 'repost'
+    canClose: true,
+  }));
+
+  // Tự động đóng modal nếu user đăng nhập thành công
+  useEffect(() => {
+    if (isAuthenticated) {
+      setAuthModal((prev) => ({ ...prev, isOpen: false }));
+    }
+  }, [isAuthenticated]);
+
+  // Khi chưa đăng nhập: scroll khoảng 100% view height (window.innerHeight) thì hiện modal say_more và KHÔNG thể tắt
+  useEffect(() => {
+    if (isAuthenticated) return;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const viewHeight = window.innerHeight || document.documentElement.clientHeight || 800;
+
+      if (scrollY >= viewHeight * 0.95) {
+        setAuthModal((prev) => {
+          if (prev.isOpen && prev.type === 'say_more' && !prev.canClose) {
+            return prev;
+          }
+          return {
+            isOpen: true,
+            type: 'say_more',
+            canClose: false,
+          };
+        });
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isAuthenticated]);
+
+  // Reset modal khóa khi chuyển route
+  useEffect(() => {
+    setAuthModal((prev) => {
+      if (!prev.canClose) {
+        return { isOpen: false, type: 'say_more', canClose: true };
+      }
+      return prev;
+    });
+  }, [location.pathname]);
 
   // Lắng nghe sự kiện click thêm thread hoặc các nút trên slider khi chưa đăng nhập
   useEffect(() => {
     const handleOpenSignUp = () => {
-      setAuthModal({ isOpen: true, type: 'post' });
+      setAuthModal({ isOpen: true, type: 'post', canClose: true });
     };
     const handleOpenSayMore = () => {
-      setAuthModal({ isOpen: true, type: 'say_more' });
+      setAuthModal({ isOpen: true, type: 'say_more', canClose: true });
     };
     const handleOpenAuthPrompt = (e) => {
       setAuthModal({
         isOpen: true,
         type: e?.detail?.type || 'say_more',
+        canClose: e?.detail?.canClose !== undefined ? e.detail.canClose : true,
       });
     };
     const handleOpenCreateThread = () => {
       if (!isAuthenticated) {
-        setAuthModal({ isOpen: true, type: 'post' });
+        setAuthModal({ isOpen: true, type: 'post', canClose: true });
       }
     };
 
@@ -67,6 +112,7 @@ export default function DefaultLayout() {
         <SignUpToPostModal
           isOpen={authModal.isOpen}
           type={authModal.type}
+          canClose={authModal.canClose}
           onClose={() => setAuthModal((prev) => ({ ...prev, isOpen: false }))}
         />
       </div>
@@ -117,6 +163,7 @@ export default function DefaultLayout() {
         <SignUpToPostModal
           isOpen={authModal.isOpen}
           type={authModal.type}
+          canClose={authModal.canClose}
           onClose={() => setAuthModal((prev) => ({ ...prev, isOpen: false }))}
         />
       </div>
@@ -166,6 +213,7 @@ export default function DefaultLayout() {
       <SignUpToPostModal
         isOpen={authModal.isOpen}
         type={authModal.type}
+        canClose={authModal.canClose}
         onClose={() => setAuthModal((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>

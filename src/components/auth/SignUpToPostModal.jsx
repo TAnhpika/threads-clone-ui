@@ -171,18 +171,30 @@ export default function SignUpToPostModal({
   isOpen,
   onClose,
   type = 'post', // 'post' | 'say_more' | 'like' | 'comment' | 'repost'
+  canClose = true,
 }) {
   const navigate = useNavigate();
 
+  // Khóa cuộn trang khi modal đang mở
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && canClose) {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, canClose, onClose]);
 
   if (!isOpen) return null;
 
@@ -198,20 +210,22 @@ export default function SignUpToPostModal({
   return (
     <div
       className="fixed inset-0 z-50 bg-black/65 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200 select-none"
-      onClick={onClose}
+      onClick={canClose ? onClose : undefined}
     >
       <div
         className="relative w-full max-w-110 bg-[#181818] border border-zinc-800 rounded-3xl p-8 sm:p-9 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Nút đóng X ở góc trên bên phải */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors cursor-pointer rounded-full hover:bg-zinc-800/60"
-          title="Đóng"
-        >
-          <X className="w-5 h-5 stroke-2" />
-        </button>
+        {/* Nút đóng X ở góc trên bên phải - Chỉ hiển thị khi cho phép đóng (canClose === true) */}
+        {canClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors cursor-pointer rounded-full hover:bg-zinc-800/60"
+            title="Đóng"
+          >
+            <X className="w-5 h-5 stroke-2" />
+          </button>
+        )}
 
         {/* Biểu tượng Neon Gradient (Heart / Comment / Repost / Compose Pen) */}
         <ModalIcon type={type} />
