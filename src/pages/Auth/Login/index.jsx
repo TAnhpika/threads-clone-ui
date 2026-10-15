@@ -374,7 +374,7 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => showToast("Report a problem")}
+            onClick={() => window.dispatchEvent(new CustomEvent('open-report-problem'))}
             className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
           >
             Report a problem

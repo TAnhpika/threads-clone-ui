@@ -139,7 +139,7 @@ export default function MoreMenu({
             type="button"
             onClick={() => {
               onClose();
-              showToast('Báo cáo sự cố');
+              window.dispatchEvent(new CustomEvent('open-report-problem'));
             }}
             className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
           >

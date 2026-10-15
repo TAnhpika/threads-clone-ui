@@ -63,7 +63,7 @@ export default function LoginPanel() {
           <p>
             <button
               type="button"
-              onClick={() => window.alert('Report a problem')}
+              onClick={() => window.dispatchEvent(new CustomEvent('open-report-problem'))}
               className="hover:underline cursor-pointer hover:text-black dark:hover:text-zinc-300"
             >
               Report a problem
