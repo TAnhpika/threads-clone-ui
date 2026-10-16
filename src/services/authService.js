@@ -36,8 +36,25 @@ export const login = async (credentials) => {
  * API "Register": Gọi API đăng ký tài khoản mới
  */
 export const register = async (data) => {
-    const response = await http.post("/auth/register", data);
+    const response = await http.post("/auth/register", data, {
+        headers: {
+            "x-origin": typeof window !== "undefined" ? window.location.origin : "",
+        },
+    });
     return response?.data || response;
+};
+
+/**
+ * API "Check Exists Email": Kiểm tra email đã được đăng ký hay chưa
+ */
+export const checkExistsEmail = async (email) => {
+    try {
+        const response = await http.get(`/auth/check-email?email=${encodeURIComponent(email)}`);
+        const data = response?.data || response;
+        return data?.exists ?? data?.isExist ?? false;
+    } catch {
+        return false;
+    }
 };
 
 /**

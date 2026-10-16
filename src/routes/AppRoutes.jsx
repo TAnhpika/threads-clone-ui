@@ -15,6 +15,7 @@ const ProfilePage = lazy(() => import("@/pages/Profile"));
 const LoginPage = lazy(() => import("@/pages/Auth/Login"));
 const RegisterPage = lazy(() => import("@/pages/Auth/Register"));
 const ForgotPasswordPage = lazy(() => import("@/pages/Auth/ForgotPassword"));
+const VerifyEmailPage = lazy(() => import("@/pages/Auth/VerifyEmail"));
 const NotFoundPage = lazy(() => import("@/pages/NotFound"));
 
 function PageLoader() {
@@ -53,6 +54,7 @@ export default function AppRoutes() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/verify-email" element={<VerifyEmailPage />} />
                 </Route>
 
                 {/* 404 Not Found Route */}
