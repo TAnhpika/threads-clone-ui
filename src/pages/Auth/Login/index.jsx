@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -77,9 +77,19 @@ export default function LoginPage() {
       : "/";
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
+  const location = useLocation();
+  const [routeSuccessMessage, setRouteSuccessMessage] = useState(
+    location.state?.message || null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  const handleInputChange = () => {
+    if (routeSuccessMessage) {
+      setRouteSuccessMessage(null);
+    }
+  };
 
   // Cấu hình React Hook Form kết hợp Yup Resolver
   const {
@@ -228,6 +238,13 @@ export default function LoginPage() {
           Log in with your Instagram account
         </h1>
 
+        {/* Thông báo thành công từ route state (Mục 6: Tạo mật khẩu mới thành công, vui lòng đăng nhập) */}
+        {routeSuccessMessage && (
+          <div className="w-full px-5 py-3.5 mb-4 rounded-2xl bg-[#f0fdf4] dark:bg-[#062d1c] border border-[#bbf7d0] dark:border-[#059669]/40 text-[#166534] dark:text-[#86efac] text-xs sm:text-[13px] font-normal leading-relaxed text-left animate-in fade-in zoom-in-95 duration-200">
+            {routeSuccessMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="w-full space-y-2.5">
           {/* Input Identifier */}
           <AuthInput
@@ -235,7 +252,9 @@ export default function LoginPage() {
             type="text"
             placeholder="Username, phone or email"
             error={errors.identifier}
-            {...register("identifier")}
+            {...register("identifier", {
+              onChange: handleInputChange,
+            })}
           />
 
           {/* Input Password */}
@@ -244,7 +263,9 @@ export default function LoginPage() {
             type="password"
             placeholder="Password"
             error={errors.password}
-            {...register("password")}
+            {...register("password", {
+              onChange: handleInputChange,
+            })}
           />
 
           {/* Nút Log in */}
