@@ -160,7 +160,7 @@ export const AuthInput = forwardRef(function AuthInput(
         onClick={() => inputRef.current?.focus()}
         className={`relative w-full h-13 sm:h-13.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border ${
           hasError
-            ? "!border-red-500 hover:!border-red-500 focus-within:!border-red-500 active:!border-red-500"
+            ? "border-red-500! hover:border-red-500! focus-within:border-red-500! active:border-red-500!"
             : "border-zinc-200 hover:border-zinc-400 focus-within:border-zinc-400 active:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600 dark:focus-within:border-zinc-600 dark:active:border-zinc-600"
         } px-4.5 transition-colors duration-150 flex items-center justify-between cursor-text`}
       >

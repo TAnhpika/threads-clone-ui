@@ -100,13 +100,80 @@ export const resetPassword = async ({ token, password, password_confirmation }) 
 };
 
 /**
+ * API "Validate Email": Kiểm tra email có khả dụng không
+ * Endpoint: POST /auth/validate/email
+ * @param {string} email
+ */
+export const validateEmail = async (email) => {
+    try {
+        const response = await http.post("/auth/validate/email", { email });
+        return response?.data || response;
+    } catch (error) {
+        if (error.response?.data) {
+            return error.response.data;
+        }
+        throw error;
+    }
+};
+
+/**
  * API "Check Exists Email": Kiểm tra email đã được đăng ký hay chưa
+ * @param {string} email
+ * @returns {Promise<boolean>} true nếu email đã tồn tại / không khả dụng
  */
 export const checkExistsEmail = async (email) => {
     try {
-        const response = await http.get(`/auth/check-email?email=${encodeURIComponent(email)}`);
-        const data = response?.data || response;
-        return data?.exists ?? data?.isExist ?? false;
+        const res = await validateEmail(email);
+        if (typeof res?.available === "boolean") {
+            return !res.available;
+        }
+        if (typeof res?.data?.available === "boolean") {
+            return !res.data.available;
+        }
+        if (res?.errors?.email) {
+            return true;
+        }
+        return false;
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * API "Validate Username": Kiểm tra username có khả dụng không
+ * Endpoint: POST /auth/validate/username
+ * @param {string} username
+ */
+export const validateUsername = async (username) => {
+    try {
+        const response = await http.post("/auth/validate/username", { username });
+        return response?.data || response;
+    } catch (error) {
+        if (error.response?.data) {
+            return error.response.data;
+        }
+        throw error;
+    }
+};
+
+/**
+ * API "Check Exists Username": Kiểm tra username đã được sử dụng hay chưa
+ * @param {string} username
+ * @returns {Promise<boolean>} true nếu username đã tồn tại / không khả dụng
+ */
+export const checkExistsUsername = async (username) => {
+    try {
+        const res = await validateUsername(username);
+        if (typeof res?.available === "boolean") {
+            return !res.available;
+        }
+        if (typeof res?.data?.available === "boolean") {
+            return !res.data.available;
+        }
+        if (res?.errors?.username) {
+            return true;
+        }
+        return false;
     } catch {
         return false;
     }

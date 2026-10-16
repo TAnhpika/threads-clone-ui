@@ -7,6 +7,7 @@ import AuthInput from "@/components/common/AuthInput";
 import AuthButton from "@/components/common/AuthButton";
 import AuthAlert from "@/components/common/AuthAlert";
 import useEmailCheck from "@/hooks/useEmailCheck";
+import useUsernameCheck from "@/hooks/useUsernameCheck";
 import { registerSchema } from "@/utils/validators";
 import * as authService from "@/services/authService";
 
@@ -48,10 +49,24 @@ export default function RegisterPage() {
     clearErrors,
   });
 
+  // Logic kiểm tra và hiển thị spinner cho username giống email
+  const usernameValue = watch("username");
+  const usernameCheck = useUsernameCheck({
+    usernameValue,
+    trigger,
+    clearErrors,
+  });
+
   // Khi đang hiện thông báo lỗi, nếu input được chỉnh sửa (thêm / xóa ký tự) thì tắt thông báo lỗi ngay
   const handleInputChange = (fieldName) => {
     if (errors[fieldName]) {
       clearErrors(fieldName);
+    }
+    if (fieldName === "email") {
+      emailCheck.resetStatus();
+    }
+    if (fieldName === "username") {
+      usernameCheck.resetStatus();
     }
     if (generalErrorMessage) {
       setGeneralErrorMessage(null);
@@ -84,6 +99,7 @@ export default function RegisterPage() {
       );
       reset();
       emailCheck.resetStatus();
+      usernameCheck.resetStatus();
     } catch (error) {
       const resData = error.response?.data;
       const resMsg = resData?.message;
@@ -95,6 +111,7 @@ export default function RegisterPage() {
           const msg = Array.isArray(msgs) ? msgs[0] : msgs;
           if (field === "username" || field === "firstName" || field === "lastName") {
             setError("username", { type: "server", message: msg });
+            usernameCheck.setStatus("error");
           } else {
             setError(field, { type: "server", message: msg });
           }
@@ -114,6 +131,7 @@ export default function RegisterPage() {
             type: "server",
             message: resMsg,
           });
+          usernameCheck.setStatus("error");
         } else if (resMsg.toLowerCase().includes("password")) {
           setError("password", {
             type: "server",
@@ -130,13 +148,23 @@ export default function RegisterPage() {
     }
   };
 
-  const isEmailError = !!errors.email && emailCheck.status === "error";
+  const hasEmailError = Boolean(errors.email);
   const currentEmailStatus =
     emailCheck.status === "checking"
       ? "checking"
-      : isEmailError
+      : hasEmailError
       ? "error"
       : emailCheck.status === "success" || emailCheck.status === "typing"
+      ? "success"
+      : "idle";
+
+  const hasUsernameError = Boolean(errors.username);
+  const currentUsernameStatus =
+    usernameCheck.status === "checking"
+      ? "checking"
+      : hasUsernameError
+      ? "error"
+      : usernameCheck.status === "success" || usernameCheck.status === "typing"
       ? "success"
       : "idle";
 
@@ -167,14 +195,37 @@ export default function RegisterPage() {
           <AuthInput
             label="Tên hiển thị"
             type="text"
-            showClearButton
-            onClear={() => {
-              setValue("username", "");
-              clearErrors("username");
-            }}
             error={errors.username}
+            rightSlot={
+              currentUsernameStatus === "checking" ? (
+                <div
+                  title="Đang kiểm tra..."
+                  className="w-4.5 h-4.5 rounded-full border-2 border-zinc-400/30 border-t-blue-500 dark:border-zinc-600/40 dark:border-t-blue-400 animate-spin"
+                />
+              ) : currentUsernameStatus === "success" && !hasUsernameError ? (
+                <CheckCircle2
+                  className="w-5 h-5 text-green-500 shrink-0"
+                  strokeWidth={2}
+                />
+              ) : usernameValue ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue("username", "");
+                    usernameCheck.resetStatus();
+                    clearErrors("username");
+                  }}
+                  tabIndex={-1}
+                  className="text-zinc-400 hover:text-black dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center p-1"
+                  title="Xóa tên hiển thị"
+                >
+                  <X className="w-5 h-5 shrink-0" strokeWidth={2} />
+                </button>
+              ) : null
+            }
             {...register("username", {
               onChange: () => handleInputChange("username"),
+              onBlur: usernameCheck.handleBlur,
             })}
           />
 
@@ -189,7 +240,7 @@ export default function RegisterPage() {
                   title="Đang kiểm tra..."
                   className="w-4.5 h-4.5 rounded-full border-2 border-zinc-400/30 border-t-blue-500 dark:border-zinc-600/40 dark:border-t-blue-400 animate-spin"
                 />
-              ) : currentEmailStatus === "success" && !isEmailError ? (
+              ) : currentEmailStatus === "success" && !hasEmailError ? (
                 <CheckCircle2
                   className="w-5 h-5 text-green-500 shrink-0"
                   strokeWidth={2}

@@ -1,4 +1,4 @@
-import { checkExistsEmail } from "@/services/authService";
+import { checkExistsEmail, checkExistsUsername } from "@/services/authService";
 import { addMethod, object, ref, string } from "yup";
 
 export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -36,6 +36,34 @@ export const debounceCheckExistsEmail = checkEmailAvailability;
 
 export const USERNAME_REGEX = /^[a-zA-Z0-9_-]+$/;
 
+const usernameCache = new Map();
+
+export const checkUsernameAvailability = async (username) => {
+  if (!username) return true;
+  const trimmed = username.trim();
+  if (
+    trimmed.length < 3 ||
+    trimmed.length > 30 ||
+    !USERNAME_REGEX.test(trimmed)
+  ) {
+    return true;
+  }
+  if (usernameCache.has(trimmed)) {
+    return usernameCache.get(trimmed);
+  }
+  try {
+    const exists = await checkExistsUsername(trimmed);
+    const isAvailable = !exists;
+    usernameCache.set(trimmed, isAvailable);
+    return isAvailable;
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra username tồn tại:", error);
+    return true;
+  }
+};
+
+export const debounceCheckExistsUsername = checkUsernameAvailability;
+
 export const registerSchema = object({
   username: string()
     .trim()
@@ -45,6 +73,13 @@ export const registerSchema = object({
     .matches(
       USERNAME_REGEX,
       'Tên hiển thị chỉ gồm chữ không dấu, số, "-" và "_"'
+    )
+    .test(
+      "username-exists",
+      "Tên hiển thị này đã được sử dụng",
+      async (value) => {
+        return await checkUsernameAvailability(value);
+      }
     ),
   email: string()
     .required("Vui lòng nhập email")

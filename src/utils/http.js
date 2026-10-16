@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_BASE_API || "https://api01.f8team.dev/api";
+const baseURL = import.meta.env.VITE_BASE_API || "https://threads.f8team.dev/api";
 
 export const httpClient = axios.create({
     baseURL,
@@ -66,7 +66,7 @@ httpClient.interceptors.response.use(
         const isAuthRequest =
             originalRequest?.url?.includes("/auth/login") ||
             originalRequest?.url?.includes("/auth/register") ||
-            originalRequest?.url?.includes("/auth/refresh-token");
+            originalRequest?.url?.includes("/auth/refresh");
 
         // Khi token hết hạn (response code 401), chưa retry và không phải là request auth
         if (
@@ -102,7 +102,7 @@ httpClient.interceptors.response.use(
 
             // Gọi API "Refresh Token" để lấy token mới
             try {
-                const res = await axios.post(`${baseURL}/auth/refresh-token`, {
+                const res = await axios.post(`${baseURL}/auth/refresh`, {
                     refresh_token: refreshToken,
                 });
 
