@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { ChevronRight, X } from "lucide-react";
-import { loginSuccess, selectIsAuthenticated } from "@/features/auth/authSlice";
+import { selectIsAuthenticated } from "@/features/auth/authSlice";
 import * as authService from "@/services/authService";
-import userAvatar from "@/assets/images/ava.png";
 import threadsLoginBg from "@/assets/images/threads-login-bg.webp";
 
 // Schema validation kiểm tra form với Yup
@@ -263,19 +262,18 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* Link Quên mật khẩu */}
-        <button
-          type="button"
-          onClick={() => showToast("Tính năng khôi phục mật khẩu")}
-          className="text-xs text-zinc-500 hover:text-black dark:hover:text-zinc-300 text-center block mt-3.5 transition-colors cursor-pointer"
+        {/* Link Quên mật khẩu -> /forgot-password */}
+        <Link
+          to="/forgot-password"
+          className="text-xs text-zinc-500 hover:text-black dark:hover:text-zinc-300 text-center block mt-3.5 transition-colors cursor-pointer hover:underline"
         >
-          Forgot password?
-        </button>
+          Quên mật khẩu?
+        </Link>
 
-        {/* Đường phân cách or */}
+        {/* Đường phân cách hoặc */}
         <div className="w-full flex items-center gap-4 my-5.5">
           <div className="h-px bg-zinc-200 dark:bg-zinc-800/80 flex-1" />
-          <span className="text-xs text-zinc-400 dark:text-zinc-600 font-semibold lowercase">or</span>
+          <span className="text-xs text-zinc-400 dark:text-zinc-600 font-semibold lowercase">hoặc</span>
           <div className="h-px bg-zinc-200 dark:bg-zinc-800/80 flex-1" />
         </div>
 
@@ -292,7 +290,7 @@ export default function LoginPage() {
             </div>
             <div className="text-left">
               <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 block">
-                Continue with Instagram
+                Tiếp tục bằng Instagram
               </span>
               <span className="text-sm font-bold text-black dark:text-white block tracking-tight">
                 tuananhpika
@@ -301,6 +299,19 @@ export default function LoginPage() {
           </div>
           <ChevronRight className="w-4 h-4 text-zinc-400 dark:text-zinc-600 group-hover:text-black dark:group-hover:text-zinc-300 transition-colors shrink-0" />
         </button>
+
+        {/* Dòng Bạn chưa có tài khoản? Đăng ký -> /register */}
+        <div className="mt-5 text-center">
+          <Link
+            to="/register"
+            className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+          >
+            <span>Bạn chưa có tài khoản? </span>
+            <span className="font-semibold text-black dark:text-white underline-offset-2 hover:underline">
+              Đăng ký
+            </span>
+          </Link>
+        </div>
       </div>
 
       {/* 3. KHỐI QUÉT MÃ QR APP Ở GÓC PHẢI DƯỚI MÀN HÌNH */}

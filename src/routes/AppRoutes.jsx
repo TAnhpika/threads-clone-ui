@@ -13,6 +13,8 @@ const InsightsPage = lazy(() => import("@/pages/Insights"));
 const SearchPage = lazy(() => import("@/pages/Search"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
 const LoginPage = lazy(() => import("@/pages/Auth/Login"));
+const RegisterPage = lazy(() => import("@/pages/Auth/Register"));
+const ForgotPasswordPage = lazy(() => import("@/pages/Auth/ForgotPassword"));
 const NotFoundPage = lazy(() => import("@/pages/NotFound"));
 
 function PageLoader() {
@@ -49,6 +51,8 @@ export default function AppRoutes() {
                 {/* Auth Routes với AuthLayout */}
                 <Route element={<AuthLayout />}>
                     <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 </Route>
 
                 {/* 404 Not Found Route */}
