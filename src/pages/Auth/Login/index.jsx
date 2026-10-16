@@ -227,7 +227,6 @@ export default function LoginPage() {
           <AuthInput
             label="Username, phone or email"
             type="text"
-            placeholder="Username, phone or email"
             error={errors.identifier}
             {...register("identifier", {
               onChange: handleInputChange,
@@ -238,7 +237,6 @@ export default function LoginPage() {
           <AuthInput
             label="Password"
             type="password"
-            placeholder="Password"
             error={errors.password}
             {...register("password", {
               onChange: handleInputChange,

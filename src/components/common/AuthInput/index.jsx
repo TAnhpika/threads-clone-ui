@@ -192,7 +192,7 @@ export const AuthInput = forwardRef(function AuthInput(
             id={inputId}
             ref={handleRef}
             type={resolvedType}
-            placeholder={isFloating ? placeholder : ""}
+            placeholder={isFloating && placeholder && placeholder !== label ? placeholder : ""}
             className={`w-full bg-transparent text-sm text-black dark:text-white outline-none transition-all duration-150 ${
               isFloating ? "pt-4.5 pb-0.5" : "pt-0 pb-0"
             } ${className}`}
