@@ -3,7 +3,13 @@ import { useEffect, useRef } from "react";
 /**
  * Hook lắng nghe khi phần tử sentinel chạm đáy màn hình để kích hoạt tải thêm dữ liệu
  */
-export function useInfinityLoad({ onIntersect, hasMore, isLoading }) {
+export function useInfinityLoad({
+    onIntersect,
+    hasMore,
+    isLoading,
+    rootMargin = "300px 0px",
+    threshold = 0.1,
+}) {
     const sentinelRef = useRef(null);
 
     useEffect(() => {
@@ -16,7 +22,7 @@ export function useInfinityLoad({ onIntersect, hasMore, isLoading }) {
                     onIntersect?.();
                 }
             },
-            { threshold: 0.1 },
+            { threshold, rootMargin },
         );
 
         observer.observe(target);
@@ -24,7 +30,7 @@ export function useInfinityLoad({ onIntersect, hasMore, isLoading }) {
         return () => {
             observer.disconnect();
         };
-    }, [onIntersect, hasMore, isLoading]);
+    }, [onIntersect, hasMore, isLoading, rootMargin, threshold]);
 
     return { sentinelRef };
 }

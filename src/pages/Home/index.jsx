@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { Plus, Loader2 } from 'lucide-react';
@@ -10,22 +10,22 @@ import CreatePostModal from '@/components/post/CreatePostModal';
 import CreateFeedModal from '@/components/feed/CreateFeedModal';
 import SuggestedProfiles from '@/components/feed/SuggestedProfiles';
 import { mockPosts } from '@/components/post/mockPosts';
+import { useInfinityLoad } from '@/hooks/useInfinityLoad';
 import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
 
-const INITIAL_BATCH_SIZE = 8;
-const PAGE_SIZE = 6;
+const INITIAL_BATCH_SIZE = 6;
+const PAGE_SIZE = 3;
 
 export default function HomePage({ defaultCreateFeedOpen = false }) {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const currentUser = useSelector(selectCurrentUser);
 
-  // Khởi tạo batch bài viết ban đầu
+  // Khởi tạo batch bài viết ban đầu không bị trùng
   const [posts, setPosts] = useState(() => mockPosts.slice(0, INITIAL_BATCH_SIZE));
-  const [, setPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const sentinelRef = useRef(null);
+  const [hasMore, setHasMore] = useState(() => mockPosts.length > INITIAL_BATCH_SIZE);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('center'); // 'center' | 'bottom-right'
@@ -35,61 +35,40 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
   const [toastMessage, setToastMessage] = useState(null);
   const [showSuggested, setShowSuggested] = useState(false);
 
-  // Tải thêm bài viết khi cuộn xuống gần cuối danh sách (Infinite Load)
+  // Tải thêm bài viết: lọc triệt để các bài viết đã có để đảm bảo bài mới KHÔNG BAO GIỜ bị trùng
   const loadMorePosts = useCallback(() => {
-    if (isLoadingMore) return;
+    if (isLoadingMore || !hasMore) return;
+
+    // Lọc các bài viết trong mockPosts chưa từng xuất hiện trên trang
+    const loadedIds = new Set(posts.map((p) => p.id));
+    const unrenderedPosts = mockPosts.filter((p) => !loadedIds.has(p.id));
+
+    // Nếu đã tải hết tất cả bài viết mẫu
+    if (unrenderedPosts.length === 0) {
+      setHasMore(false);
+      return;
+    }
+
     setIsLoadingMore(true);
 
     setTimeout(() => {
-      setPage((prevPage) => {
-        const nextPage = prevPage + 1;
-        const startIndex = INITIAL_BATCH_SIZE + (nextPage - 2) * PAGE_SIZE;
-        const endIndex = startIndex + PAGE_SIZE;
+      const nextBatch = unrenderedPosts.slice(0, PAGE_SIZE);
+      setPosts((prev) => [...prev, ...nextBatch]);
+      setIsLoadingMore(false);
 
-        let nextBatch = [];
-        if (startIndex < mockPosts.length) {
-          nextBatch = mockPosts.slice(startIndex, endIndex);
-        }
+      if (unrenderedPosts.length <= PAGE_SIZE) {
+        setHasMore(false);
+      }
+    }, 400);
+  }, [isLoadingMore, hasMore, posts]);
 
-        // Tạo trải nghiệm infinite load liên tục: khi hết dữ liệu mẫu thì tiếp tục loop với ID mới
-        if (nextBatch.length < PAGE_SIZE) {
-          const needed = PAGE_SIZE - nextBatch.length;
-          const loopOffset = (startIndex + nextBatch.length) % mockPosts.length;
-          const looped = mockPosts.slice(loopOffset, loopOffset + needed).map((p, idx) => ({
-            ...p,
-            id: `${p.id}-inf-${nextPage}-${idx}`,
-            timestamp: `${Math.floor(Math.random() * 20) + 1}h`,
-          }));
-          nextBatch = [...nextBatch, ...looped];
-        }
-
-        setPosts((prev) => [...prev, ...nextBatch]);
-        setIsLoadingMore(false);
-        return nextPage;
-      });
-    }, 600);
-  }, [isLoadingMore]);
-
-  // Observer theo dõi sentinel element ở cuối feed để kích hoạt loadMore
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          loadMorePosts();
-        }
-      },
-      { rootMargin: '350px 0px', threshold: 0.05 }
-    );
-
-    const el = sentinelRef.current;
-    if (el) {
-      observer.observe(el);
-    }
-
-    return () => {
-      if (el) observer.unobserve(el);
-    };
-  }, [loadMorePosts]);
+  // Sử dụng hook useInfinityLoad để lắng nghe khi cuộn chạm đáy
+  const { sentinelRef } = useInfinityLoad({
+    onIntersect: loadMorePosts,
+    hasMore,
+    isLoading: isLoadingMore,
+    rootMargin: '300px 0px',
+  });
 
   // Khi lướt xuống khoảng 150% viewheight (scrollY >= 1.5 * viewHeight) thì hiển thị Suggested for you
   useEffect(() => {
@@ -210,6 +189,10 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
                     <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
                     <span className="text-xs font-semibold">Đang tải thêm bài viết...</span>
                   </div>
+                ) : !hasMore ? (
+                  <div className="text-xs text-zinc-400 dark:text-zinc-500 font-medium py-1">
+                    Đã hiển thị tất cả bài viết
+                  </div>
                 ) : (
                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 opacity-60" />
                 )}
@@ -276,6 +259,10 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
               <div className="flex items-center gap-2 text-zinc-400">
                 <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
                 <span className="text-xs font-semibold">Đang tải thêm bài viết...</span>
+              </div>
+            ) : !hasMore ? (
+              <div className="text-xs text-zinc-400 dark:text-zinc-500 font-medium py-1">
+                Đã hiển thị tất cả bài viết
               </div>
             ) : (
               <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 opacity-60" />
