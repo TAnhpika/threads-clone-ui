@@ -33,8 +33,7 @@ export default function RegisterPage() {
     reValidateMode: "onBlur",
     resolver: yupResolver(registerSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      username: "",
       email: "",
       password: "",
       password_confirmation: "",
@@ -73,7 +72,12 @@ export default function RegisterPage() {
     setGeneralErrorMessage(null);
 
     try {
-      await authService.register(data);
+      await authService.register({
+        username: data.username.trim(),
+        email: data.email.trim(),
+        password: data.password,
+        password_confirmation: data.password_confirmation,
+      });
       // Đăng ký thành công: hiển thị thông báo theo yêu cầu
       setSuccessMessage(
         "Chúng tôi đã gửi một liên kết xác thực tới email của bạn. Vui lòng kiểm tra email để xác thực tài khoản."
@@ -83,13 +87,17 @@ export default function RegisterPage() {
     } catch (error) {
       const resData = error.response?.data;
       const resMsg = resData?.message;
-      const fieldErrors = resData?.errors;
+      const fieldErrors = resData?.errors || (typeof resMsg === "object" ? resMsg : null);
 
       // Phân giải lỗi chi tiết từ response backend:
       if (fieldErrors && typeof fieldErrors === "object") {
         Object.entries(fieldErrors).forEach(([field, msgs]) => {
           const msg = Array.isArray(msgs) ? msgs[0] : msgs;
-          setError(field, { type: "server", message: msg });
+          if (field === "username" || field === "firstName" || field === "lastName") {
+            setError("username", { type: "server", message: msg });
+          } else {
+            setError(field, { type: "server", message: msg });
+          }
           if (field === "email") {
             emailCheck.setStatus("error");
           }
@@ -101,6 +109,11 @@ export default function RegisterPage() {
             message: "Email này đã được sử dụng",
           });
           emailCheck.setStatus("error");
+        } else if (resMsg.toLowerCase().includes("username")) {
+          setError("username", {
+            type: "server",
+            message: resMsg,
+          });
         } else if (resMsg.toLowerCase().includes("password")) {
           setError("password", {
             type: "server",
@@ -150,65 +163,52 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-3">
-          {/* Họ & tên đệm + Tên */}
-          <div className="grid grid-cols-2 gap-2">
-            <AuthInput
-              label="Họ & tên đệm"
-              type="text"
-              placeholder="Nguyễn Văn"
-              error={errors.firstName}
-              {...register("firstName", {
-                onChange: () => handleInputChange("firstName"),
-              })}
-            />
-
-            <AuthInput
-              label="Tên"
-              type="text"
-              placeholder="A"
-              error={errors.lastName}
-              {...register("lastName", {
-                onChange: () => handleInputChange("lastName"),
-              })}
-            />
-          </div>
+          {/* Tên hiển thị */}
+          <AuthInput
+            label="Tên hiển thị"
+            type="text"
+            showClearButton
+            onClear={() => {
+              setValue("username", "");
+              clearErrors("username");
+            }}
+            error={errors.username}
+            {...register("username", {
+              onChange: () => handleInputChange("username"),
+            })}
+          />
 
           {/* Email */}
           <AuthInput
             label="Email"
             type="email"
-            placeholder="nguyenvana@gmail.com"
-            error={isEmailError ? errors.email : null}
+            error={errors.email}
             rightSlot={
-              <>
-                {currentEmailStatus === "checking" && (
-                  <div
-                    title="Đang kiểm tra..."
-                    className="w-4.5 h-4.5 rounded-full border-2 border-zinc-400/30 border-t-blue-500 dark:border-zinc-600/40 dark:border-t-blue-400 animate-spin"
-                  />
-                )}
-                {currentEmailStatus === "error" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setValue("email", "");
-                      emailCheck.resetStatus();
-                      clearErrors("email");
-                    }}
-                    tabIndex={-1}
-                    className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-300 dark:hover:text-white transition-colors cursor-pointer"
-                    title="Xóa email"
-                  >
-                    <X className="w-5 h-5" strokeWidth={2.2} />
-                  </button>
-                )}
-                {currentEmailStatus === "success" && (
-                  <CheckCircle2
-                    className="w-5 h-5 text-green-500 shrink-0"
-                    strokeWidth={2.2}
-                  />
-                )}
-              </>
+              currentEmailStatus === "checking" ? (
+                <div
+                  title="Đang kiểm tra..."
+                  className="w-4.5 h-4.5 rounded-full border-2 border-zinc-400/30 border-t-blue-500 dark:border-zinc-600/40 dark:border-t-blue-400 animate-spin"
+                />
+              ) : currentEmailStatus === "success" && !isEmailError ? (
+                <CheckCircle2
+                  className="w-5 h-5 text-green-500 shrink-0"
+                  strokeWidth={2}
+                />
+              ) : emailValue ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue("email", "");
+                    emailCheck.resetStatus();
+                    clearErrors("email");
+                  }}
+                  tabIndex={-1}
+                  className="text-zinc-400 hover:text-black dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center p-1"
+                  title="Xóa email"
+                >
+                  <X className="w-5 h-5 shrink-0" strokeWidth={2} />
+                </button>
+              ) : null
             }
             {...register("email", {
               onChange: () => handleInputChange("email"),
@@ -220,7 +220,6 @@ export default function RegisterPage() {
           <AuthInput
             label="Mật khẩu"
             type="password"
-            placeholder="Tối thiểu 8 ký tự"
             error={errors.password}
             {...register("password", {
               onChange: () => handleInputChange("password"),
@@ -236,7 +235,6 @@ export default function RegisterPage() {
           <AuthInput
             label="Xác nhận mật khẩu"
             type="password"
-            placeholder="Nhập lại mật khẩu"
             error={errors.password_confirmation}
             {...register("password_confirmation", {
               onChange: () => handleInputChange("password_confirmation"),

@@ -34,13 +34,18 @@ export const checkEmailAvailability = async (email) => {
 
 export const debounceCheckExistsEmail = checkEmailAvailability;
 
+export const USERNAME_REGEX = /^[a-zA-Z0-9_-]+$/;
+
 export const registerSchema = object({
-  firstName: string()
-    .required("Họ & tên đệm là bắt buộc")
-    .min(2, "Tối thiểu 2 ký tự"),
-  lastName: string()
-    .required("Tên là bắt buộc")
-    .min(2, "Tối thiểu 2 ký tự"),
+  username: string()
+    .trim()
+    .required("Vui lòng nhập tên hiển thị")
+    .min(3, "Tên hiển thị phải từ 3 đến 30 ký tự")
+    .max(30, "Tên hiển thị phải từ 3 đến 30 ký tự")
+    .matches(
+      USERNAME_REGEX,
+      'Tên hiển thị chỉ gồm chữ không dấu, số, "-" và "_"'
+    ),
   email: string()
     .required("Vui lòng nhập email")
     .email("Sai định dạng email")
