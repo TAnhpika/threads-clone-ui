@@ -9,7 +9,6 @@ import { selectIsAuthenticated } from "@/features/auth/authSlice";
 import * as authService from "@/services/authService";
 import AuthInput from "@/components/common/AuthInput";
 import AuthButton from "@/components/common/AuthButton";
-import threadsLoginBg from "@/assets/images/threads-login-bg.webp";
 
 // Schema validation kiểm tra form với Yup
 const loginSchema = yup.object().shape({
@@ -209,30 +208,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col justify-between items-center bg-white dark:bg-[#0a0a0a] text-black dark:text-white overflow-hidden select-none px-4 py-6 transition-colors duration-200">
-      {/* 1. HỌA TIẾT BACKGROUND CHUẨN THREADS (Canonical classes: w-446.25, h-127.5, -mt-67) */}
-      <div className="absolute top-0 -mt-67 left-1/2 -translate-x-1/2 w-446.25 h-127.5 max-w-none pointer-events-none select-none z-0">
-        <picture className="w-446.25 h-127.5 block">
-          <source
-            srcSet="https://static.cdninstagram.com/rsrc.php/ym/r/gf40BP6SRYU.avif"
-            type="image/avif"
-          />
-          <source
-            srcSet="https://static.cdninstagram.com/rsrc.php/yL/r/ZqRe_VCVa2A.webp"
-            type="image/webp"
-          />
-          <img
-            alt=""
-            height="510"
-            width="1785"
-            src={threadsLoginBg}
-            className="w-446.25 h-127.5 max-w-none object-contain pointer-events-none select-none"
-          />
-        </picture>
-      </div>
-
-      {/* 2. KHUNG FORM ĐĂNG NHẬP CHÍNH */}
-      <div className="w-full max-w-92.5 z-20 flex flex-col items-center pt-24 sm:pt-28 md:pt-32 my-auto">
+    <>
+      <div className="w-full max-w-92.5 z-20 flex flex-col items-center pt-20 sm:pt-24 my-auto">
         {/* Tiêu đề */}
         <h1 className="text-sm sm:text-base font-bold text-black dark:text-white text-center mb-4 tracking-tight">
           Log in with your Instagram account
@@ -372,47 +349,12 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* 4. FOOTER CÁC ĐIỀU KHOẢN DƯỚI CÙNG TRANG */}
-      <footer className="w-full z-20 pt-8 pb-2">
-        <div className="flex items-center justify-center gap-3.5 text-xs text-zinc-400 dark:text-zinc-600 font-normal flex-wrap">
-          <span>© 2026</span>
-          <button
-            type="button"
-            onClick={() => showToast("Threads Terms")}
-            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
-          >
-            Threads Terms
-          </button>
-          <button
-            type="button"
-            onClick={() => showToast("Privacy Policy")}
-            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
-          >
-            Privacy Policy
-          </button>
-          <button
-            type="button"
-            onClick={() => showToast("Cookies Policy")}
-            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
-          >
-            Cookies Policy
-          </button>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('open-report-problem'))}
-            className="hover:underline hover:text-black dark:hover:text-zinc-300 transition-all cursor-pointer"
-          >
-            Report a problem
-          </button>
-        </div>
-      </footer>
-
       {/* Toast thông báo phong cách Threads */}
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4.5 py-2.5 bg-black/95 dark:bg-white text-white dark:text-black border border-zinc-800/80 dark:border-zinc-200 rounded-2xl text-xs font-semibold shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
           {toastMessage}
         </div>
       )}
-    </div>
+    </>
   );
 }
