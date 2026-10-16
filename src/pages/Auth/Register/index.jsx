@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { CheckCircle2, X, AlertCircle } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import AuthInput from "@/components/common/AuthInput";
+import AuthButton from "@/components/common/AuthButton";
+import AuthAlert from "@/components/common/AuthAlert";
 import useEmailCheck from "@/hooks/useEmailCheck";
 import { registerSchema } from "@/utils/validators";
 import * as authService from "@/services/authService";
@@ -165,9 +167,7 @@ export default function RegisterPage() {
 
         {/* Thông báo đăng ký thành công */}
         {successMessage ? (
-          <div className="w-full px-5 py-4 mb-4 rounded-2xl bg-[#f0f7ff] dark:bg-[#0c1e38] border border-[#c7ddfd] dark:border-[#1d4ed8]/40 text-[#1e40af] dark:text-[#93c5fd] text-xs sm:text-[13px] font-normal leading-relaxed text-left animate-in fade-in zoom-in-95 duration-200">
-            {successMessage}
-          </div>
+          <AuthAlert type="success" message={successMessage} className="mb-4" />
         ) : (
           <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center mb-5">
             Tham gia chia sẻ ý tưởng và kết nối với mọi người
@@ -176,10 +176,7 @@ export default function RegisterPage() {
 
         {/* Thông báo lỗi chung nếu có */}
         {generalErrorMessage && (
-          <div className="w-full p-3.5 mb-4 rounded-2xl bg-red-500/10 dark:bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-400 text-xs font-medium text-center flex items-center gap-2 animate-in fade-in duration-200">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{generalErrorMessage}</span>
-          </div>
+          <AuthAlert type="error" message={generalErrorMessage} className="mb-4" />
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-3">
@@ -277,17 +274,9 @@ export default function RegisterPage() {
           />
 
           <div className="pt-2">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-13.5 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm sm:text-base active:scale-99 transition-all cursor-pointer flex items-center justify-center shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white dark:border-black/30 dark:border-t-black rounded-full animate-spin" />
-              ) : (
-                "Đăng ký"
-              )}
-            </button>
+            <AuthButton type="submit" isLoading={isLoading}>
+              Đăng ký
+            </AuthButton>
           </div>
         </form>
 

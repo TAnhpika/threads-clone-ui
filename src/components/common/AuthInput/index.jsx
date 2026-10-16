@@ -1,18 +1,52 @@
-import { forwardRef } from "react";
-import { AlertCircle } from "lucide-react";
+import { useState, forwardRef } from "react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export const AuthInput = forwardRef(function AuthInput(
   {
     label,
+    type = "text",
     error,
     rightSlot,
+    showPasswordToggle = true,
+    showErrorIcon = false,
     className = "",
     containerClassName = "",
     ...props
   },
   ref
 ) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordField = type === "password";
   const hasError = Boolean(error);
+
+  // Xác định type thực tế cho thẻ input
+  const resolvedType = isPasswordField
+    ? showPassword
+      ? "text"
+      : "password"
+    : type;
+
+  // Xác định rightSlot: nếu là password và không truyền rightSlot riêng thì hiển thị icon ẩn/hiện
+  const resolvedRightSlot =
+    rightSlot !== undefined ? (
+      rightSlot
+    ) : isPasswordField && showPasswordToggle ? (
+      <button
+        type="button"
+        tabIndex={-1}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setShowPassword((prev) => !prev)}
+        className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors p-1 cursor-pointer focus:outline-none flex items-center justify-center"
+        title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+        aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+      >
+        {showPassword ? (
+          <Eye className="w-5 h-5 shrink-0" strokeWidth={1.8} />
+        ) : (
+          <EyeOff className="w-5 h-5 shrink-0" strokeWidth={1.8} />
+        )}
+      </button>
+    ) : null;
 
   return (
     <div className={`w-full ${containerClassName}`}>
@@ -37,21 +71,22 @@ export const AuthInput = forwardRef(function AuthInput(
           )}
           <input
             ref={ref}
+            type={resolvedType}
             className={`w-full bg-transparent text-sm text-black dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600 ${className}`}
             {...props}
           />
         </div>
 
-        {rightSlot && (
+        {resolvedRightSlot && (
           <div className="shrink-0 flex items-center justify-center pl-1">
-            {rightSlot}
+            {resolvedRightSlot}
           </div>
         )}
       </div>
 
       {hasError && (
         <p className="text-xs text-red-500 dark:text-red-400 font-medium mt-1.5 px-1 flex items-center gap-1.5">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          {showErrorIcon && <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
           <span>{typeof error === "string" ? error : error?.message}</span>
         </p>
       )}

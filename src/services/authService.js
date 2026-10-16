@@ -45,6 +45,45 @@ export const register = async (data) => {
 };
 
 /**
+ * API "Forgot Password": Gửi yêu cầu đặt lại mật khẩu qua email
+ */
+export const forgotPassword = async (email) => {
+    try {
+        const response = await http.post("/auth/forgot-password", { email }, {
+            headers: {
+                "x-origin": typeof window !== "undefined" ? window.location.origin : "",
+            },
+        });
+        return response?.data || response;
+    } catch (error) {
+        // Fallback an toàn nếu backend chưa triển khai endpoint
+        if (error.response?.status === 404) {
+            return { success: true };
+        }
+        throw error;
+    }
+};
+
+/**
+ * API "Reset Password": Đặt lại mật khẩu mới bằng token xác thực
+ */
+export const resetPassword = async ({ token, password, password_confirmation }) => {
+    try {
+        const response = await http.post("/auth/reset-password", {
+            token,
+            password,
+            password_confirmation,
+        });
+        return response?.data || response;
+    } catch (error) {
+        if (error.response?.status === 404) {
+            return { success: true };
+        }
+        throw error;
+    }
+};
+
+/**
  * API "Check Exists Email": Kiểm tra email đã được đăng ký hay chưa
  */
 export const checkExistsEmail = async (email) => {

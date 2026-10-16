@@ -7,6 +7,8 @@ import * as yup from "yup";
 import { ChevronRight, X } from "lucide-react";
 import { selectIsAuthenticated } from "@/features/auth/authSlice";
 import * as authService from "@/services/authService";
+import AuthInput from "@/components/common/AuthInput";
+import AuthButton from "@/components/common/AuthButton";
 import threadsLoginBg from "@/assets/images/threads-login-bg.webp";
 
 // Schema validation kiểm tra form với Yup
@@ -84,6 +86,7 @@ export default function LoginPage() {
     register,
     handleSubmit,
     setValue,
+    formState: { errors },
   } = useForm({
     resolver: yupResolver(loginSchema),
     defaultValues: {
@@ -227,38 +230,28 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="w-full space-y-2.5">
           {/* Input Identifier */}
-          <div>
-            <input
-              type="text"
-              {...register("identifier")}
-              placeholder="Username, phone or email"
-              className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
-            />
-          </div>
+          <AuthInput
+            label="Username, phone or email"
+            type="text"
+            placeholder="Username, phone or email"
+            error={errors.identifier}
+            {...register("identifier")}
+          />
 
           {/* Input Password */}
-          <div>
-            <input
-              type="password"
-              {...register("password")}
-              placeholder="Password"
-              className="w-full h-13.5 px-4.5 rounded-2xl bg-zinc-100 dark:bg-[#141414] border border-zinc-200 dark:border-zinc-800 text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
-            />
-          </div>
+          <AuthInput
+            label="Password"
+            type="password"
+            placeholder="Password"
+            error={errors.password}
+            {...register("password")}
+          />
 
           {/* Nút Log in */}
           <div className="pt-1">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-13.5 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm sm:text-base active:scale-99 transition-all cursor-pointer flex items-center justify-center shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white dark:border-black/30 dark:border-t-black rounded-full animate-spin" />
-              ) : (
-                "Log in"
-              )}
-            </button>
+            <AuthButton type="submit" isLoading={isLoading}>
+              Log in
+            </AuthButton>
           </div>
         </form>
 
