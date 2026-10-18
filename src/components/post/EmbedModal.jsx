@@ -5,6 +5,7 @@ import { faThreads } from '@fortawesome/free-brands-svg-icons';
 import { Check, Copy, Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
 import defaultAvatar from '@/assets/images/default-avatar.svg';
 import { getAuthorAvatar } from '@/utils/avatar';
+import { getEmbedUrl } from '@/utils/postUrl';
 
 export default function EmbedModal({
   isOpen,
@@ -56,9 +57,8 @@ export default function EmbedModal({
   const repostsCount = post.reposts ?? 34;
   const sharesCount = post.shares ?? 23;
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://threads.net';
   const currentPostId = postId || post?.id || 'DiyNUECS0k';
-  const embedUrl = `${origin}/${authorUsername}/post/${currentPostId}/embed`;
+  const embedUrl = getEmbedUrl(post, currentPostId);
   const iframeSnippet = `<iframe src="${embedUrl}" width="100%" height="450" frameborder="0" scrolling="no" allowtransparency="true"></iframe>`;
 
   const handleCopyCode = () => {

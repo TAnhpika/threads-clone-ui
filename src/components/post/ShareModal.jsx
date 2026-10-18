@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, Link2, Image, Globe } from 'lucide-react';
 import copy from 'copy-to-clipboard';
+import { useShareUrl } from '@/hooks/useShareUrl';
 import userAvatar from '@/assets/images/default-avatar.svg';
 
 // Icon Instagram Story với dải gradient đặc trưng
@@ -107,12 +108,15 @@ export default function ShareModal({
       profile.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const { copyShareUrl } = useShareUrl({
+    post,
+    postId,
+    onToast: onActionFeedback,
+  });
+
   const handleAction = (type) => {
     if (type === 'copy_link') {
-      const shareId = postId || post?.id || 'IKPRLtxQV';
-      const shareUrl = `${window.location.origin}/share/${shareId}/`;
-      copy(shareUrl);
-      if (onActionFeedback) onActionFeedback('Đã sao chép liên kết vào bộ nhớ tạm');
+      copyShareUrl();
       onClose();
     } else if (type === 'instagram_story') {
       // Giữ ShareModal hiển thị ở nền, không gọi onClose()

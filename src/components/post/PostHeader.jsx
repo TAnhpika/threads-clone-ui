@@ -8,6 +8,7 @@ import PostMenu from './PostMenu';
 import AuthorProfileModal from './AuthorProfileModal';
 import UnfollowConfirmModal from './UnfollowConfirmModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
+import { getShareUrl } from '@/utils/postUrl';
 
 export default function PostHeader({
   author = {},
@@ -18,6 +19,7 @@ export default function PostHeader({
   onFollow,
 }) {
   const { name = 'Anonymous', username = 'user', avatar, isVerified = false } = author;
+  const shareUrl = getShareUrl({ author }, postId);
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -235,6 +237,7 @@ export default function PostHeader({
           isOpen={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
           onAction={handleAction}
+          postUrl={shareUrl}
         />
       </div>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import copy from 'copy-to-clipboard';
 import {
   Link2,
   Bookmark,
@@ -77,8 +78,9 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
   if (!isOpen) return null;
 
   const handleCopyLink = () => {
-    if (navigator?.clipboard) {
-      navigator.clipboard.writeText(postUrl);
+    copy(postUrl);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(postUrl).catch(() => {});
     }
     if (onAction) onAction('copy_link');
     onClose();
@@ -92,6 +94,8 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
   return (
     <div
       ref={menuRef}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       className="absolute right-0 top-9 w-64 p-1.5 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none text-black dark:text-white"
       role="menu"
       aria-label="Tùy chọn bài viết"
