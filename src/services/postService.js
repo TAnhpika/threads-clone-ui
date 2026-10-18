@@ -89,10 +89,10 @@ export function adaptPost(item) {
 
 /**
  * Gọi API GET /posts/feed lấy danh sách bài viết trên trang chủ
- * @param {Object} params - { type = 'for_you', page = 1, per_page = 20 }
+ * @param {Object} params - { type = 'for_you', page = 1, per_page = 4 }
  * @returns {Promise<{ success: boolean, data: Array, pagination: Object }>}
  */
-export async function getFeed({ type = 'for_you', page = 1, per_page = 20 } = {}) {
+export async function getFeed({ type = 'for_you', page = 1, per_page = 4 } = {}) {
   const response = await http.get('/posts/feed', {
     params: {
       type,

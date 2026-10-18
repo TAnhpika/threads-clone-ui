@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
+import { saveFeedScroll } from '@/features/feed/feedSlice';
 import RepostModal from './RepostModal';
 import ShareModal from './ShareModal';
 
@@ -15,8 +16,10 @@ export default function InteractionBar({
   initialIsReposted = false,
   postId,
   authorUsername,
+  feedType = 'for_you',
 }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
@@ -43,6 +46,14 @@ export default function InteractionBar({
   const handleComment = (e) => {
     e?.stopPropagation?.();
     if (postId) {
+      const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      dispatch(
+        saveFeedScroll({
+          feedType,
+          scrollPosition: currentScrollY,
+          lastClickedPostId: postId,
+        })
+      );
       const username = authorUsername || 'user';
       navigate(`/@${username}/post/${postId}#reply`, { state: { focusReply: true } });
     }

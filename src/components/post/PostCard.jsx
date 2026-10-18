@@ -1,10 +1,13 @@
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { saveFeedScroll } from '@/features/feed/feedSlice';
 import PostHeader from '@/components/post/PostHeader';
 import PostContent from '@/components/post/PostContent';
 import InteractionBar from '@/components/post/InteractionBar';
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, feedType = 'for_you' }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   if (!post) return null;
 
   const handlePostClick = (e) => {
@@ -12,11 +15,21 @@ export default function PostCard({ post }) {
     if (e.target.closest('button') || e.target.closest('a')) {
       return;
     }
-    navigate(`/@${post.author.username}/post/${post.id}`);
+    const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    dispatch(
+      saveFeedScroll({
+        feedType,
+        scrollPosition: currentScrollY,
+        lastClickedPostId: post.id,
+      })
+    );
+    navigate(`/@${post.author?.username || 'user'}/post/${post.id}`);
   };
 
   return (
     <article
+      id={`post-card-${post.id}`}
+      data-post-id={post.id}
       onClick={handlePostClick}
       className="py-4 px-4 sm:px-5 border-b border-zinc-100 dark:border-zinc-800/80 hover:bg-zinc-50/40 dark:hover:bg-zinc-900/20 transition-colors cursor-pointer"
     >
@@ -39,6 +52,7 @@ export default function PostCard({ post }) {
         <InteractionBar
           postId={post.id}
           authorUsername={post.author?.username}
+          feedType={feedType}
           initialLikes={post.likes}
           initialComments={post.comments}
           initialReposts={post.reposts}

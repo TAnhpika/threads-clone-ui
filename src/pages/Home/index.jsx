@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { Plus, Loader2 } from 'lucide-react';
 import FeedHeader from '@/components/FeedHeader';
@@ -12,6 +12,13 @@ import SuggestedProfiles from '@/components/feed/SuggestedProfiles';
 import { getFeed } from '@/services/postService';
 import { useInfinityLoad } from '@/hooks/useInfinityLoad';
 import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/authSlice';
+import {
+  selectFeedState,
+  setFeedData,
+  appendFeedData,
+  saveFeedScroll,
+  prependFeedPost,
+} from '@/features/feed/feedSlice';
 import userAvatar from '@/assets/images/ava.png';
 
 // Skeleton hiển thị khi đang tải danh sách bài viết
@@ -34,18 +41,26 @@ function PostSkeleton() {
   );
 }
 
+// Số lượng bài viết tải mỗi trang (khớp chuẩn 4 bài viết ban đầu của threads.com)
+const FEED_PER_PAGE = 4;
+
 export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedType }) {
   const location = useLocation();
+  const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const currentUser = useSelector(selectCurrentUser);
 
-  // State quản lý Feed: đồng bộ theo đường dẫn URL (/following -> 'following', / -> 'for_you')
-  const activeFeedType = location.pathname === '/following' ? 'following' : (defaultFeedType || 'for_you');
-  const [feedType, setFeedType] = useState(activeFeedType);
-  const [posts, setPosts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+  // Xác định active feedType ('for_you' | 'following')
+  const feedType = location.pathname === '/following' ? 'following' : (defaultFeedType || 'for_you');
+
+  // Lấy dữ liệu feed từ Redux store
+  const feedState = useSelector(selectFeedState(feedType));
+  const posts = feedState.posts;
+  const page = feedState.page;
+  const hasMore = feedState.hasMore;
+  const isLoaded = feedState.isLoaded;
+
+  const [isLoadingInitial, setIsLoadingInitial] = useState(!isLoaded);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
@@ -59,75 +74,122 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
 
   // Tránh fetch trùng lặp trong React StrictMode
   const isFetchingRef = useRef(false);
+  const hasRestoredScrollRef = useRef(false);
 
-  // Hàm gọi API lấy danh sách bài viết từ backend
-  const fetchFeed = useCallback(async (targetPage = 1, targetType = 'for_you', isReset = false) => {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
-
-    if (isReset) {
-      setIsLoadingInitial(true);
-      setError(null);
-    } else {
-      setIsLoadingMore(true);
-    }
-
-    try {
-      const res = await getFeed({
-        type: targetType,
-        page: targetPage,
-        per_page: 20,
-      });
-
-      const newPosts = res.data || [];
-      const pagination = res.pagination;
+  // Hàm gọi API lấy danh sách bài viết từ backend và lưu vào Redux
+  const fetchFeed = useCallback(
+    async (targetPage = 1, targetType = 'for_you', isReset = false) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
 
       if (isReset) {
-        setPosts(newPosts);
-        setPage(1);
+        setIsLoadingInitial(true);
+        setError(null);
       } else {
-        setPosts((prev) => {
-          const existingIds = new Set(prev.map((p) => p.id));
-          const filteredNew = newPosts.filter((p) => !existingIds.has(p.id));
-          return [...prev, ...filteredNew];
+        setIsLoadingMore(true);
+      }
+
+      try {
+        const res = await getFeed({
+          type: targetType,
+          page: targetPage,
+          per_page: FEED_PER_PAGE,
         });
-        setPage(targetPage);
-      }
 
-      // Kiểm tra còn trang tiếp theo không
-      if (pagination) {
-        setHasMore(pagination.current_page < pagination.last_page);
-      } else {
-        setHasMore(newPosts.length >= 20);
+        const newPosts = res.data || [];
+        const pagination = res.pagination;
+        const nextHasMore = pagination
+          ? pagination.current_page < pagination.last_page
+          : newPosts.length >= FEED_PER_PAGE;
+
+        if (isReset) {
+          dispatch(
+            setFeedData({
+              feedType: targetType,
+              posts: newPosts,
+              page: 1,
+              hasMore: nextHasMore,
+            })
+          );
+        } else {
+          dispatch(
+            appendFeedData({
+              feedType: targetType,
+              posts: newPosts,
+              page: targetPage,
+              hasMore: nextHasMore,
+            })
+          );
+        }
+      } catch (err) {
+        console.error('Fetch feed error:', err);
+        setError('Không thể tải bảng tin. Vui lòng thử lại sau.');
+      } finally {
+        setIsLoadingInitial(false);
+        setIsLoadingMore(false);
+        isFetchingRef.current = false;
       }
-    } catch (err) {
-      console.error('Fetch feed error:', err);
-      setError('Không thể tải bảng tin. Vui lòng thử lại sau.');
-    } finally {
+    },
+    [dispatch]
+  );
+
+  // Lần đầu mount hoặc khi đổi tab: Chỉ gọi API nếu tab đó chưa từng load dữ liệu
+  useEffect(() => {
+    hasRestoredScrollRef.current = false;
+    if (!feedState.isLoaded || feedState.posts.length === 0) {
+      fetchFeed(1, feedType, true);
+    } else {
       setIsLoadingInitial(false);
-      setIsLoadingMore(false);
-      isFetchingRef.current = false;
     }
-  }, []);
+  }, [feedType, feedState.isLoaded, feedState.posts.length, fetchFeed]);
 
-  // Đồng bộ feedType khi URL thay đổi (từ / sang /following và ngược lại)
+  // Khôi phục vị trí cuộn trang khi user quay lại từ PostDetail
   useEffect(() => {
-    const targetType = location.pathname === '/following' ? 'following' : (defaultFeedType || 'for_you');
-    setFeedType(targetType);
-  }, [location.pathname, defaultFeedType]);
+    if (!hasRestoredScrollRef.current && feedState.isLoaded && feedState.posts.length > 0) {
+      const { scrollPosition, lastClickedPostId } = feedState;
+      if (scrollPosition > 0 || lastClickedPostId) {
+        hasRestoredScrollRef.current = true;
+        requestAnimationFrame(() => {
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'instant',
+          });
 
-  // Lần đầu mount hoặc khi feedType thay đổi: gọi API trang 1
+          // Fallback định vị trúng card nếu chiều cao có chênh lệch nhẹ
+          if (lastClickedPostId) {
+            const targetEl = document.getElementById(`post-card-${lastClickedPostId}`);
+            if (targetEl) {
+              targetEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+            }
+          }
+        });
+      }
+    }
+  }, [feedState.isLoaded, feedState.posts.length, feedState.scrollPosition, feedState.lastClickedPostId]);
+
+  // Luôn lưu tọa độ scroll hiện tại khi người dùng cuộn hoặc rời khỏi trang
   useEffect(() => {
-    fetchFeed(1, feedType, true);
-  }, [fetchFeed, feedType]);
+    const handleScrollSave = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      if (y > 0) {
+        dispatch(saveFeedScroll({ feedType, scrollPosition: y }));
+      }
+    };
 
-  // Tải thêm bài viết khi cuộn chạm đáy
+    window.addEventListener('scroll', handleScrollSave, { passive: true });
+    return () => {
+      handleScrollSave();
+      window.removeEventListener('scroll', handleScrollSave);
+    };
+  }, [feedType, dispatch]);
+
+  // Tải thêm bài viết khi cuộn chạm đáy (Infinite scroll)
   const loadMorePosts = useCallback(() => {
     if (isLoadingMore || isLoadingInitial || !hasMore || isFetchingRef.current) return;
     fetchFeed(page + 1, feedType, false);
   }, [isLoadingMore, isLoadingInitial, hasMore, page, feedType, fetchFeed]);
 
-  // Sử dụng hook useInfinityLoad để lắng nghe khi cuộn chạm đáy
+  // Hook lắng nghe chạm đáy
   const { sentinelRef } = useInfinityLoad({
     onIntersect: loadMorePosts,
     hasMore,
@@ -215,16 +277,17 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
       isReposted: false,
     };
 
-    setPosts([newPost, ...posts]);
+    dispatch(prependFeedPost({ feedType, post: newPost }));
     setToastMessage('Đã đăng bài viết mới thành công ✨');
     setTimeout(() => setToastMessage(null), 3000);
   };
 
   // Khối danh sách bài viết dùng chung cho cả 2 view (Authenticated & Unauthenticated)
   const renderPostList = () => {
-    if (isLoadingInitial) {
+    if (isLoadingInitial && posts.length === 0) {
       return (
         <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+          <PostSkeleton />
           <PostSkeleton />
           <PostSkeleton />
           <PostSkeleton />
@@ -266,7 +329,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
         {posts.flatMap((post, index) => {
           const isTarget = index === 1;
-          const items = [<PostCard key={post.id} post={post} />];
+          const items = [<PostCard key={post.id} post={post} feedType={feedType} />];
           if (showSuggested && isTarget) {
             items.push(
               <SuggestedProfiles

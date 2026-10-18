@@ -2,6 +2,7 @@ import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import storageModule from "redux-persist/lib/storage";
 import authReducer from "@/features/auth/authSlice";
+import feedReducer from "@/features/feed/feedSlice";
 
 // Khắc phục tương thích ESM của Vite với redux-persist (tránh lỗi TypeError: storage.getItem is not a function)
 const storage = storageModule.default ?? storageModule;
@@ -15,6 +16,7 @@ const authPersistConfig = {
 
 const rootReducer = combineReducers({
     auth: persistReducer(authPersistConfig, authReducer),
+    feed: feedReducer,
 });
 
 export const store = configureStore({

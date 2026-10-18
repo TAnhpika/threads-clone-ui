@@ -204,7 +204,13 @@ export default function PostDetailPage() {
         <header className="relative flex items-center justify-between py-2 px-1 mb-2 select-none">
           {/* Nút quay lại */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}
             className="p-1.5 -ml-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             title="Quay lại"
             aria-label="Quay lại"
