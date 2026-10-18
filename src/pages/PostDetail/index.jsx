@@ -19,7 +19,8 @@ import { getPostByIdApi, getRepliesApi, createReplyApi } from '@/services/postSe
 import { usePostInteraction } from '@/hooks/usePostInteraction';
 import PostContent from '@/components/post/PostContent';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
-import userAvatar from '@/assets/images/ava.png';
+import userAvatar from '@/assets/images/default-avatar.svg';
+import { getAuthorAvatar } from '@/utils/avatar';
 import PostMenu from '@/components/post/PostMenu';
 import RepostModal from '@/components/post/RepostModal';
 import QuotedPostCard from '@/components/post/QuotedPostCard';
@@ -247,8 +248,11 @@ export default function PostDetailPage() {
                   {/* Avatar có badge follow dấu cộng [+] */}
                   <div className="relative shrink-0">
                     <img
-                      src={post.author?.avatar || userAvatar}
+                      src={post.author?.avatar || getAuthorAvatar(post.author)}
                       alt={post.author?.username || 'user'}
+                      onError={(e) => {
+                        e.currentTarget.src = userAvatar;
+                      }}
                       className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
                     />
                     <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
@@ -640,8 +644,11 @@ function ReplyItem({ reply, onToast, isAuthenticated, onQuoteReply }) {
         <div className="flex flex-col items-center shrink-0">
           <div className="relative">
             <img
-              src={reply.author?.avatar || userAvatar}
+              src={reply.author?.avatar || getAuthorAvatar(reply.author)}
               alt={reply.author?.username || 'user'}
+              onError={(e) => {
+                e.currentTarget.src = userAvatar;
+              }}
               className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
             />
             <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">

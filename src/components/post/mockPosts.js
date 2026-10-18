@@ -1,4 +1,4 @@
-import userAvatar from "@/assets/images/ava.png";
+import userAvatar from '@/assets/images/default-avatar.svg';
 
 /**
  * Mock Posts API: Chủ đề Fashion for Men - Smart Casual & Old Money Aesthetic
@@ -10,7 +10,7 @@ export const mockPosts = [
         author: {
             name: "m.ylittlesecret_",
             username: "m.ylittlesecret_",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+            avatar: userAvatar,
             isVerified: false,
         },
         tag: "Kiến trúc",
@@ -62,7 +62,7 @@ export const mockPosts = [
                 author: {
                     name: "m.ylittlesecret_",
                     username: "m.ylittlesecret_",
-                    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+                    avatar: userAvatar,
                     isVerified: false,
                     isAuthor: true,
                 },
@@ -102,7 +102,7 @@ export const mockPosts = [
         author: {
             name: "fidsulaiman9",
             username: "fidsulaiman9",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+            avatar: userAvatar,
             isVerified: false,
         },
         timestamp: "13h",
@@ -281,7 +281,7 @@ export const mockPosts = [
         author: {
             name: "Trang Tròn Tròn",
             username: "trang.ootd",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+            avatar: userAvatar,
             isVerified: true,
         },
         tag: "Streetwear Việt",
@@ -491,7 +491,7 @@ export const mockPosts = [
         author: {
             name: "Thảo Vy Đi Cafe",
             username: "thaovy.cafeinspo",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+            avatar: userAvatar,
             isVerified: false,
         },
         tag: "Outfit Đi Cafe",
@@ -619,7 +619,7 @@ export const mockPosts = [
         author: {
             name: "Sài Gòn Món Ngon",
             username: "saigon.streetfood",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+            avatar: userAvatar,
             isVerified: true,
         },
         tag: "Cơm Tấm Sài Gòn",
@@ -745,7 +745,7 @@ export const mockPosts = [
         author: {
             name: "Đà Lạt Đi Ăn Gì",
             username: "dalat.foodmap",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+            avatar: userAvatar,
             isVerified: false,
         },
         tag: "Lẩu Gà Lá É",

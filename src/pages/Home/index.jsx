@@ -19,7 +19,6 @@ import {
   saveFeedScroll,
   prependFeedPost,
 } from '@/features/feed/feedSlice';
-import userAvatar from '@/assets/images/ava.png';
 
 // Skeleton hiển thị khi đang tải danh sách bài viết
 function PostSkeleton() {

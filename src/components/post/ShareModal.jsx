@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, Link2, Image, Globe } from 'lucide-react';
-import userAvatar from '@/assets/images/ava.png';
+import userAvatar from '@/assets/images/default-avatar.svg';
 
 // Icon Instagram Story với dải gradient đặc trưng
 function InstagramStoryIcon({ className = 'w-6 h-6' }) {
@@ -39,13 +39,13 @@ const defaultProfiles = [
     id: 'user-1',
     username: '_lamih',
     name: 'Linh Nguyen',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80',
   },
   {
     id: 'user-2',
     username: 'alexander.sartorial',
     name: 'Alexander Vance',
-    avatar: userAvatar,
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
   },
   {
     id: 'user-3',
@@ -204,8 +204,11 @@ export default function ShareModal({
                 >
                   <div className="relative">
                     <img
-                      src={profile.avatar}
+                      src={profile.avatar || userAvatar}
                       alt={profile.name}
+                      onError={(e) => {
+                        e.currentTarget.src = userAvatar;
+                      }}
                       className={`w-20 h-20 rounded-full object-cover border-2 transition-transform group-hover:scale-105 ${
                         selectedUser === profile.id
                           ? 'border-green-500 scale-105'

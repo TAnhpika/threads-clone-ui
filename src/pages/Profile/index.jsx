@@ -20,7 +20,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { selectCurrentUser, updateCurrentUser, logout } from '@/features/auth/authSlice';
-import userAvatar from '@/assets/images/ava.png';
+import userAvatar from '@/assets/images/default-avatar.svg';
 import CreatePostBox from '@/components/post/CreatePostBox';
 import CreatePostModal from '@/components/post/CreatePostModal';
 import PostCard from '@/components/post/PostCard';
@@ -67,7 +67,7 @@ export default function ProfilePage() {
       id: 'p-1',
       name: 'm.ylittlesecret_',
       username: 'm.ylittlesecret_',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+      avatar: 'https://images.unsplash.com/photo-1534030347209-467a5b0ad3e6?w=120&auto=format&fit=crop&q=80',
       bio: 'Architecture & Design inspiration',
     },
     {

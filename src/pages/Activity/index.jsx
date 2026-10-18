@@ -12,7 +12,7 @@ import {
   Check,
 } from 'lucide-react';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
-import userAvatar from '@/assets/images/ava.png';
+import userAvatar from '@/assets/images/default-avatar.svg';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
 // Meta Infinity SVG icon
@@ -62,7 +62,7 @@ const mockActivities = [
     user: {
       name: 'm.ylittlesecret_',
       username: 'm.ylittlesecret_',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+      avatar: 'https://images.unsplash.com/photo-1534030347209-467a5b0ad3e6?w=120&auto=format&fit=crop&q=80',
     },
     actionText: 'bắt đầu theo dõi bạn.',
     timestamp: '3h',

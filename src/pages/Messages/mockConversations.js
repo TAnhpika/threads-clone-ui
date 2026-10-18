@@ -1,4 +1,4 @@
-import userAvatar from '@/assets/images/ava.png';
+import userAvatar from '@/assets/images/default-avatar.svg';
 
 export const initialConversations = [
   {
@@ -6,7 +6,7 @@ export const initialConversations = [
     user: {
       name: 'm.ylittlesecret_',
       username: 'm.ylittlesecret_',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+      avatar: 'https://images.unsplash.com/photo-1534030347209-467a5b0ad3e6?w=120&auto=format&fit=crop&q=80',
       isVerified: false,
     },
     lastMessage: 'Dạ em cảm ơn anh nhiều ạ! Em sẽ áp dụng cách này cho đồ án tới.',
@@ -64,7 +64,7 @@ export const initialConversations = [
     user: {
       name: 'Alexander Vance',
       username: 'alexander.sartorial',
-      avatar: userAvatar,
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
       isVerified: true,
     },
     lastMessage: 'Chiếc blazer navy đợt trước anh may ở đâu vậy ạ?',

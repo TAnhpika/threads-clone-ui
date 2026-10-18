@@ -1,4 +1,5 @@
-import userAvatar from '@/assets/images/ava.png';
+import userAvatar from '@/assets/images/default-avatar.svg';
+import { getAuthorAvatar } from '@/utils/avatar';
 
 /**
  * Component hiển thị preview của bài viết được trích dẫn (Quoted Post).
@@ -10,7 +11,7 @@ export default function QuotedPostCard({ post, onTranslate }) {
   if (!post) return null;
 
   const author = post.author || post.user || {};
-  const avatarUrl = author.avatar || author.avatar_url || userAvatar;
+  const avatarUrl = author.avatar || author.avatar_url || getAuthorAvatar(author);
   const username = author.username || author.name || 'user';
   const timestamp = post.timestamp || '17h';
   const content = post.content || '';
@@ -23,6 +24,9 @@ export default function QuotedPostCard({ post, onTranslate }) {
         <img
           src={avatarUrl}
           alt={username}
+          onError={(e) => {
+            e.currentTarget.src = userAvatar;
+          }}
           className="w-5 h-5 rounded-full object-cover border border-zinc-300 dark:border-zinc-700 shrink-0"
         />
         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 hover:underline cursor-pointer truncate">

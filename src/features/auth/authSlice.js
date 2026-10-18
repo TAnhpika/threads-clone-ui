@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import userAvatar from "@/assets/images/ava.png";
+import userAvatar from "@/assets/images/default-avatar.svg";
 import { getCurrentUser } from "@/services/authService";
 
 const defaultUser = {

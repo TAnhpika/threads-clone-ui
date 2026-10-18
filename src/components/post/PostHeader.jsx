@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MoreHorizontal, CheckCircle2 } from 'lucide-react';
 import PostMenu from './PostMenu';
+import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
 
 export default function PostHeader({
   author = {},
@@ -31,8 +32,11 @@ export default function PostHeader({
         {/* Avatar */}
         <div className="relative shrink-0">
           <img
-            src={avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+            src={avatar || getAuthorAvatar(author)}
             alt={name}
+            onError={(e) => {
+              e.currentTarget.src = defaultAvatar;
+            }}
             className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
             loading="lazy"
           />

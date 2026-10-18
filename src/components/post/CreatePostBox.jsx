@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import userAvatar from '@/assets/images/ava.png';
+import userAvatar from '@/assets/images/default-avatar.svg';
 
 export default function CreatePostBox({ user, onClick }) {
   const { t } = useTranslation();

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import defaultAvatar from '@/assets/images/default-avatar.svg';
 
 const INITIAL_SUGGESTIONS = [
   {
@@ -37,7 +38,7 @@ const INITIAL_SUGGESTIONS = [
     id: 'sug-5',
     name: 'Trang Tròn Tròn',
     username: 'trang.ootd',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatar: defaultAvatar,
     isBrand: false,
   },
   {
@@ -152,8 +153,11 @@ export default function SuggestedProfiles({ className = '' }) {
                   </div>
                 ) : (
                   <img
-                    src={profile.avatar}
+                    src={profile.avatar || defaultAvatar}
                     alt={profile.name}
+                    onError={(e) => {
+                      e.currentTarget.src = defaultAvatar;
+                    }}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />

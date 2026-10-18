@@ -1,5 +1,6 @@
 import http from '@/utils/http';
 import { mockPosts } from '@/components/post/mockPosts';
+import { getAuthorAvatar } from '@/utils/avatar';
 
 /**
  * Format thời gian từ chuỗi ISO thành dạng hiển thị tương đối: vừa xong, 5m, 2h, 3d, 12 thg 10
@@ -61,7 +62,7 @@ export function adaptPost(item) {
       id: user.id,
       name: user.name || user.username || 'User',
       username: user.username || 'user',
-      avatar: user.avatar_url || null,
+      avatar: user.avatar_url || getAuthorAvatar(user),
       isVerified: Boolean(user.verified),
       isFollowed: Boolean(user.is_followed_by_auth),
     },
