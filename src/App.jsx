@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import AuthProvider from "@/components/AuthProvider";
 import AppRoutes from "@/routes/AppRoutes";
 import ReportProblemModal from "@/components/ReportProblemModal";
+import GlobalToast from "@/components/common/GlobalToast";
 
 export default function App() {
     return (
@@ -13,6 +14,7 @@ export default function App() {
                     <AuthProvider>
                         <AppRoutes />
                         <ReportProblemModal />
+                        <GlobalToast />
                     </AuthProvider>
                 </BrowserRouter>
             </ThemeProvider>

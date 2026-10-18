@@ -16,7 +16,15 @@ import {
   Plus,
   Check,
 } from 'lucide-react';
-import { getPostByIdApi, getRepliesApi, createReplyApi } from '@/services/postService';
+import {
+  getPostByIdApi,
+  getRepliesApi,
+  createReplyApi,
+  savePostApi,
+  unsavePostApi,
+  hidePostApi,
+  reportPostApi,
+} from '@/services/postService';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import { getAuthorAvatar } from '@/utils/avatar';
@@ -167,6 +175,82 @@ export default function PostDetailPage() {
     }
   };
 
+  const handleHeaderMenuAction = async (action) => {
+    const targetPostId = post?.id || postId;
+
+    if (action === 'copy_link') {
+      showToast('Đã sao chép liên kết vào bộ nhớ tạm');
+    } else if (action === 'embed') {
+      setIsEmbedModalOpen(true);
+    } else if (action === 'save') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
+        return;
+      }
+      setPost((prev) => (prev ? { ...prev, isSaved: true } : prev));
+      showToast('Đã lưu bài viết');
+      try {
+        if (targetPostId) await savePostApi(targetPostId);
+      } catch (err) {
+        console.error('Save post failed:', err);
+        setPost((prev) => (prev ? { ...prev, isSaved: false } : prev));
+        showToast('Không thể lưu bài viết. Vui lòng thử lại.');
+      }
+    } else if (action === 'unsave') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
+        return;
+      }
+      setPost((prev) => (prev ? { ...prev, isSaved: false } : prev));
+      showToast('Đã bỏ lưu bài viết');
+      try {
+        if (targetPostId) await unsavePostApi(targetPostId);
+      } catch (err) {
+        console.error('Unsave post failed:', err);
+        setPost((prev) => (prev ? { ...prev, isSaved: true } : prev));
+        showToast('Không thể bỏ lưu bài viết. Vui lòng thử lại.');
+      }
+    } else if (action === 'not_interested') {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Đã ẩn bài viết',
+            undoText: 'Hoàn tác',
+            duration: 6000,
+            onUndo: async () => {
+              if (targetPostId) {
+                try {
+                  await unhidePostApi(targetPostId);
+                  window.dispatchEvent(
+                    new CustomEvent('app-toast', {
+                      detail: { message: 'Đã hoàn tác ẩn bài viết', duration: 2500 },
+                    })
+                  );
+                } catch (err) {
+                  console.error('Unhide post failed:', err);
+                }
+              }
+            },
+          },
+        })
+      );
+      try {
+        if (targetPostId) await hidePostApi(targetPostId);
+        navigate('/');
+      } catch (err) {
+        console.error('Hide post failed:', err);
+        showToast('Không thể ẩn bài viết. Vui lòng thử lại.');
+      }
+    } else if (action === 'report') {
+      showToast('Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét bài viết này.');
+      try {
+        if (targetPostId) await reportPostApi(targetPostId);
+      } catch (err) {
+        console.error('Report post failed:', err);
+      }
+    }
+  };
+
   return (
     <div className="flex justify-center items-start w-full relative">
       <div className="w-full max-w-155 min-w-0">
@@ -208,12 +292,9 @@ export default function PostDetailPage() {
             <PostMenu
               isOpen={isHeaderMenuOpen}
               onClose={() => setIsHeaderMenuOpen(false)}
-              onAction={(action) => {
-                if (action === 'copy_link') showToast('Đã sao chép liên kết vào bộ nhớ tạm');
-                if (action === 'save') showToast('Đã lưu bài viết');
-                if (action === 'embed') setIsEmbedModalOpen(true);
-              }}
+              onAction={handleHeaderMenuAction}
               postUrl={getShareUrl(post, postId)}
+              isSaved={Boolean(post?.isSaved)}
             />
           </div>
         </header>

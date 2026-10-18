@@ -91,6 +91,29 @@ export const feedSlice = createSlice({
       });
     },
 
+    // Ẩn / Xoá bài viết khỏi feed
+    removeFeedPost: (state, action) => {
+      const postId = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        state[key].posts = state[key].posts.filter((p) => String(p.id) !== String(postId));
+      });
+    },
+
+    // Phục hồi bài viết vào feed khi hoàn tác ẩn
+    restoreFeedPost: (state, action) => {
+      const { post, index } = action.payload || {};
+      if (!post) return;
+      ['forYou', 'following'].forEach((key) => {
+        if (!state[key].posts.some((p) => String(p.id) === String(post.id))) {
+          if (typeof index === 'number' && index >= 0 && index <= state[key].posts.length) {
+            state[key].posts.splice(index, 0, post);
+          } else {
+            state[key].posts.unshift(post);
+          }
+        }
+      });
+    },
+
     // Reset dữ liệu feed
     clearFeed: (state, action) => {
       const feedType = action.payload;
@@ -112,6 +135,8 @@ export const {
   prependFeedPost,
   updatePostInteraction,
   updateAuthorFollowStatus,
+  removeFeedPost,
+  restoreFeedPost,
   clearFeed,
 } = feedSlice.actions;
 

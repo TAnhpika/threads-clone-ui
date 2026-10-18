@@ -204,6 +204,66 @@ export async function repostPostApi(postId) {
 }
 
 /**
+ * API Lưu bài viết
+ * Endpoint: POST /posts/:id/save
+ * @param {string|number} postId
+ * @returns {Promise<Object>}
+ */
+export async function savePostApi(postId) {
+    const response = await http.post(`/posts/${postId}/save`);
+    return response?.data || response;
+}
+
+/**
+ * API Bỏ lưu bài viết (Method Spoofing: _method = DELETE)
+ * Endpoint: POST /posts/:id/save kèm body { _method: "DELETE" }
+ * @param {string|number} postId
+ * @returns {Promise<Object>}
+ */
+export async function unsavePostApi(postId) {
+    const response = await http.post(`/posts/${postId}/save`, {
+        _method: 'DELETE',
+    });
+    return response?.data || response;
+}
+
+/**
+ * API Ẩn bài viết / Không quan tâm
+ * Endpoint: POST /posts/:id/hide
+ * @param {string|number} postId
+ * @returns {Promise<Object>}
+ */
+export async function hidePostApi(postId) {
+    const response = await http.post(`/posts/${postId}/hide`);
+    return response?.data || response;
+}
+
+/**
+ * API Bỏ ẩn bài viết / Hoàn tác ẩn (Method Spoofing: _method = DELETE)
+ * Endpoint: POST /posts/:id/hide kèm body { _method: "DELETE" }
+ * @param {string|number} postId
+ * @returns {Promise<Object>}
+ */
+export async function unhidePostApi(postId) {
+    const response = await http.post(`/posts/${postId}/hide`, {
+        _method: 'DELETE',
+    });
+    return response?.data || response;
+}
+
+/**
+ * API Báo cáo bài viết
+ * Endpoint: POST /posts/:id/report
+ * @param {string|number} postId
+ * @param {Object} [data] - { reason }
+ * @returns {Promise<Object>}
+ */
+export async function reportPostApi(postId, data = {}) {
+    const response = await http.post(`/posts/${postId}/report`, data);
+    return response?.data || response;
+}
+
+/**
  * Giả lập API gọi danh sách bài viết thời trang (backward-compatibility)
  */
 export async function getPostsApi(delay = 100) {

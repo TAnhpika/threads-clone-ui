@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
-import { updateAuthorFollowStatus } from '@/features/feed/feedSlice';
+import {
+  updateAuthorFollowStatus,
+  updatePostInteraction,
+  removeFeedPost,
+  restoreFeedPost,
+} from '@/features/feed/feedSlice';
 import { followUserApi, unfollowUserApi } from '@/services/userService';
+import {
+  savePostApi,
+  unsavePostApi,
+  hidePostApi,
+  unhidePostApi,
+  reportPostApi,
+} from '@/services/postService';
 import { MoreHorizontal, CheckCircle2, Plus, Check } from 'lucide-react';
 import PostMenu from './PostMenu';
 import AuthorProfileModal from './AuthorProfileModal';
@@ -29,6 +41,7 @@ export default function PostHeader({
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isFollowed, setIsFollowed] = useState(Boolean(author?.isFollowed));
+  const [isSaved, setIsSaved] = useState(Boolean(post?.isSaved));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
 
@@ -38,6 +51,13 @@ export default function PostHeader({
       setIsFollowed(Boolean(author.isFollowed));
     }
   }, [author?.isFollowed]);
+
+  // Đồng bộ trạng thái lưu bài viết từ prop post
+  useEffect(() => {
+    if (post?.isSaved !== undefined) {
+      setIsSaved(Boolean(post.isSaved));
+    }
+  }, [post?.isSaved]);
 
   // Không hiển thị follow badge nếu là bài của chính mình
   const isSelf = Boolean(
@@ -142,17 +162,147 @@ export default function PostHeader({
     }
   };
 
-  const handleAction = (action) => {
+  const currentFeedPosts = useSelector((state) => state.feed?.forYou?.posts);
+
+  const handleAction = async (action) => {
+    const currentPostId = postId || post?.id;
+
     if (action === 'copy_link') {
-      setToastMessage('Đã sao chép liên kết vào bộ nhớ tạm');
-      setTimeout(() => setToastMessage(null), 2500);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Đã sao chép liên kết vào bộ nhớ tạm' },
+        })
+      );
     } else if (action === 'embed') {
       setIsEmbedModalOpen(true);
-    } else if (action === 'save') {
-      setToastMessage('Đã lưu bài viết');
-      setTimeout(() => setToastMessage(null), 2500);
     } else if (action === 'create_feed') {
       window.dispatchEvent(new CustomEvent('open-create-feed'));
+    } else if (action === 'save') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
+        return;
+      }
+      setIsSaved(true);
+      if (currentPostId) {
+        dispatch(updatePostInteraction({ postId: currentPostId, updates: { isSaved: true } }));
+      }
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Đã lưu bài viết' },
+        })
+      );
+
+      try {
+        if (currentPostId) {
+          await savePostApi(currentPostId);
+        }
+      } catch (err) {
+        console.error('Save post failed:', err);
+        setIsSaved(false);
+        if (currentPostId) {
+          dispatch(updatePostInteraction({ postId: currentPostId, updates: { isSaved: false } }));
+        }
+        window.dispatchEvent(
+          new CustomEvent('app-toast', {
+            detail: { message: 'Không thể lưu bài viết. Vui lòng thử lại.' },
+          })
+        );
+      }
+    } else if (action === 'unsave') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
+        return;
+      }
+      setIsSaved(false);
+      if (currentPostId) {
+        dispatch(updatePostInteraction({ postId: currentPostId, updates: { isSaved: false } }));
+      }
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Đã bỏ lưu bài viết' },
+        })
+      );
+
+      try {
+        if (currentPostId) {
+          await unsavePostApi(currentPostId);
+        }
+      } catch (err) {
+        console.error('Unsave post failed:', err);
+        setIsSaved(true);
+        if (currentPostId) {
+          dispatch(updatePostInteraction({ postId: currentPostId, updates: { isSaved: true } }));
+        }
+        window.dispatchEvent(
+          new CustomEvent('app-toast', {
+            detail: { message: 'Không thể bỏ lưu bài viết. Vui lòng thử lại.' },
+          })
+        );
+      }
+    } else if (action === 'not_interested') {
+      const postBackup = post || { id: currentPostId, author, timestamp, tag };
+      const postIndex = currentFeedPosts?.findIndex((p) => String(p.id) === String(currentPostId));
+
+      if (currentPostId) {
+        dispatch(removeFeedPost(currentPostId));
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Đã ẩn bài viết',
+            undoText: 'Hoàn tác',
+            duration: 6000,
+            onUndo: async () => {
+              if (currentPostId) {
+                dispatch(restoreFeedPost({ post: postBackup, index: postIndex }));
+                window.dispatchEvent(
+                  new CustomEvent('app-toast', {
+                    detail: {
+                      message: 'Đã hoàn tác ẩn bài viết',
+                      duration: 2500,
+                    },
+                  })
+                );
+                try {
+                  await unhidePostApi(currentPostId);
+                } catch (err) {
+                  console.error('Unhide post failed:', err);
+                }
+              }
+            },
+          },
+        })
+      );
+
+      try {
+        if (currentPostId) {
+          await hidePostApi(currentPostId);
+        }
+      } catch (err) {
+        console.error('Hide post failed:', err);
+        if (currentPostId) {
+          dispatch(restoreFeedPost({ post: postBackup, index: postIndex }));
+        }
+        window.dispatchEvent(
+          new CustomEvent('app-toast', {
+            detail: { message: 'Không thể ẩn bài viết. Vui lòng thử lại.' },
+          })
+        );
+      }
+    } else if (action === 'report') {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét bài viết này.' },
+        })
+      );
+      try {
+        if (currentPostId) {
+          await reportPostApi(currentPostId);
+        }
+      } catch (err) {
+        console.error('Report post failed:', err);
+      }
     }
   };
 
@@ -243,6 +393,7 @@ export default function PostHeader({
           onClose={() => setIsMenuOpen(false)}
           onAction={handleAction}
           postUrl={shareUrl}
+          isSaved={isSaved}
         />
       </div>
 
@@ -276,8 +427,20 @@ export default function PostHeader({
 
       {/* Toast thông báo tương tác nhanh */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
-          {toastMessage}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150 flex items-center gap-3">
+          <span>{typeof toastMessage === 'string' ? toastMessage : toastMessage.text}</span>
+          {typeof toastMessage === 'object' && toastMessage?.onUndo && (
+            <button
+              type="button"
+              onClick={() => {
+                toastMessage.onUndo();
+                setToastMessage(null);
+              }}
+              className="underline hover:opacity-80 font-bold cursor-pointer text-blue-400 dark:text-blue-600"
+            >
+              Hoàn tác
+            </button>
+          )}
         </div>
       )}
     </div>

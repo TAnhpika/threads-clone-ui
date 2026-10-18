@@ -35,7 +35,13 @@ function EmbedCodeIcon({ className = 'w-5 h-5' }) {
   );
 }
 
-export default function PostMenu({ isOpen, onClose, postUrl = window.location.href, onAction }) {
+export default function PostMenu({
+  isOpen,
+  onClose,
+  postUrl = window.location.href,
+  onAction,
+  isSaved = false,
+}) {
   const [view, setView] = useState('main'); // 'main' | 'add_to_feed'
   const menuRef = useRef(null);
   const { t } = useTranslation();
@@ -156,11 +162,17 @@ export default function PostMenu({ isOpen, onClose, postUrl = window.location.hr
           {/* Nhóm 2: Tương tác cá nhân */}
           <div className="space-y-0.5">
             <button
-              onClick={() => handleItemClick('save')}
+              onClick={() => handleItemClick(isSaved ? 'unsave' : 'save')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
-              <span>{t('postMenu.save', 'Save')}</span>
-              <Bookmark className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <span>{isSaved ? t('postMenu.unsave', 'Unsave') : t('postMenu.save', 'Save')}</span>
+              <Bookmark
+                className={`w-5 h-5 stroke-[2.2] ${
+                  isSaved
+                    ? 'fill-black dark:fill-white text-black dark:text-white'
+                    : 'text-zinc-700 dark:text-zinc-300'
+                }`}
+              />
             </button>
 
             <button
