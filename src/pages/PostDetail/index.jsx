@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -15,7 +15,8 @@ import {
   Send,
   Plus,
 } from 'lucide-react';
-import { getPostByIdApi, getRepliesApi, createReplyApi } from '@/services/postService';
+import { getPostByIdApi, getRepliesApi, createReplyApi, likePostApi } from '@/services/postService';
+import { updatePostInteraction } from '@/features/feed/feedSlice';
 import PostContent from '@/components/post/PostContent';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
@@ -23,6 +24,7 @@ import PostMenu from '@/components/post/PostMenu';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
 export default function PostDetailPage() {
+  const dispatch = useDispatch();
   const { username, postId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,17 +112,49 @@ export default function PostDetailPage() {
     }
   }, [isLoading, post, location.hash, location.state]);
 
-  const handleLikePost = () => {
+  const handleLikePost = async () => {
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
       return;
     }
-    if (isLiked) {
-      setLikes((prev) => Math.max(0, prev - 1));
-      setIsLiked(false);
-    } else {
-      setLikes((prev) => prev + 1);
-      setIsLiked(true);
+    const targetPostId = post?.id || postId;
+    const prevIsLiked = isLiked;
+    const prevLikes = likes;
+
+    const nextIsLiked = !prevIsLiked;
+    const nextLikes = nextIsLiked ? prevLikes + 1 : Math.max(0, prevLikes - 1);
+
+    // 1. Optimistic Update ngay lập tức trên UI và Redux
+    setIsLiked(nextIsLiked);
+    setLikes(nextLikes);
+    if (targetPostId) {
+      dispatch(
+        updatePostInteraction({
+          postId: targetPostId,
+          updates: { isLiked: nextIsLiked, likes: nextLikes },
+        })
+      );
+    }
+
+    // 2. Gọi API ngầm lưu trạng thái
+    try {
+      if (targetPostId) {
+        await likePostApi(targetPostId);
+      }
+    } catch (err) {
+      console.error('Failed to toggle like on post detail:', err);
+      // 3. Rollback nếu API thất bại
+      setIsLiked(prevIsLiked);
+      setLikes(prevLikes);
+      if (targetPostId) {
+        dispatch(
+          updatePostInteraction({
+            postId: targetPostId,
+            updates: { isLiked: prevIsLiked, likes: prevLikes },
+          })
+        );
+      }
+      showToast('Không thể cập nhật lượt thích. Vui lòng thử lại.');
     }
   };
 
@@ -595,17 +629,29 @@ function ReplyItem({ reply, onToast, isAuthenticated }) {
   const [isReposted, setIsReposted] = useState(Boolean(reply.isReposted));
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
       return;
     }
-    if (isLiked) {
-      setLikes((prev) => Math.max(0, prev - 1));
-      setIsLiked(false);
-    } else {
-      setLikes((prev) => prev + 1);
-      setIsLiked(true);
+    const prevIsLiked = isLiked;
+    const prevLikes = likes;
+    const nextIsLiked = !prevIsLiked;
+    const nextLikes = nextIsLiked ? prevLikes + 1 : Math.max(0, prevLikes - 1);
+
+    // Optimistic update
+    setIsLiked(nextIsLiked);
+    setLikes(nextLikes);
+
+    try {
+      if (reply?.id) {
+        await likePostApi(reply.id);
+      }
+    } catch (err) {
+      console.error('Failed to toggle like on reply:', err);
+      setIsLiked(prevIsLiked);
+      setLikes(prevLikes);
+      onToast?.('Không thể cập nhật lượt thích. Vui lòng thử lại.');
     }
   };
 

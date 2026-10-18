@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
-import { saveFeedScroll } from '@/features/feed/feedSlice';
+import { saveFeedScroll, updatePostInteraction } from '@/features/feed/feedSlice';
+import { likePostApi } from '@/services/postService';
 import RepostModal from './RepostModal';
 import ShareModal from './ShareModal';
 
@@ -29,17 +30,58 @@ export default function InteractionBar({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  const handleLike = () => {
+  useEffect(() => {
+    setIsLiked(initialIsLiked);
+  }, [initialIsLiked]);
+
+  useEffect(() => {
+    setLikes(initialLikes);
+  }, [initialLikes]);
+
+  const handleLike = async (e) => {
+    e?.stopPropagation?.();
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
       return;
     }
-    if (isLiked) {
-      setLikes((prev) => prev - 1);
-      setIsLiked(false);
-    } else {
-      setLikes((prev) => prev + 1);
-      setIsLiked(true);
+
+    const prevIsLiked = isLiked;
+    const prevLikes = likes;
+    const nextIsLiked = !prevIsLiked;
+    const nextLikes = nextIsLiked ? prevLikes + 1 : Math.max(0, prevLikes - 1);
+
+    // 1. Optimistic Update ngay lập tức trên UI và Redux
+    setIsLiked(nextIsLiked);
+    setLikes(nextLikes);
+    if (postId) {
+      dispatch(
+        updatePostInteraction({
+          postId,
+          updates: { isLiked: nextIsLiked, likes: nextLikes },
+        })
+      );
+    }
+
+    // 2. Gọi API ngầm lưu trạng thái
+    try {
+      if (postId) {
+        await likePostApi(postId);
+      }
+    } catch (err) {
+      console.error('Failed to toggle like on post:', err);
+      // 3. Rollback nếu API thất bại
+      setIsLiked(prevIsLiked);
+      setLikes(prevLikes);
+      if (postId) {
+        dispatch(
+          updatePostInteraction({
+            postId,
+            updates: { isLiked: prevIsLiked, likes: prevLikes },
+          })
+        );
+      }
+      setToastMessage('Không thể cập nhật lượt thích. Vui lòng thử lại.');
+      setTimeout(() => setToastMessage(null), 2500);
     }
   };
 

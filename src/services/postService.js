@@ -166,6 +166,16 @@ export async function createReplyApi(postId, { content }) {
 }
 
 /**
+ * API Like / Unlike bài viết
+ * @param {string|number} postId
+ * @returns {Promise<Object>}
+ */
+export async function likePostApi(postId) {
+  const response = await http.post(`/posts/${postId}/like`);
+  return response?.data || response;
+}
+
+/**
  * Giả lập API gọi danh sách bài viết thời trang (backward-compatibility)
  */
 export async function getPostsApi(delay = 100) {
@@ -175,4 +185,5 @@ export async function getPostsApi(delay = 100) {
     }, delay);
   });
 }
+
 
