@@ -83,7 +83,8 @@ export default function PostMenu({
 
   if (!isOpen) return null;
 
-  const handleCopyLink = () => {
+  const handleCopyLink = (e) => {
+    e?.stopPropagation?.();
     copy(postUrl);
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(postUrl).catch(() => {});
@@ -92,7 +93,8 @@ export default function PostMenu({
     onClose();
   };
 
-  const handleItemClick = (actionName) => {
+  const handleItemClick = (e, actionName) => {
+    e?.stopPropagation?.();
     if (onAction) onAction(actionName);
     onClose();
   };
@@ -102,7 +104,7 @@ export default function PostMenu({
       ref={menuRef}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
-      className="absolute right-0 top-9 w-64 p-1.5 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none text-black dark:text-white"
+      className="absolute right-0 top-9 w-64 p-1.5 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[60] animate-in fade-in zoom-in-95 duration-150 select-none text-black dark:text-white"
       role="menu"
       aria-label="Tùy chọn bài viết"
     >
@@ -112,7 +114,10 @@ export default function PostMenu({
           {/* Header với nút quay lại */}
           <div className="flex items-center gap-2.5 px-1.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800/80">
             <button
-              onClick={() => setView('main')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setView('main');
+              }}
               className="p-1 rounded-full text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Quay lại"
               aria-label="Quay lại"
@@ -127,7 +132,7 @@ export default function PostMenu({
           {/* Danh sách hành động */}
           <div className="pt-0.5">
             <button
-              onClick={() => handleItemClick('create_feed')}
+              onClick={(e) => handleItemClick(e, 'create_feed')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer group"
             >
               <span>{t('postMenu.createNewFeed', 'Create new feed')}</span>
@@ -149,7 +154,7 @@ export default function PostMenu({
             </button>
 
             <button
-              onClick={() => handleItemClick('embed')}
+              onClick={(e) => handleItemClick(e, 'embed')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.embed', 'Get embed code')}</span>
@@ -162,7 +167,7 @@ export default function PostMenu({
           {/* Nhóm 2: Tương tác cá nhân */}
           <div className="space-y-0.5">
             <button
-              onClick={() => handleItemClick(isSaved ? 'unsave' : 'save')}
+              onClick={(e) => handleItemClick(e, isSaved ? 'unsave' : 'save')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isSaved ? t('postMenu.unsave', 'Unsave') : t('postMenu.save', 'Save')}</span>
@@ -176,7 +181,7 @@ export default function PostMenu({
             </button>
 
             <button
-              onClick={() => handleItemClick('not_interested')}
+              onClick={(e) => handleItemClick(e, 'not_interested')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.notInterested', 'Not interested')}</span>
@@ -189,7 +194,10 @@ export default function PostMenu({
           {/* Nhóm 3: Kiểm soát & Quan hệ */}
           <div className="space-y-0.5">
             <button
-              onClick={() => setView('add_to_feed')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setView('add_to_feed');
+              }}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.addToFeed', 'Add to feed')}</span>
@@ -197,7 +205,7 @@ export default function PostMenu({
             </button>
 
             <button
-              onClick={() => handleItemClick('mute')}
+              onClick={(e) => handleItemClick(e, 'mute')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.mute', 'Mute')}</span>
@@ -205,7 +213,7 @@ export default function PostMenu({
             </button>
 
             <button
-              onClick={() => handleItemClick('restrict')}
+              onClick={(e) => handleItemClick(e, 'restrict')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.restrict', 'Restrict')}</span>
@@ -214,7 +222,7 @@ export default function PostMenu({
 
             {/* Các mục cảnh báo màu đỏ */}
             <button
-              onClick={() => handleItemClick('block')}
+              onClick={(e) => handleItemClick(e, 'block')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.block', 'Block')}</span>
@@ -222,7 +230,7 @@ export default function PostMenu({
             </button>
 
             <button
-              onClick={() => handleItemClick('report')}
+              onClick={(e) => handleItemClick(e, 'report')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.report', 'Report')}</span>

@@ -384,7 +384,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
 
           {/* Row 2, Col 1: Khối Posts Feed */}
           <div className="w-full min-w-0">
-            <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
+            <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-visible transition-colors">
               {renderPostList()}
 
               {/* Sentinel và loading indicator cho infinite scroll */}
@@ -428,7 +428,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         />
 
         {/* Khối Card chính bo góc chứa Composer & Danh sách Post */}
-        <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
+        <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-visible transition-colors">
           {/* Thanh soạn thảo 'What's new?' */}
           <CreatePostBox
             user={currentUser}

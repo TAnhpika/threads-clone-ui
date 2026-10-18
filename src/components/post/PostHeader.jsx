@@ -20,6 +20,7 @@ import PostMenu from './PostMenu';
 import AuthorProfileModal from './AuthorProfileModal';
 import UnfollowConfirmModal from './UnfollowConfirmModal';
 import EmbedModal from './EmbedModal';
+import ReportModal from './ReportModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
 
@@ -44,6 +45,7 @@ export default function PostHeader({
   const [isSaved, setIsSaved] = useState(Boolean(post?.isSaved));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // Tự động đồng bộ khi Redux feedSlice cập nhật trạng thái follow của tác giả này
   useEffect(() => {
@@ -291,23 +293,15 @@ export default function PostHeader({
         );
       }
     } else if (action === 'report') {
-      window.dispatchEvent(
-        new CustomEvent('app-toast', {
-          detail: { message: 'Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét bài viết này.' },
-        })
-      );
-      try {
-        if (currentPostId) {
-          await reportPostApi(currentPostId);
-        }
-      } catch (err) {
-        console.error('Report post failed:', err);
-      }
+      setIsReportModalOpen(true);
     }
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 relative">
+    <div
+      className="flex items-center justify-between gap-3 relative"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Thông tin tác giả & thời gian */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Avatar */}
@@ -423,6 +417,13 @@ export default function PostHeader({
           setToastMessage(msg);
           setTimeout(() => setToastMessage(null), 2500);
         }}
+      />
+
+      {/* Modal Báo cáo bài viết (Report Modal) */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        postId={postId || post?.id}
       />
 
       {/* Toast thông báo tương tác nhanh */}

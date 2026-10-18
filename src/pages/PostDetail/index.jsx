@@ -25,12 +25,12 @@ import {
   hidePostApi,
   reportPostApi,
 } from '@/services/postService';
+import ReportModal from '@/components/post/ReportModal';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import { getAuthorAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
 import PostMenu from '@/components/post/PostMenu';
-import EmbedModal from '@/components/post/EmbedModal';
 import CreatePostModal from '@/components/post/CreatePostModal';
 import PostCard from '@/components/post/PostCard';
 import PostContent from '@/components/post/PostContent';
@@ -55,14 +55,14 @@ export default function PostDetailPage() {
   const [isError, setIsError] = useState(false);
 
   // Menu và input states
-  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
+  const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
+  const columnMenuRef = useRef(null);
   const [quoteTargetPost, setQuoteTargetPost] = useState(null);
   const [replyInput, setReplyInput] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('bottom-right');
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -70,6 +70,25 @@ export default function PostDetailPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
   };
+
+  // Đóng column menu khi click ra ngoài hoặc bấm Escape
+  useEffect(() => {
+    if (!isColumnMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (columnMenuRef.current && !columnMenuRef.current.contains(e.target)) {
+        setIsColumnMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsColumnMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isColumnMenuOpen]);
 
   // Tải chi tiết bài viết và danh sách bình luận từ API
   useEffect(() => {
@@ -175,82 +194,6 @@ export default function PostDetailPage() {
     }
   };
 
-  const handleHeaderMenuAction = async (action) => {
-    const targetPostId = post?.id || postId;
-
-    if (action === 'copy_link') {
-      showToast('Đã sao chép liên kết vào bộ nhớ tạm');
-    } else if (action === 'embed') {
-      setIsEmbedModalOpen(true);
-    } else if (action === 'save') {
-      if (!isAuthenticated) {
-        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
-        return;
-      }
-      setPost((prev) => (prev ? { ...prev, isSaved: true } : prev));
-      showToast('Đã lưu bài viết');
-      try {
-        if (targetPostId) await savePostApi(targetPostId);
-      } catch (err) {
-        console.error('Save post failed:', err);
-        setPost((prev) => (prev ? { ...prev, isSaved: false } : prev));
-        showToast('Không thể lưu bài viết. Vui lòng thử lại.');
-      }
-    } else if (action === 'unsave') {
-      if (!isAuthenticated) {
-        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
-        return;
-      }
-      setPost((prev) => (prev ? { ...prev, isSaved: false } : prev));
-      showToast('Đã bỏ lưu bài viết');
-      try {
-        if (targetPostId) await unsavePostApi(targetPostId);
-      } catch (err) {
-        console.error('Unsave post failed:', err);
-        setPost((prev) => (prev ? { ...prev, isSaved: true } : prev));
-        showToast('Không thể bỏ lưu bài viết. Vui lòng thử lại.');
-      }
-    } else if (action === 'not_interested') {
-      window.dispatchEvent(
-        new CustomEvent('app-toast', {
-          detail: {
-            message: 'Đã ẩn bài viết',
-            undoText: 'Hoàn tác',
-            duration: 6000,
-            onUndo: async () => {
-              if (targetPostId) {
-                try {
-                  await unhidePostApi(targetPostId);
-                  window.dispatchEvent(
-                    new CustomEvent('app-toast', {
-                      detail: { message: 'Đã hoàn tác ẩn bài viết', duration: 2500 },
-                    })
-                  );
-                } catch (err) {
-                  console.error('Unhide post failed:', err);
-                }
-              }
-            },
-          },
-        })
-      );
-      try {
-        if (targetPostId) await hidePostApi(targetPostId);
-        navigate('/');
-      } catch (err) {
-        console.error('Hide post failed:', err);
-        showToast('Không thể ẩn bài viết. Vui lòng thử lại.');
-      }
-    } else if (action === 'report') {
-      showToast('Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét bài viết này.');
-      try {
-        if (targetPostId) await reportPostApi(targetPostId);
-      } catch (err) {
-        console.error('Report post failed:', err);
-      }
-    }
-  };
-
   return (
     <div className="flex justify-center items-start w-full relative">
       <div className="w-full max-w-155 min-w-0">
@@ -279,23 +222,53 @@ export default function PostDetailPage() {
             </h1>
           </div>
 
-          {/* Nút tuỳ chọn (...) hình tròn viền mỏng bên phải */}
-          <div className="relative">
+          {/* Nút tuỳ chọn (...) ở trên cùng của Thread: chỉ có chức năng Add as column (Ảnh 1) */}
+          <div className="relative" ref={columnMenuRef}>
             <button
-              onClick={() => setIsHeaderMenuOpen((prev) => !prev)}
-              className="w-7 h-7 rounded-full border border-zinc-300 dark:border-zinc-700/80 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              onClick={() => setIsColumnMenuOpen((prev) => !prev)}
+              className={`w-7 h-7 rounded-full border transition-colors flex items-center justify-center cursor-pointer ${
+                isColumnMenuOpen
+                  ? 'border-black dark:border-white text-black dark:text-white bg-zinc-100 dark:bg-zinc-800'
+                  : 'border-zinc-300 dark:border-zinc-700/80 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`}
               title="Tuỳ chọn"
-              aria-label="Tuỳ chọn"
+              aria-label="Tuỳ chọn cột"
+              aria-expanded={isColumnMenuOpen}
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
-            <PostMenu
-              isOpen={isHeaderMenuOpen}
-              onClose={() => setIsHeaderMenuOpen(false)}
-              onAction={handleHeaderMenuAction}
-              postUrl={getShareUrl(post, postId)}
-              isSaved={Boolean(post?.isSaved)}
-            />
+
+            {isColumnMenuOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-9 w-48 p-1 bg-white dark:bg-[#1e1e1e] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 select-none text-black dark:text-white"
+                role="menu"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsColumnMenuOpen(false);
+                    showToast('Đã thêm làm cột');
+                  }}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer group"
+                >
+                  <span>Add as column</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4.5 h-4.5 text-zinc-600 dark:text-zinc-300 group-hover:scale-105 transition-transform"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -309,7 +282,7 @@ export default function PostDetailPage() {
 
         {/* Khung Card chính chứa bài viết gốc và toàn bộ chuỗi replies */}
         {!isLoading && post && (
-          <main className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
+          <main className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-visible transition-colors">
             {/* 1. BÀI VIẾT CHÍNH (Main Post) */}
             <PostCard
               post={post}
@@ -477,17 +450,6 @@ export default function PostDetailPage() {
         placement={createModalPlacement}
       />
 
-      {/* Modal Get Embed Code */}
-      {post && (
-        <EmbedModal
-          isOpen={isEmbedModalOpen}
-          onClose={() => setIsEmbedModalOpen(false)}
-          post={post}
-          postId={postId}
-          onSuccessFeedback={showToast}
-        />
-      )}
-
       {/* Toast thông báo */}
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
@@ -550,6 +512,7 @@ function PostNotFound({ onGoHome }) {
 function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isFollowed, setIsFollowed] = useState(Boolean(reply.author?.isFollowed));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
@@ -719,7 +682,13 @@ function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply 
                 onAction={(action) => {
                   if (action === 'copy_link') onToast('Đã sao chép liên kết');
                   if (action === 'save') onToast('Đã lưu câu trả lời');
+                  if (action === 'report') setIsReportModalOpen(true);
                 }}
+              />
+              <ReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                postId={reply.id}
               />
             </div>
           </div>

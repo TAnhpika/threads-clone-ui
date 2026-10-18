@@ -259,7 +259,14 @@ export async function unhidePostApi(postId) {
  * @returns {Promise<Object>}
  */
 export async function reportPostApi(postId, data = {}) {
-    const response = await http.post(`/posts/${postId}/report`, data);
+    const payload =
+        typeof data === 'string'
+            ? { reason: data, description: '' }
+            : {
+                  reason: data?.reason || '',
+                  description: data?.description || '',
+              };
+    const response = await http.post(`/posts/${postId}/report`, payload);
     return response?.data || response;
 }
 
