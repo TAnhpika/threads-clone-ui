@@ -140,13 +140,13 @@ export default function LoginPage() {
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
+      const identifier = data.identifier.trim();
       const payload = {
-        email: data.identifier.trim(),
+        login: identifier,
         password: data.password.trim(),
+        email: identifier,
+        username: identifier,
       };
-      if (!data.identifier.includes("@")) {
-        payload.username = data.identifier.trim();
-      }
 
       // Gọi API Login
       const response = await authService.login(payload);
@@ -175,6 +175,9 @@ export default function LoginPage() {
 
       if (error.response?.status === 401) {
         errorMsg = "Tài khoản hoặc mật khẩu không chính xác!";
+      } else if (resData?.errors && typeof resData.errors === "object") {
+        const firstErr = Object.values(resData.errors).flat()[0];
+        errorMsg = firstErr || resData.message || "Thông tin đăng nhập không hợp lệ!";
       } else if (resData?.message) {
         if (typeof resData.message === "string") {
           if (resData.message.toLowerCase().includes("invalid credentials")) {
@@ -199,10 +202,10 @@ export default function LoginPage() {
 
   // 2. Đăng nhập nhanh qua Instagram (tài khoản F8 demo)
   const handleInstagramLogin = () => {
-    setValue("identifier", "anhpika123456@gmail.com");
+    setValue("identifier", "tuananhpika");
     setValue("password", "123123123");
     onSubmit({
-      identifier: "anhpika123456@gmail.com",
+      identifier: "tuananhpika",
       password: "123123123",
     });
   };
@@ -349,7 +352,7 @@ export default function LoginPage() {
 
       {/* Toast thông báo phong cách Threads */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4.5 py-2.5 bg-black/95 dark:bg-white text-white dark:text-black border border-zinc-800/80 dark:border-zinc-200 rounded-2xl text-xs font-semibold shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="fixed bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 px-4.5 py-2.5 bg-black/95 dark:bg-white text-white dark:text-black border border-zinc-800/80 dark:border-zinc-200 rounded-2xl text-xs font-semibold shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 whitespace-nowrap">
           {toastMessage}
         </div>
       )}

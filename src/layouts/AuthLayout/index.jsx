@@ -35,12 +35,12 @@ export default function AuthLayout() {
       </div>
 
       {/* Main Content (Trang con) */}
-      <main className="w-full flex-1 flex flex-col justify-center items-center z-20">
+      <main className="w-full flex-1 flex flex-col justify-center items-center relative z-20">
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="w-full z-20 pt-8 pb-2">
+      <footer className="w-full relative z-10 pt-8 pb-2">
         <div className="flex items-center justify-center gap-3.5 text-xs text-zinc-400 dark:text-zinc-600 font-normal flex-wrap">
           <span>© 2026</span>
           <Link to="/login" className="hover:underline">Threads Terms</Link>
