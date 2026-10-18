@@ -216,7 +216,7 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
   const otherFeeds = [
     {
       label: 'Following',
-      path: '/?feed=following',
+      path: '/following',
     },
     {
       label: 'Saved',
@@ -426,7 +426,10 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
               {otherFeeds.map((feed) => {
                 const IconComponent = feed.icon;
                 const RightIconComponent = feed.rightIcon;
-                const isActive = location.search === feed.path.replace('/', '');
+                const isActive =
+                  feed.path === '/following'
+                    ? location.pathname === '/following'
+                    : location.search === feed.path.replace('/', '');
 
                 if (!isAuthenticated) {
                   return (

@@ -34,13 +34,14 @@ function PostSkeleton() {
   );
 }
 
-export default function HomePage({ defaultCreateFeedOpen = false }) {
+export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedType }) {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const currentUser = useSelector(selectCurrentUser);
 
-  // State quản lý Feed
-  const [feedType, setFeedType] = useState('for_you'); // 'for_you' | 'following'
+  // State quản lý Feed: đồng bộ theo đường dẫn URL (/following -> 'following', / -> 'for_you')
+  const activeFeedType = location.pathname === '/following' ? 'following' : (defaultFeedType || 'for_you');
+  const [feedType, setFeedType] = useState(activeFeedType);
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -109,16 +110,16 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     }
   }, []);
 
+  // Đồng bộ feedType khi URL thay đổi (từ / sang /following và ngược lại)
+  useEffect(() => {
+    const targetType = location.pathname === '/following' ? 'following' : (defaultFeedType || 'for_you');
+    setFeedType(targetType);
+  }, [location.pathname, defaultFeedType]);
+
   // Lần đầu mount hoặc khi feedType thay đổi: gọi API trang 1
   useEffect(() => {
     fetchFeed(1, feedType, true);
   }, [fetchFeed, feedType]);
-
-  // Đổi tab giữa "Dành cho bạn" và "Đang theo dõi"
-  const handleTabChange = (newType) => {
-    if (newType === feedType) return;
-    setFeedType(newType);
-  };
 
   // Tải thêm bài viết khi cuộn chạm đáy
   const loadMorePosts = useCallback(() => {
@@ -284,10 +285,10 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     return (
       <div className="w-full flex justify-center">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_350px] gap-x-8 gap-y-3 w-full max-w-260 justify-center items-start">
-          {/* Row 1, Col 1: Tiêu đề 'Home' */}
+          {/* Row 1, Col 1: Tiêu đề 'Home' hoặc 'Following' */}
           <div className="col-span-1 px-1">
             <h1 className="text-xl font-bold text-black dark:text-white tracking-tight">
-              Home
+              {feedType === 'following' ? 'Following' : 'Home'}
             </h1>
           </div>
 
@@ -332,12 +333,10 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     <div className="flex justify-center items-start gap-8 w-full max-w-2xl mx-auto">
       {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}
       <div className="flex-1 max-w-155 min-w-0">
-        {/* Header của Feed: 'For you' & 'Following' nằm riêng phía trên Card */}
+        {/* Header của Feed: 'For you' hoặc 'Following' chuẩn Threads.com */}
         <FeedHeader
-          title="Trang chủ"
+          title={feedType === 'following' ? 'Following' : 'For you'}
           isLoggedIn={isAuthenticated}
-          activeTab={feedType}
-          onTabChange={handleTabChange}
           onCreateFeed={handleOpenCreateFeed}
         />
 
