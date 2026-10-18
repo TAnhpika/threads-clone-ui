@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import { updateAuthorFollowStatus } from '@/features/feed/feedSlice';
-import { followUserApi } from '@/services/userService';
+import { followUserApi, unfollowUserApi } from '@/services/userService';
 import { MoreHorizontal, CheckCircle2, Plus, Check } from 'lucide-react';
 import PostMenu from './PostMenu';
 import AuthorProfileModal from './AuthorProfileModal';
@@ -116,10 +116,10 @@ export default function PostHeader({
     setToastMessage(`Đã bỏ theo dõi @${username}`);
     setTimeout(() => setToastMessage(null), 2500);
 
-    // 2. Gọi API huỷ theo dõi (toggle)
+    // 2. Gọi API huỷ theo dõi (POST /users/:id/follow với body { _method: "DELETE" })
     try {
       if (author?.id) {
-        await followUserApi(author.id);
+        await unfollowUserApi(author.id);
       }
     } catch (error) {
       console.error('Unfollow user API failed:', error);

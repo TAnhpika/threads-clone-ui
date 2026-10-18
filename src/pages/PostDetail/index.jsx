@@ -28,7 +28,7 @@ import RepostModal from '@/components/post/RepostModal';
 import AuthorProfileModal from '@/components/post/AuthorProfileModal';
 import UnfollowConfirmModal from '@/components/post/UnfollowConfirmModal';
 import { usePostInteraction } from '@/hooks/usePostInteraction';
-import { followUserApi } from '@/services/userService';
+import { followUserApi, unfollowUserApi } from '@/services/userService';
 
 export default function PostDetailPage() {
   const { username, postId } = useParams();
@@ -510,7 +510,7 @@ function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply 
 
     try {
       if (reply.author?.id) {
-        await followUserApi(reply.author.id);
+        await unfollowUserApi(reply.author.id);
       }
     } catch (error) {
       console.error('Unfollow reply author failed:', error);
