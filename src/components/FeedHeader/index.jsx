@@ -2,7 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 
-export default function FeedHeader({ title, isLoggedIn = false, onCreateFeed }) {
+export default function FeedHeader({
+  title,
+  isLoggedIn = false,
+  activeTab = 'for_you',
+  onTabChange,
+  onCreateFeed,
+}) {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -42,8 +48,36 @@ export default function FeedHeader({ title, isLoggedIn = false, onCreateFeed }) 
     <header className="py-2 px-1 mb-2 select-none">
       <div className="flex items-center justify-between relative">
         {isLoggedIn ? (
-          <div className="flex items-center gap-1.5 font-bold text-base text-black dark:text-white tracking-tight">
-            <span>{t('home.forYou', 'For you')}</span>
+          <div className="flex items-center gap-5 text-sm sm:text-base font-bold tracking-tight">
+            <button
+              type="button"
+              onClick={() => onTabChange?.('for_you')}
+              className={`transition-colors cursor-pointer relative py-1 ${
+                activeTab === 'for_you'
+                  ? 'text-black dark:text-white'
+                  : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'
+              }`}
+            >
+              <span>{t('home.forYou', 'Dành cho bạn')}</span>
+              {activeTab === 'for_you' && (
+                <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-black dark:bg-white rounded-full animate-in fade-in duration-150" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onTabChange?.('following')}
+              className={`transition-colors cursor-pointer relative py-1 ${
+                activeTab === 'following'
+                  ? 'text-black dark:text-white'
+                  : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'
+              }`}
+            >
+              <span>{t('home.following', 'Đang theo dõi')}</span>
+              {activeTab === 'following' && (
+                <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-black dark:bg-white rounded-full animate-in fade-in duration-150" />
+              )}
+            </button>
           </div>
         ) : (
           <h1 className="text-base font-bold text-black dark:text-white tracking-tight">
@@ -90,4 +124,3 @@ export default function FeedHeader({ title, isLoggedIn = false, onCreateFeed }) 
     </header>
   );
 }
-

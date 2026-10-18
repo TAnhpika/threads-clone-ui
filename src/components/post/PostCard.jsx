@@ -37,10 +37,13 @@ export default function PostCard({ post }) {
 
         {/* 3. Thanh tương tác (Like, Comment, Repost, Share) */}
         <InteractionBar
+          postId={post.id}
           initialLikes={post.likes}
           initialComments={post.comments}
           initialReposts={post.reposts}
           initialShares={post.shares}
+          initialIsLiked={post.isLiked}
+          initialIsReposted={post.isReposted}
         />
       </div>
     </article>

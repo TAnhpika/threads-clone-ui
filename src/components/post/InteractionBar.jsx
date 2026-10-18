@@ -10,12 +10,15 @@ export default function InteractionBar({
   initialComments = 0,
   initialReposts = 0,
   initialShares = 0,
+  initialIsLiked = false,
+  initialIsReposted = false,
+  postId,
 }) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [likes, setLikes] = useState(initialLikes);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [reposts, setReposts] = useState(initialReposts);
-  const [isReposted, setIsReposted] = useState(false);
+  const [isReposted, setIsReposted] = useState(initialIsReposted);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);

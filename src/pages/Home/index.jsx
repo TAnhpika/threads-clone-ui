@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { Plus, Loader2 } from 'lucide-react';
@@ -9,23 +9,44 @@ import CreatePostBox from '@/components/post/CreatePostBox';
 import CreatePostModal from '@/components/post/CreatePostModal';
 import CreateFeedModal from '@/components/feed/CreateFeedModal';
 import SuggestedProfiles from '@/components/feed/SuggestedProfiles';
-import { mockPosts } from '@/components/post/mockPosts';
+import { getFeed } from '@/services/postService';
 import { useInfinityLoad } from '@/hooks/useInfinityLoad';
 import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
 
-const INITIAL_BATCH_SIZE = 6;
-const PAGE_SIZE = 3;
+// Skeleton hiển thị khi đang tải danh sách bài viết
+function PostSkeleton() {
+  return (
+    <div className="py-4 px-4 sm:px-5 border-b border-zinc-100 dark:border-zinc-800/80 animate-pulse select-none">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="w-28 h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded" />
+          <div className="w-16 h-3 bg-zinc-100 dark:bg-zinc-850 rounded" />
+        </div>
+      </div>
+      <div className="pl-13 mt-3 space-y-2">
+        <div className="w-11/12 h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded" />
+        <div className="w-4/5 h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded" />
+        <div className="w-2/3 h-3.5 bg-zinc-100 dark:bg-zinc-850 rounded" />
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage({ defaultCreateFeedOpen = false }) {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const currentUser = useSelector(selectCurrentUser);
 
-  // Khởi tạo batch bài viết ban đầu không bị trùng
-  const [posts, setPosts] = useState(() => mockPosts.slice(0, INITIAL_BATCH_SIZE));
+  // State quản lý Feed
+  const [feedType, setFeedType] = useState('for_you'); // 'for_you' | 'following'
+  const [posts, setPosts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(() => mockPosts.length > INITIAL_BATCH_SIZE);
+  const [error, setError] = useState(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('center'); // 'center' | 'bottom-right'
@@ -35,38 +56,81 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
   const [toastMessage, setToastMessage] = useState(null);
   const [showSuggested, setShowSuggested] = useState(false);
 
-  // Tải thêm bài viết: lọc triệt để các bài viết đã có để đảm bảo bài mới KHÔNG BAO GIỜ bị trùng
-  const loadMorePosts = useCallback(() => {
-    if (isLoadingMore || !hasMore) return;
+  // Tránh fetch trùng lặp trong React StrictMode
+  const isFetchingRef = useRef(false);
 
-    // Lọc các bài viết trong mockPosts chưa từng xuất hiện trên trang
-    const loadedIds = new Set(posts.map((p) => p.id));
-    const unrenderedPosts = mockPosts.filter((p) => !loadedIds.has(p.id));
+  // Hàm gọi API lấy danh sách bài viết từ backend
+  const fetchFeed = useCallback(async (targetPage = 1, targetType = 'for_you', isReset = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
 
-    // Nếu đã tải hết tất cả bài viết mẫu
-    if (unrenderedPosts.length === 0) {
-      setHasMore(false);
-      return;
+    if (isReset) {
+      setIsLoadingInitial(true);
+      setError(null);
+    } else {
+      setIsLoadingMore(true);
     }
 
-    setIsLoadingMore(true);
+    try {
+      const res = await getFeed({
+        type: targetType,
+        page: targetPage,
+        per_page: 20,
+      });
 
-    setTimeout(() => {
-      const nextBatch = unrenderedPosts.slice(0, PAGE_SIZE);
-      setPosts((prev) => [...prev, ...nextBatch]);
-      setIsLoadingMore(false);
+      const newPosts = res.data || [];
+      const pagination = res.pagination;
 
-      if (unrenderedPosts.length <= PAGE_SIZE) {
-        setHasMore(false);
+      if (isReset) {
+        setPosts(newPosts);
+        setPage(1);
+      } else {
+        setPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const filteredNew = newPosts.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...filteredNew];
+        });
+        setPage(targetPage);
       }
-    }, 400);
-  }, [isLoadingMore, hasMore, posts]);
+
+      // Kiểm tra còn trang tiếp theo không
+      if (pagination) {
+        setHasMore(pagination.current_page < pagination.last_page);
+      } else {
+        setHasMore(newPosts.length >= 20);
+      }
+    } catch (err) {
+      console.error('Fetch feed error:', err);
+      setError('Không thể tải bảng tin. Vui lòng thử lại sau.');
+    } finally {
+      setIsLoadingInitial(false);
+      setIsLoadingMore(false);
+      isFetchingRef.current = false;
+    }
+  }, []);
+
+  // Lần đầu mount hoặc khi feedType thay đổi: gọi API trang 1
+  useEffect(() => {
+    fetchFeed(1, feedType, true);
+  }, [fetchFeed, feedType]);
+
+  // Đổi tab giữa "Dành cho bạn" và "Đang theo dõi"
+  const handleTabChange = (newType) => {
+    if (newType === feedType) return;
+    setFeedType(newType);
+  };
+
+  // Tải thêm bài viết khi cuộn chạm đáy
+  const loadMorePosts = useCallback(() => {
+    if (isLoadingMore || isLoadingInitial || !hasMore || isFetchingRef.current) return;
+    fetchFeed(page + 1, feedType, false);
+  }, [isLoadingMore, isLoadingInitial, hasMore, page, feedType, fetchFeed]);
 
   // Sử dụng hook useInfinityLoad để lắng nghe khi cuộn chạm đáy
   const { sentinelRef } = useInfinityLoad({
     onIntersect: loadMorePosts,
     hasMore,
-    isLoading: isLoadingMore,
+    isLoading: isLoadingMore || isLoadingInitial,
     rootMargin: '300px 0px',
   });
 
@@ -131,24 +195,88 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     const newPost = {
       id: `post-${Date.now()}`,
       author: {
-        name: currentUser?.name || 'tuananhpika',
-        username: currentUser?.username || currentUser?.email?.split('@')[0] || 'tuananhpika',
+        id: currentUser?.id,
+        name: currentUser?.name || 'User',
+        username: currentUser?.username || currentUser?.email?.split('@')[0] || 'user',
         avatar: currentUser?.avatar || userAvatar,
         isVerified: true,
       },
-      tag: newPostData.topic || 'Old Money Aesthetic',
-      timestamp: 'Vừa xong',
+      tag: newPostData.topic || null,
+      timestamp: 'vừa xong',
       content: newPostData.content,
-      media: newPostData.media || null,
+      media: newPostData.media ? { url: newPostData.media.url, urls: [newPostData.media.url] } : null,
       likes: 0,
       comments: 0,
       reposts: 0,
       shares: 0,
+      isLiked: false,
+      isSaved: false,
+      isReposted: false,
     };
 
     setPosts([newPost, ...posts]);
     setToastMessage('Đã đăng bài viết mới thành công ✨');
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Khối danh sách bài viết dùng chung cho cả 2 view (Authenticated & Unauthenticated)
+  const renderPostList = () => {
+    if (isLoadingInitial) {
+      return (
+        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+        </div>
+      );
+    }
+
+    if (error && posts.length === 0) {
+      return (
+        <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm text-zinc-500 mb-4">{error}</p>
+          <button
+            type="button"
+            onClick={() => fetchFeed(1, feedType, true)}
+            className="px-5 py-2.5 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 text-xs font-bold transition-all cursor-pointer"
+          >
+            Thử lại
+          </button>
+        </div>
+      );
+    }
+
+    if (posts.length === 0) {
+      return (
+        <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+            Chưa có bài viết nào
+          </p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 max-w-sm">
+            {feedType === 'following'
+              ? 'Hãy theo dõi thêm người dùng để xem bài viết của họ tại đây.'
+              : 'Hãy là người đầu tiên chia sẻ bài viết mới trên Threads!'}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+        {posts.flatMap((post, index) => {
+          const isTarget = index === 1;
+          const items = [<PostCard key={post.id} post={post} />];
+          if (showSuggested && isTarget) {
+            items.push(
+              <SuggestedProfiles
+                key={isAuthenticated ? 'suggested-profiles-auth' : 'suggested-profiles-unauth'}
+              />
+            );
+          }
+          return items;
+        })}
+      </div>
+    );
   };
 
   // Khi CHƯA ĐĂNG NHẬP: Layout chuẩn mẫu Threads - Header 'Home' trên cột Posts, Block Log in ngang height với Posts
@@ -169,27 +297,19 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
           {/* Row 2, Col 1: Khối Posts Feed */}
           <div className="w-full min-w-0">
             <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                {posts.flatMap((post, index) => {
-                  const isTarget =
-                    post.id === 'post-fidsulaiman9' ||
-                    (!posts.some((p) => p.id === 'post-fidsulaiman9') && index === 1);
-                  const items = [<PostCard key={post.id} post={post} />];
-                  if (showSuggested && isTarget) {
-                    items.push(<SuggestedProfiles key="suggested-profiles-unauth" />);
-                  }
-                  return items;
-                })}
-              </div>
+              {renderPostList()}
 
               {/* Sentinel và loading indicator cho infinite scroll */}
-              <div ref={sentinelRef} className="py-6 flex flex-col items-center justify-center min-h-14 border-t border-zinc-100 dark:border-zinc-800/80">
+              <div
+                ref={sentinelRef}
+                className="py-6 flex flex-col items-center justify-center min-h-14 border-t border-zinc-100 dark:border-zinc-800/80"
+              >
                 {isLoadingMore ? (
                   <div className="flex items-center gap-2 text-zinc-400">
                     <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
                     <span className="text-xs font-semibold">Đang tải thêm bài viết...</span>
                   </div>
-                ) : !hasMore ? (
+                ) : !hasMore && posts.length > 0 ? (
                   <div className="text-xs text-zinc-400 dark:text-zinc-500 font-medium py-1">
                     Đã hiển thị tất cả bài viết
                   </div>
@@ -207,29 +327,30 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     );
   }
 
+  // Khi ĐÃ ĐĂNG NHẬP
   return (
-    <div className={`flex justify-center items-start gap-8 w-full ${isAuthenticated ? 'max-w-2xl mx-auto' : ''}`}>
+    <div className="flex justify-center items-start gap-8 w-full max-w-2xl mx-auto">
       {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}
       <div className="flex-1 max-w-155 min-w-0">
-        {/* Header của Feed: 'For you' nằm riêng phía trên Card */}
+        {/* Header của Feed: 'For you' & 'Following' nằm riêng phía trên Card */}
         <FeedHeader
           title="Trang chủ"
           isLoggedIn={isAuthenticated}
+          activeTab={feedType}
+          onTabChange={handleTabChange}
           onCreateFeed={handleOpenCreateFeed}
         />
 
         {/* Khối Card chính bo góc chứa Composer & Danh sách Post */}
         <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
-          {/* Thanh soạn thảo 'What's new?' chỉ xuất hiện khi đã đăng nhập */}
-          {isAuthenticated && (
-            <CreatePostBox
-              user={currentUser}
-              onClick={() => {
-                setCreateModalPlacement('center');
-                setIsCreateModalOpen(true);
-              }}
-            />
-          )}
+          {/* Thanh soạn thảo 'What's new?' */}
+          <CreatePostBox
+            user={currentUser}
+            onClick={() => {
+              setCreateModalPlacement('center');
+              setIsCreateModalOpen(true);
+            }}
+          />
 
           {/* Dải phân cách '☆ First thread' */}
           <div className="flex items-center gap-1.5 px-6 py-2.5 text-xs font-semibold text-zinc-500 border-b border-zinc-100 dark:border-zinc-800/80">
@@ -240,27 +361,19 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
           </div>
 
           {/* Danh sách các bài viết */}
-          <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-            {posts.flatMap((post, index) => {
-              const isTarget =
-                post.id === 'post-fidsulaiman9' ||
-                (!posts.some((p) => p.id === 'post-fidsulaiman9') && index === 1);
-              const items = [<PostCard key={post.id} post={post} />];
-              if (showSuggested && isTarget) {
-                items.push(<SuggestedProfiles key="suggested-profiles-auth" />);
-              }
-              return items;
-            })}
-          </div>
+          {renderPostList()}
 
           {/* Sentinel và loading indicator cho infinite scroll */}
-          <div ref={sentinelRef} className="py-6 flex flex-col items-center justify-center min-h-14 border-t border-zinc-100 dark:border-zinc-800/80">
+          <div
+            ref={sentinelRef}
+            className="py-6 flex flex-col items-center justify-center min-h-14 border-t border-zinc-100 dark:border-zinc-800/80"
+          >
             {isLoadingMore ? (
               <div className="flex items-center gap-2 text-zinc-400">
                 <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
                 <span className="text-xs font-semibold">Đang tải thêm bài viết...</span>
               </div>
-            ) : !hasMore ? (
+            ) : !hasMore && posts.length > 0 ? (
               <div className="text-xs text-zinc-400 dark:text-zinc-500 font-medium py-1">
                 Đã hiển thị tất cả bài viết
               </div>
@@ -271,48 +384,41 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
         </section>
       </div>
 
-      {/* Cột phải: LoginPanel mời đăng nhập (chỉ hiển thị khi CHƯA đăng nhập) */}
-      {!isAuthenticated && <LoginPanel />}
-
       {/* 1. Nút outline sổ ghi chép [+] ở mép phải giữa màn hình */}
-      {isAuthenticated && (
-        <button
-          onClick={() => {
-            setCreateModalPlacement('bottom-right');
-            setIsCreateModalOpen(true);
-          }}
-          className="fixed right-6 sm:right-8 top-1/2 -translate-y-1/2 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors z-40 cursor-pointer hidden lg:block"
-          title="Tạo Thread mới"
-          aria-label="Tạo Thread mới"
-        >
-          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-[1.8]">
-            <rect x="3" y="3" width="18" height="18" rx="4" />
-            <path d="M8 3v18" />
-            <path d="M15 9v6" />
-            <path d="M12 12h6" />
-          </svg>
-        </button>
-      )}
+      <button
+        onClick={() => {
+          setCreateModalPlacement('bottom-right');
+          setIsCreateModalOpen(true);
+        }}
+        className="fixed right-6 sm:right-8 top-1/2 -translate-y-1/2 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors z-40 cursor-pointer hidden lg:block"
+        title="Tạo Thread mới"
+        aria-label="Tạo Thread mới"
+      >
+        <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-[1.8]">
+          <rect x="3" y="3" width="18" height="18" rx="4" />
+          <path d="M8 3v18" />
+          <path d="M15 9v6" />
+          <path d="M12 12h6" />
+        </svg>
+      </button>
 
       {/* 2. Nút nổi vuông bo góc dấu cộng [+] ở góc dưới bên phải */}
-      {isAuthenticated && (
-        <button
-          id="floating-new-thread-btn"
-          onClick={() => {
-            if (isCreateModalOpen && createModalPlacement === 'bottom-right') {
-              setIsCreateModalOpen(false);
-            } else {
-              setCreateModalPlacement('bottom-right');
-              setIsCreateModalOpen(true);
-            }
-          }}
-          className="fixed bottom-6 right-6 sm:right-8 w-14 h-14 rounded-2xl bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
-          title="Tạo Thread mới"
-          aria-label="Tạo Thread mới"
-        >
-          <Plus className="w-7 h-7 stroke-[2.2]" />
-        </button>
-      )}
+      <button
+        id="floating-new-thread-btn"
+        onClick={() => {
+          if (isCreateModalOpen && createModalPlacement === 'bottom-right') {
+            setIsCreateModalOpen(false);
+          } else {
+            setCreateModalPlacement('bottom-right');
+            setIsCreateModalOpen(true);
+          }
+        }}
+        className="fixed bottom-6 right-6 sm:right-8 w-14 h-14 rounded-2xl bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+        title="Tạo Thread mới"
+        aria-label="Tạo Thread mới"
+      >
+        <Plus className="w-7 h-7 stroke-[2.2]" />
+      </button>
 
       {/* Modal tạo bài viết (Hỗ trợ cả 'center' và 'bottom-right' góc phải) */}
       <CreatePostModal
@@ -339,4 +445,3 @@ export default function HomePage({ defaultCreateFeedOpen = false }) {
     </div>
   );
 }
-
