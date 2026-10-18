@@ -64,6 +64,7 @@ export default function ShareModal({
   postUrl,
   onActionFeedback,
   onOpenIgStory,
+  onOpenCopyImage,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showBanner, setShowBanner] = useState(true);
@@ -120,7 +121,13 @@ export default function ShareModal({
       }
       return;
     } else if (type === 'copy_image') {
-      if (onActionFeedback) onActionFeedback('Đã sao chép bài viết dưới dạng hình ảnh');
+      onClose();
+      if (onOpenCopyImage) {
+        onOpenCopyImage();
+      } else if (onActionFeedback) {
+        onActionFeedback('Đang chuẩn bị xuất ảnh bài viết...');
+      }
+      return;
     } else if (type === 'embed_code') {
       if (onActionFeedback) onActionFeedback('Đã sao chép mã nhúng bài viết');
     }

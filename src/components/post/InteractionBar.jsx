@@ -9,6 +9,7 @@ import RepostModal from './RepostModal';
 import QuoteModal from './QuoteModal';
 import ShareModal from './ShareModal';
 import AddToIgStoryModal from './AddToIgStoryModal';
+import CopyImageModal from './CopyImageModal';
 
 export default function InteractionBar({
   initialLikes = 0,
@@ -31,6 +32,7 @@ export default function InteractionBar({
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isIgStoryModalOpen, setIsIgStoryModalOpen] = useState(false);
+  const [isCopyImageModalOpen, setIsCopyImageModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
@@ -195,6 +197,7 @@ export default function InteractionBar({
             postId={postId || post?.id}
             onActionFeedback={handleFeedback}
             onOpenIgStory={() => setIsIgStoryModalOpen(true)}
+            onOpenCopyImage={() => setIsCopyImageModalOpen(true)}
           />
         )}
       </div>
@@ -204,6 +207,16 @@ export default function InteractionBar({
         <AddToIgStoryModal
           isOpen={isIgStoryModalOpen}
           onClose={() => setIsIgStoryModalOpen(false)}
+          post={post}
+          onSuccessFeedback={handleFeedback}
+        />
+      )}
+
+      {/* Modal Copy as Image */}
+      {isAuthenticated && (
+        <CopyImageModal
+          isOpen={isCopyImageModalOpen}
+          onClose={() => setIsCopyImageModalOpen(false)}
           post={post}
           onSuccessFeedback={handleFeedback}
         />
