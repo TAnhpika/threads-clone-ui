@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, CheckCircle2 } from 'lucide-react';
+import { MoreHorizontal, CheckCircle2, Plus } from 'lucide-react';
 import PostMenu from './PostMenu';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
 
@@ -8,6 +8,7 @@ export default function PostHeader({
   timestamp = '2h',
   tag,
   postId,
+  showFollowBadge = false,
 }) {
   const { name = 'Anonymous', username = 'user', avatar, isVerified = false } = author;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -40,6 +41,11 @@ export default function PostHeader({
             className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
             loading="lazy"
           />
+          {showFollowBadge && (
+            <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
+              <Plus className="w-3 h-3 stroke-3" />
+            </div>
+          )}
         </div>
 
         {/* Tên, Verified & Thời gian */}

@@ -21,6 +21,8 @@ export default function InteractionBar({
   authorUsername,
   feedType = 'for_you',
   post,
+  onCommentClick,
+  onQuote,
 }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -55,6 +57,10 @@ export default function InteractionBar({
 
   const handleComment = (e) => {
     e?.stopPropagation?.();
+    if (onCommentClick) {
+      onCommentClick(e);
+      return;
+    }
     if (postId) {
       const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
       dispatch(
@@ -92,6 +98,10 @@ export default function InteractionBar({
       return;
     }
     setIsRepostModalOpen(false);
+    if (onQuote) {
+      onQuote(post);
+      return;
+    }
     setIsQuoteModalOpen(true);
   };
 

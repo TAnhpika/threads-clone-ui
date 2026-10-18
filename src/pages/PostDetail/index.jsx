@@ -16,17 +16,15 @@ import {
   Plus,
 } from 'lucide-react';
 import { getPostByIdApi, getRepliesApi, createReplyApi } from '@/services/postService';
-import { usePostInteraction } from '@/hooks/usePostInteraction';
-import PostContent from '@/components/post/PostContent';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import { getAuthorAvatar } from '@/utils/avatar';
 import PostMenu from '@/components/post/PostMenu';
-import RepostModal from '@/components/post/RepostModal';
-import QuotedPostCard from '@/components/post/QuotedPostCard';
 import CreatePostModal from '@/components/post/CreatePostModal';
-import ShareModal from '@/components/post/ShareModal';
-import AddToIgStoryModal from '@/components/post/AddToIgStoryModal';
+import PostCard from '@/components/post/PostCard';
+import PostContent from '@/components/post/PostContent';
+import RepostModal from '@/components/post/RepostModal';
+import { usePostInteraction } from '@/hooks/usePostInteraction';
 
 export default function PostDetailPage() {
   const { username, postId } = useParams();
@@ -44,8 +42,6 @@ export default function PostDetailPage() {
 
   // Menu và input states
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
-  const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
-  const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [quoteTargetPost, setQuoteTargetPost] = useState(null);
   const [replyInput, setReplyInput] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -53,32 +49,12 @@ export default function PostDetailPage() {
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('bottom-right');
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isIgStoryModalOpen, setIsIgStoryModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
   };
-
-  // Quản lý tương tác Like & Repost bài viết chính qua Hook tái sử dụng
-  const {
-    isLiked,
-    likes,
-    toggleLike: handleLikePost,
-    isReposted,
-    reposts,
-    toggleRepost: handleRepostPost,
-  } = usePostInteraction({
-    postId: post?.id || postId,
-    initialLikes: post?.likes || 0,
-    initialIsLiked: post?.isLiked || false,
-    initialReposts: post?.reposts || 0,
-    initialIsReposted: post?.isReposted || false,
-    onToast: showToast,
-    syncRedux: true,
-  });
 
   // Tải chi tiết bài viết và danh sách bình luận từ API
   useEffect(() => {
@@ -245,194 +221,19 @@ export default function PostDetailPage() {
         {!isLoading && post && (
           <main className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
             {/* 1. BÀI VIẾT CHÍNH (Main Post) */}
-            <article className="p-4 sm:p-5">
-              {/* Header tác giả */}
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  {/* Avatar có badge follow dấu cộng [+] */}
-                  <div className="relative shrink-0">
-                    <img
-                      src={post.author?.avatar || getAuthorAvatar(post.author)}
-                      alt={post.author?.username || 'user'}
-                      onError={(e) => {
-                        e.currentTarget.src = userAvatar;
-                      }}
-                      className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
-                      <Plus className="w-3 h-3 stroke-3" />
-                    </div>
-                  </div>
-
-                  {/* Username + Category/Tag + Thời gian */}
-                  <div className="flex items-center gap-1.5 min-w-0 text-sm">
-                    <span className="font-bold text-black dark:text-white hover:underline cursor-pointer truncate">
-                      {post.author?.username || username || 'user'}
-                    </span>
-                    {post.tag && (
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1 shrink-0">
-                        <span>›</span>
-                        <span className="font-medium hover:underline cursor-pointer">
-                          {post.tag}
-                        </span>
-                      </span>
-                    )}
-                    <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
-                      {post.timestamp}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Nút More (...) của bài viết */}
-                <div className="relative shrink-0">
-                  <button
-                    onClick={() => setIsPostMenuOpen((prev) => !prev)}
-                    className="p-1 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-                    title="Tuỳ chọn bài viết"
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
-                  <PostMenu
-                    isOpen={isPostMenuOpen}
-                    onClose={() => setIsPostMenuOpen(false)}
-                    onAction={(action) => {
-                      if (action === 'copy_link') showToast('Đã sao chép liên kết');
-                      if (action === 'save') showToast('Đã lưu bài viết');
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Nội dung bài viết (Text + Media/GIF) */}
-              <div className="mt-3">
-                <PostContent text={post.content} media={post.media} />
-              </div>
-
-              {/* Card bài viết trích dẫn (nếu có) */}
-              {post.quotedPost && (
-                <div className="mt-3">
-                  <QuotedPostCard post={post.quotedPost} />
-                </div>
-              )}
-
-              {/* Thanh tương tác bài viết chính: Heart | Comment | Repost | Share */}
-              <div className="flex items-center gap-4 sm:gap-6 mt-4 text-zinc-600 dark:text-zinc-400 text-sm font-medium">
-                {/* Like */}
-                <button
-                  onClick={handleLikePost}
-                  className={`flex items-center gap-1.5 transition-colors cursor-pointer group ${
-                    isLiked ? 'text-red-500' : 'hover:text-black dark:hover:text-white'
-                  }`}
-                >
-                  <Heart
-                    className={`w-4.5 h-4.5 transition-transform group-hover:scale-110 ${
-                      isLiked ? 'fill-red-500 stroke-red-500' : ''
-                    }`}
-                  />
-                  <span>{likes}</span>
-                </button>
-
-                {/* Comment */}
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      window.dispatchEvent(
-                        new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
-                      );
-                      return;
-                    }
-                    replyInputRef.current?.focus();
-                  }}
-                  className="flex items-center gap-1.5 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
-                >
-                  <MessageCircle className="w-4.5 h-4.5 transition-transform group-hover:scale-110" />
-                  <span>{post.comments || replies.length}</span>
-                </button>
-
-                {/* Repost */}
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        window.dispatchEvent(
-                          new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } })
-                        );
-                        return;
-                      }
-                      setIsRepostModalOpen((prev) => !prev);
-                    }}
-                    className={`flex items-center gap-1.5 transition-colors cursor-pointer group ${
-                      isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
-                    }`}
-                    title={isReposted ? 'Hủy đăng lại' : 'Đăng lại'}
-                    aria-expanded={isRepostModalOpen}
-                  >
-                    <Repeat2
-                      className={`w-4.5 h-4.5 transition-transform group-hover:scale-110 ${
-                        isReposted ? 'stroke-green-500 stroke-2 text-green-500' : ''
-                      }`}
-                    />
-                    <span>{reposts}</span>
-                  </button>
-
-                  {/* Modal Repost / Quote */}
-                  {isAuthenticated && (
-                    <RepostModal
-                      isOpen={isRepostModalOpen}
-                      onClose={() => setIsRepostModalOpen(false)}
-                      isReposted={isReposted}
-                      onRepost={handleRepostPost}
-                      onQuote={() => {
-                        setIsRepostModalOpen(false);
-                        setQuoteTargetPost(post);
-                        setCreateModalPlacement('center');
-                        setIsCreateModalOpen(true);
-                      }}
-                    />
-                  )}
-                </div>
-
-                {/* Share */}
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        window.dispatchEvent(new CustomEvent('open-say-more'));
-                        return;
-                      }
-                      setIsShareModalOpen(true);
-                    }}
-                    className="flex items-center gap-1.5 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
-                    title="Chia sẻ"
-                  >
-                    <Send className="w-4.5 h-4.5 transition-transform group-hover:scale-110" />
-                    <span>{post.shares || 0}</span>
-                  </button>
-
-                  {/* Modal Share Post */}
-                  {isAuthenticated && (
-                    <ShareModal
-                      isOpen={isShareModalOpen}
-                      onClose={() => setIsShareModalOpen(false)}
-                      post={post}
-                      postId={post.id || postId}
-                      onActionFeedback={showToast}
-                      onOpenIgStory={() => setIsIgStoryModalOpen(true)}
-                    />
-                  )}
-
-                  {/* Modal Add to Instagram Story */}
-                  {isAuthenticated && (
-                    <AddToIgStoryModal
-                      isOpen={isIgStoryModalOpen}
-                      onClose={() => setIsIgStoryModalOpen(false)}
-                      post={post}
-                      onSuccessFeedback={showToast}
-                    />
-                  )}
-                </div>
-              </div>
-            </article>
+            <PostCard
+              post={post}
+              isDetail={true}
+              onCommentClick={() => {
+                replyInputRef.current?.focus();
+                replyInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              onQuote={(targetPost) => {
+                setQuoteTargetPost(targetPost || post);
+                setCreateModalPlacement('center');
+                setIsCreateModalOpen(true);
+              }}
+            />
 
             {/* 2. DẢI BỘ LỌC 'Top ⌵' & 'View activity ›' */}
             <div className="flex items-center justify-between px-4 sm:px-5 py-2.5 border-t border-zinc-100 dark:border-zinc-800/80 text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">
