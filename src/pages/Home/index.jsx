@@ -183,17 +183,58 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
   }, [feedType, dispatch]);
 
   // Tải thêm bài viết khi cuộn chạm đáy (Infinite scroll)
-  const loadMorePosts = useCallback(() => {
+  // Khi ở các trang đầu (page <= 4), tự động kích hoạt tải thêm 3 lần liên tiếp để tạo buffer chống gián đoạn khi lướt nhanh
+  const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || isLoadingInitial || !hasMore || isFetchingRef.current) return;
-    fetchFeed(page + 1, feedType, false);
-  }, [isLoadingMore, isLoadingInitial, hasMore, page, feedType, fetchFeed]);
 
-  // Hook lắng nghe chạm đáy
+    isFetchingRef.current = true;
+    setIsLoadingMore(true);
+
+    const targetType = feedType;
+    const startPage = page + 1;
+    const consecutiveBatches = page <= 4 ? 3 : 1;
+
+    try {
+      let currentPage = startPage;
+      for (let i = 0; i < consecutiveBatches; i++) {
+        const res = await getFeed({
+          type: targetType,
+          page: currentPage,
+          per_page: FEED_PER_PAGE,
+        });
+
+        const newPosts = res.data || [];
+        const pagination = res.pagination;
+        const nextHasMore = pagination
+          ? pagination.current_page < pagination.last_page
+          : newPosts.length >= FEED_PER_PAGE;
+
+        dispatch(
+          appendFeedData({
+            feedType: targetType,
+            posts: newPosts,
+            page: currentPage,
+            hasMore: nextHasMore,
+          })
+        );
+
+        if (!nextHasMore || newPosts.length === 0) break;
+        currentPage += 1;
+      }
+    } catch (err) {
+      console.error('Fetch consecutive feed error:', err);
+    } finally {
+      setIsLoadingMore(false);
+      isFetchingRef.current = false;
+    }
+  }, [isLoadingMore, isLoadingInitial, hasMore, page, feedType, dispatch]);
+
+  // Hook lắng nghe chạm đáy với rootMargin 1000px kích hoạt từ rất sớm trước khi user chạm tới đáy
   const { sentinelRef } = useInfinityLoad({
     onIntersect: loadMorePosts,
     hasMore,
     isLoading: isLoadingMore || isLoadingInitial,
-    rootMargin: '300px 0px',
+    rootMargin: '1000px 0px',
   });
 
   // Lắng nghe sự kiện mở Create Post Modal từ sidebar

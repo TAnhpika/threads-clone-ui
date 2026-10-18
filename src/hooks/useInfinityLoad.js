@@ -7,8 +7,8 @@ export function useInfinityLoad({
     onIntersect,
     hasMore,
     isLoading,
-    rootMargin = "300px 0px",
-    threshold = 0.1,
+    rootMargin = "1000px 0px",
+    threshold = 0.01,
 }) {
     const sentinelRef = useRef(null);
 
