@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, Link2, Image, Globe } from 'lucide-react';
+import copy from 'copy-to-clipboard';
 import userAvatar from '@/assets/images/default-avatar.svg';
 
 // Icon Instagram Story với dải gradient đặc trưng
@@ -58,7 +59,9 @@ const defaultProfiles = [
 export default function ShareModal({
   isOpen,
   onClose,
-  postUrl = window.location.href,
+  post,
+  postId,
+  postUrl,
   onActionFeedback,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,9 +106,9 @@ export default function ShareModal({
 
   const handleAction = (type) => {
     if (type === 'copy_link') {
-      if (navigator?.clipboard) {
-        navigator.clipboard.writeText(postUrl);
-      }
+      const shareId = postId || post?.id || 'IKPRLtxQV';
+      const shareUrl = `${window.location.origin}/share/${shareId}/`;
+      copy(shareUrl);
       if (onActionFeedback) onActionFeedback('Đã sao chép liên kết vào bộ nhớ tạm');
     } else if (type === 'instagram_story') {
       if (onActionFeedback) onActionFeedback('Đang chuyển hướng chia sẻ lên Instagram Story...');

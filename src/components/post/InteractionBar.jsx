@@ -179,6 +179,8 @@ export default function InteractionBar({
           <ShareModal
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}
+            post={post}
+            postId={postId || post?.id}
             onActionFeedback={handleFeedback}
           />
         )}

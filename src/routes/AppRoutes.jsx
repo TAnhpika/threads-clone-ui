@@ -17,6 +17,7 @@ const RegisterPage = lazy(() => import("@/pages/Auth/Register"));
 const ForgotPasswordPage = lazy(() => import("@/pages/Auth/ForgotPassword"));
 const ResetPasswordPage = lazy(() => import("@/pages/Auth/ResetPassword"));
 const VerifyEmailPage = lazy(() => import("@/pages/Auth/VerifyEmail"));
+const ShareRedirectPage = lazy(() => import("@/pages/ShareRedirect"));
 const NotFoundPage = lazy(() => import("@/pages/NotFound"));
 
 function PageLoader() {
@@ -39,6 +40,7 @@ export default function AppRoutes() {
                     <Route path="/@:username/post/:postId" element={<PostDetailPage />} />
                     <Route path="/:username/post/:postId" element={<PostDetailPage />} />
                     <Route path="/post/:postId" element={<PostDetailPage />} />
+                    <Route path="/share/:postId" element={<ShareRedirectPage />} />
                     <Route path="/messages" element={<MessagesPage />} />
                     <Route path="/activity" element={<ActivityPage />} />
                     <Route path="/insights" element={<InsightsPage />} />

@@ -188,10 +188,10 @@ export default function PostDetailPage() {
           {/* Nút quay lại */}
           <button
             onClick={() => {
-              if (window.history.length > 1) {
-                navigate(-1);
-              } else {
+              if (location.state?.fromShare || window.history.length <= 2) {
                 navigate('/');
+              } else {
+                navigate(-1);
               }
             }}
             className="p-1.5 -ml-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"

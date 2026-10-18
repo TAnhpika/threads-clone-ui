@@ -202,7 +202,10 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
       path: '/profile',
       outlineIcon: User,
       solidIcon: User,
-      isActive: location.pathname.startsWith('/profile') || location.pathname.startsWith('/@'),
+      isActive:
+        !location.pathname.includes('/post/') &&
+        !location.pathname.startsWith('/share/') &&
+        (location.pathname === '/profile' || location.pathname.startsWith('/@')),
     },
     {
       label: 'Insights',
