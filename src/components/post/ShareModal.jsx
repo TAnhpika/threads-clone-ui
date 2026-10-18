@@ -63,6 +63,7 @@ export default function ShareModal({
   postId,
   postUrl,
   onActionFeedback,
+  onOpenIgStory,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showBanner, setShowBanner] = useState(true);
@@ -111,7 +112,13 @@ export default function ShareModal({
       copy(shareUrl);
       if (onActionFeedback) onActionFeedback('Đã sao chép liên kết vào bộ nhớ tạm');
     } else if (type === 'instagram_story') {
-      if (onActionFeedback) onActionFeedback('Đang chuyển hướng chia sẻ lên Instagram Story...');
+      onClose();
+      if (onOpenIgStory) {
+        onOpenIgStory();
+      } else if (onActionFeedback) {
+        onActionFeedback('Đang chuyển hướng chia sẻ lên Instagram Story...');
+      }
+      return;
     } else if (type === 'copy_image') {
       if (onActionFeedback) onActionFeedback('Đã sao chép bài viết dưới dạng hình ảnh');
     } else if (type === 'embed_code') {

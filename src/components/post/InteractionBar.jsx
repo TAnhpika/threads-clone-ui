@@ -8,6 +8,7 @@ import { usePostInteraction } from '@/hooks/usePostInteraction';
 import RepostModal from './RepostModal';
 import QuoteModal from './QuoteModal';
 import ShareModal from './ShareModal';
+import AddToIgStoryModal from './AddToIgStoryModal';
 
 export default function InteractionBar({
   initialLikes = 0,
@@ -27,6 +28,7 @@ export default function InteractionBar({
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isIgStoryModalOpen, setIsIgStoryModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
@@ -182,9 +184,20 @@ export default function InteractionBar({
             post={post}
             postId={postId || post?.id}
             onActionFeedback={handleFeedback}
+            onOpenIgStory={() => setIsIgStoryModalOpen(true)}
           />
         )}
       </div>
+
+      {/* Modal Add to Instagram Story */}
+      {isAuthenticated && (
+        <AddToIgStoryModal
+          isOpen={isIgStoryModalOpen}
+          onClose={() => setIsIgStoryModalOpen(false)}
+          post={post}
+          onSuccessFeedback={handleFeedback}
+        />
+      )}
 
       {/* Modal Quote Post */}
       {isAuthenticated && (

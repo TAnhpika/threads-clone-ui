@@ -25,6 +25,8 @@ import PostMenu from '@/components/post/PostMenu';
 import RepostModal from '@/components/post/RepostModal';
 import QuotedPostCard from '@/components/post/QuotedPostCard';
 import CreatePostModal from '@/components/post/CreatePostModal';
+import ShareModal from '@/components/post/ShareModal';
+import AddToIgStoryModal from '@/components/post/AddToIgStoryModal';
 
 export default function PostDetailPage() {
   const { username, postId } = useParams();
@@ -51,6 +53,8 @@ export default function PostDetailPage() {
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('bottom-right');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isIgStoryModalOpen, setIsIgStoryModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
@@ -389,20 +393,44 @@ export default function PostDetailPage() {
                 </div>
 
                 {/* Share */}
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      window.dispatchEvent(new CustomEvent('open-say-more'));
-                      return;
-                    }
-                    navigator.clipboard?.writeText(window.location.href);
-                    showToast('Đã sao chép liên kết để chia sẻ');
-                  }}
-                  className="flex items-center gap-1.5 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
-                >
-                  <Send className="w-4.5 h-4.5 transition-transform group-hover:scale-110" />
-                  <span>{post.shares || 0}</span>
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        window.dispatchEvent(new CustomEvent('open-say-more'));
+                        return;
+                      }
+                      setIsShareModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
+                    title="Chia sẻ"
+                  >
+                    <Send className="w-4.5 h-4.5 transition-transform group-hover:scale-110" />
+                    <span>{post.shares || 0}</span>
+                  </button>
+
+                  {/* Modal Share Post */}
+                  {isAuthenticated && (
+                    <ShareModal
+                      isOpen={isShareModalOpen}
+                      onClose={() => setIsShareModalOpen(false)}
+                      post={post}
+                      postId={post.id || postId}
+                      onActionFeedback={showToast}
+                      onOpenIgStory={() => setIsIgStoryModalOpen(true)}
+                    />
+                  )}
+
+                  {/* Modal Add to Instagram Story */}
+                  {isAuthenticated && (
+                    <AddToIgStoryModal
+                      isOpen={isIgStoryModalOpen}
+                      onClose={() => setIsIgStoryModalOpen(false)}
+                      post={post}
+                      onSuccessFeedback={showToast}
+                    />
+                  )}
+                </div>
               </div>
             </article>
 
