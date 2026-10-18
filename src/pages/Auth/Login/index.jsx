@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { ChevronRight, X } from "lucide-react";
-import { selectIsAuthenticated } from "@/features/auth/authSlice";
+import { selectIsAuthenticated, loginSuccess } from "@/features/auth/authSlice";
 import * as authService from "@/services/authService";
 import AuthInput from "@/components/common/AuthInput";
 import AuthButton from "@/components/common/AuthButton";
@@ -144,8 +144,6 @@ export default function LoginPage() {
       const payload = {
         login: identifier,
         password: data.password.trim(),
-        email: identifier,
-        username: identifier,
       };
 
       // Gọi API Login
@@ -153,6 +151,7 @@ export default function LoginPage() {
       const resData = response?.data || response;
       const accessToken = resData?.access_token || resData?.accessToken;
       const refreshToken = resData?.refresh_token || resData?.refreshToken;
+      const user = resData?.user || resData;
 
       // Lưu access_token và refresh_token vào localStorage
       if (accessToken) {
@@ -162,8 +161,15 @@ export default function LoginPage() {
         localStorage.setItem("refreshToken", refreshToken);
       }
 
-      // Gọi API "Get User Info" để lấy thông tin người dùng đang đăng nhập và lưu vào global state
-      await dispatch(authService.getCurrentUser()).unwrap();
+      // Lưu user vào Redux store ngay từ response đăng nhập
+      dispatch(loginSuccess({ user, accessToken, refreshToken }));
+
+      // Gọi API "Get User Info" (/auth/user) để đồng bộ đầy đủ thông tin người dùng
+      try {
+        await dispatch(authService.getCurrentUser()).unwrap();
+      } catch (userErr) {
+        console.warn("Could not sync getCurrentUser, but login succeeded:", userErr);
+      }
 
       showToast("Đăng nhập thành công!");
       navigate(continueUrl, { replace: true });

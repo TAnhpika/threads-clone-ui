@@ -8,7 +8,7 @@ export const getCurrentUser = createAsyncThunk(
     "auth/getCurrentUser",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await http.get("/auth/me");
+            const response = await http.get("/auth/user");
             // httpClient interceptor trả về response.data trực tiếp
             const data = response?.data || response;
             return data;
