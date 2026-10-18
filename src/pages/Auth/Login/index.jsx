@@ -10,6 +10,16 @@ import * as authService from "@/services/authService";
 import AuthInput from "@/components/common/AuthInput";
 import AuthButton from "@/components/common/AuthButton";
 
+// Key lưu tài khoản và mật khẩu của lần đăng nhập gần nhất
+const LAST_LOGIN_STORAGE_KEY = "threads_last_login_account";
+
+const DEFAULT_IG_ACCOUNT = {
+  identifier: "anhcoding",
+  username: "anhcoding",
+  password: "123123123",
+  avatar: null,
+};
+
 // Schema validation kiểm tra form với Yup
 const loginSchema = yup.object().shape({
   identifier: yup
@@ -83,6 +93,22 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  // Lưu tài khoản & mật khẩu của lần đăng nhập gần nhất
+  const [savedAccount, setSavedAccount] = useState(() => {
+    try {
+      const stored = localStorage.getItem(LAST_LOGIN_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (parsed.identifier || parsed.username) && parsed.password) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse last login account:", e);
+    }
+    return DEFAULT_IG_ACCOUNT;
+  });
 
   const handleInputChange = () => {
     if (routeSuccessMessage) {
@@ -164,6 +190,21 @@ export default function LoginPage() {
       // Lưu user vào Redux store ngay từ response đăng nhập
       dispatch(loginSuccess({ user, accessToken, refreshToken }));
 
+      // Lưu thông tin tài khoản và mật khẩu của lần đăng nhập gần nhất cho nút Tiếp tục bằng Instagram
+      const accountToSave = {
+        identifier,
+        password: data.password.trim(),
+        username: user?.username || identifier,
+        name: user?.name || user?.username || identifier,
+        avatar: user?.avatar_url || user?.avatar || null,
+      };
+      try {
+        localStorage.setItem(LAST_LOGIN_STORAGE_KEY, JSON.stringify(accountToSave));
+        setSavedAccount(accountToSave);
+      } catch (saveErr) {
+        console.error("Failed to save last login account:", saveErr);
+      }
+
       // Gọi API "Get User Info" (/auth/user) để đồng bộ đầy đủ thông tin người dùng
       try {
         await dispatch(authService.getCurrentUser()).unwrap();
@@ -206,13 +247,15 @@ export default function LoginPage() {
     }
   };
 
-  // 2. Đăng nhập nhanh qua Instagram (tài khoản F8 demo)
+  // 2. Đăng nhập nhanh qua Instagram: Sử dụng tài khoản và mật khẩu của lần đăng nhập gần nhất
   const handleInstagramLogin = () => {
-    setValue("identifier", "tuananhpika");
-    setValue("password", "123123123");
+    const targetIdentifier = savedAccount?.identifier || savedAccount?.username || DEFAULT_IG_ACCOUNT.identifier;
+    const targetPassword = savedAccount?.password || DEFAULT_IG_ACCOUNT.password;
+    setValue("identifier", targetIdentifier);
+    setValue("password", targetPassword);
     onSubmit({
-      identifier: "tuananhpika",
-      password: "123123123",
+      identifier: targetIdentifier,
+      password: targetPassword,
     });
   };
 
@@ -281,17 +324,25 @@ export default function LoginPage() {
           onClick={handleInstagramLogin}
           className="w-full p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white hover:bg-zinc-50 dark:bg-[#141414] dark:hover:bg-[#1a1a1a] transition-all cursor-pointer flex items-center justify-between group shadow-xs dark:shadow-sm"
         >
-          <div className="flex items-center gap-3.5">
-            {/* Logo Gradient Instagram */}
-            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center shadow-md shrink-0">
-              <InstagramGlyph className="w-5.5 h-5.5 text-white" />
+          <div className="flex items-center gap-3.5 min-w-0">
+            {/* Logo Gradient Instagram hoặc Avatar nếu có */}
+            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center shadow-md shrink-0 overflow-hidden">
+              {savedAccount?.avatar ? (
+                <img
+                  src={savedAccount.avatar}
+                  alt={savedAccount.username || "Instagram account"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <InstagramGlyph className="w-5.5 h-5.5 text-white" />
+              )}
             </div>
-            <div className="text-left">
-              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 block">
+            <div className="text-left min-w-0">
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 block truncate">
                 Tiếp tục bằng Instagram
               </span>
-              <span className="text-sm font-bold text-black dark:text-white block tracking-tight">
-                tuananhpika
+              <span className="text-sm font-bold text-black dark:text-white block tracking-tight truncate">
+                {savedAccount?.username || savedAccount?.identifier || DEFAULT_IG_ACCOUNT.username}
               </span>
             </div>
           </div>
