@@ -176,6 +176,16 @@ export async function likePostApi(postId) {
 }
 
 /**
+ * API Repost / Unrepost bài viết
+ * @param {string|number} postId
+ * @returns {Promise<Object>}
+ */
+export async function repostPostApi(postId) {
+  const response = await http.post(`/posts/${postId}/repost`);
+  return response?.data || response;
+}
+
+/**
  * Giả lập API gọi danh sách bài viết thời trang (backward-compatibility)
  */
 export async function getPostsApi(delay = 100) {

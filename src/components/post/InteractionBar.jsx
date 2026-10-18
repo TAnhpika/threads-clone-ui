@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
-import { saveFeedScroll, updatePostInteraction } from '@/features/feed/feedSlice';
-import { likePostApi } from '@/services/postService';
+import { saveFeedScroll } from '@/features/feed/feedSlice';
+import { usePostInteraction } from '@/hooks/usePostInteraction';
 import RepostModal from './RepostModal';
 import ShareModal from './ShareModal';
 
@@ -22,68 +22,31 @@ export default function InteractionBar({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const [likes, setLikes] = useState(initialLikes);
-  const [isLiked, setIsLiked] = useState(initialIsLiked);
-  const [reposts, setReposts] = useState(initialReposts);
-  const [isReposted, setIsReposted] = useState(initialIsReposted);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  useEffect(() => {
-    setIsLiked(initialIsLiked);
-  }, [initialIsLiked]);
-
-  useEffect(() => {
-    setLikes(initialLikes);
-  }, [initialLikes]);
-
-  const handleLike = async (e) => {
-    e?.stopPropagation?.();
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
-      return;
-    }
-
-    const prevIsLiked = isLiked;
-    const prevLikes = likes;
-    const nextIsLiked = !prevIsLiked;
-    const nextLikes = nextIsLiked ? prevLikes + 1 : Math.max(0, prevLikes - 1);
-
-    // 1. Optimistic Update ngay lập tức trên UI và Redux
-    setIsLiked(nextIsLiked);
-    setLikes(nextLikes);
-    if (postId) {
-      dispatch(
-        updatePostInteraction({
-          postId,
-          updates: { isLiked: nextIsLiked, likes: nextLikes },
-        })
-      );
-    }
-
-    // 2. Gọi API ngầm lưu trạng thái
-    try {
-      if (postId) {
-        await likePostApi(postId);
-      }
-    } catch (err) {
-      console.error('Failed to toggle like on post:', err);
-      // 3. Rollback nếu API thất bại
-      setIsLiked(prevIsLiked);
-      setLikes(prevLikes);
-      if (postId) {
-        dispatch(
-          updatePostInteraction({
-            postId,
-            updates: { isLiked: prevIsLiked, likes: prevLikes },
-          })
-        );
-      }
-      setToastMessage('Không thể cập nhật lượt thích. Vui lòng thử lại.');
-      setTimeout(() => setToastMessage(null), 2500);
-    }
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
   };
+
+  const {
+    isLiked,
+    likes,
+    toggleLike,
+    isReposted,
+    reposts,
+    toggleRepost,
+  } = usePostInteraction({
+    postId,
+    initialLikes,
+    initialIsLiked,
+    initialReposts,
+    initialIsReposted,
+    onToast: showToast,
+    syncRedux: true,
+  });
 
   const handleComment = (e) => {
     e?.stopPropagation?.();
@@ -101,31 +64,6 @@ export default function InteractionBar({
     }
   };
 
-  const handleRepostClick = () => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
-      return;
-    }
-    setIsRepostModalOpen((prev) => !prev);
-  };
-
-  const handleToggleRepost = () => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
-      return;
-    }
-    if (isReposted) {
-      setReposts((prev) => prev - 1);
-      setIsReposted(false);
-      setToastMessage('Đã hủy đăng lại');
-    } else {
-      setReposts((prev) => prev + 1);
-      setIsReposted(true);
-      setToastMessage('Đã đăng lại bài viết');
-    }
-    setTimeout(() => setToastMessage(null), 2500);
-  };
-
   const handleShareClick = () => {
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('open-say-more'));
@@ -135,13 +73,11 @@ export default function InteractionBar({
   };
 
   const handleQuote = () => {
-    setToastMessage('Đang mở trích dẫn bài viết...');
-    setTimeout(() => setToastMessage(null), 2500);
+    showToast('Đang mở trích dẫn bài viết...');
   };
 
   const handleFeedback = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+    showToast(msg);
   };
 
   // Hàm format số lượng hiển thị (1200 -> 1,2K)
@@ -156,11 +92,11 @@ export default function InteractionBar({
     <div className="relative flex items-center gap-1 sm:gap-2 mt-3 -ml-2 text-zinc-600 dark:text-zinc-400">
       {/* 1. Like Button */}
       <button
-        onClick={handleLike}
+        onClick={toggleLike}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
           isLiked ? 'text-red-500' : 'hover:text-black dark:hover:text-white'
         }`}
-        title="Thích"
+        title={isLiked ? 'Bỏ thích' : 'Thích'}
       >
         <Heart
           className={`w-4 h-4 transition-transform group-hover:scale-110 ${
@@ -183,28 +119,27 @@ export default function InteractionBar({
       {/* 3. Repost Button & Modal */}
       <div className="relative">
         <button
-          onClick={handleRepostClick}
+          onClick={toggleRepost}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
             isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
           }`}
-          title="Đăng lại"
-          aria-expanded={isRepostModalOpen}
+          title={isReposted ? 'Hủy đăng lại' : 'Đăng lại'}
         >
           <Repeat2
             className={`w-4 h-4 transition-transform group-hover:scale-110 ${
-              isReposted ? 'stroke-green-500 stroke-2' : ''
+              isReposted ? 'stroke-green-500 stroke-2 text-green-500' : ''
             }`}
           />
           <span>{formatCount(reposts)}</span>
         </button>
 
-        {/* Modal Repost / Quote */}
+        {/* Modal Repost / Quote (nếu mở) */}
         {isAuthenticated && (
           <RepostModal
             isOpen={isRepostModalOpen}
             onClose={() => setIsRepostModalOpen(false)}
             isReposted={isReposted}
-            onRepost={handleToggleRepost}
+            onRepost={toggleRepost}
             onQuote={handleQuote}
           />
         )}

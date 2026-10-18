@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -15,8 +15,8 @@ import {
   Send,
   Plus,
 } from 'lucide-react';
-import { getPostByIdApi, getRepliesApi, createReplyApi, likePostApi } from '@/services/postService';
-import { updatePostInteraction } from '@/features/feed/feedSlice';
+import { getPostByIdApi, getRepliesApi, createReplyApi } from '@/services/postService';
+import { usePostInteraction } from '@/hooks/usePostInteraction';
 import PostContent from '@/components/post/PostContent';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
@@ -24,7 +24,6 @@ import PostMenu from '@/components/post/PostMenu';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
 export default function PostDetailPage() {
-  const dispatch = useDispatch();
   const { username, postId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,15 +37,9 @@ export default function PostDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
-  // State tương tác của bài viết chính
-  const [likes, setLikes] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-  const [reposts, setReposts] = useState(0);
-  const [isReposted, setIsReposted] = useState(false);
+  // Menu và input states
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
-
-  // State nhập bình luận
   const [replyInput, setReplyInput] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
@@ -59,6 +52,24 @@ export default function PostDetailPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
   };
+
+  // Quản lý tương tác Like & Repost bài viết chính qua Hook tái sử dụng
+  const {
+    isLiked,
+    likes,
+    toggleLike: handleLikePost,
+    isReposted,
+    reposts,
+    toggleRepost: handleRepostPost,
+  } = usePostInteraction({
+    postId: post?.id || postId,
+    initialLikes: post?.likes || 0,
+    initialIsLiked: post?.isLiked || false,
+    initialReposts: post?.reposts || 0,
+    initialIsReposted: post?.isReposted || false,
+    onToast: showToast,
+    syncRedux: true,
+  });
 
   // Tải chi tiết bài viết và danh sách bình luận từ API
   useEffect(() => {
@@ -74,12 +85,7 @@ export default function PostDetailPage() {
       if (!isMounted) return;
 
       if (postRes.status === 'fulfilled' && postRes.value) {
-        const fetchedPost = postRes.value;
-        setPost(fetchedPost);
-        setLikes(fetchedPost.likes || 0);
-        setIsLiked(Boolean(fetchedPost.isLiked));
-        setReposts(fetchedPost.reposts || 0);
-        setIsReposted(Boolean(fetchedPost.isReposted));
+        setPost(postRes.value);
       } else {
         setIsError(true);
       }
@@ -111,68 +117,6 @@ export default function PostDetailPage() {
       }
     }
   }, [isLoading, post, location.hash, location.state]);
-
-  const handleLikePost = async () => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
-      return;
-    }
-    const targetPostId = post?.id || postId;
-    const prevIsLiked = isLiked;
-    const prevLikes = likes;
-
-    const nextIsLiked = !prevIsLiked;
-    const nextLikes = nextIsLiked ? prevLikes + 1 : Math.max(0, prevLikes - 1);
-
-    // 1. Optimistic Update ngay lập tức trên UI và Redux
-    setIsLiked(nextIsLiked);
-    setLikes(nextLikes);
-    if (targetPostId) {
-      dispatch(
-        updatePostInteraction({
-          postId: targetPostId,
-          updates: { isLiked: nextIsLiked, likes: nextLikes },
-        })
-      );
-    }
-
-    // 2. Gọi API ngầm lưu trạng thái
-    try {
-      if (targetPostId) {
-        await likePostApi(targetPostId);
-      }
-    } catch (err) {
-      console.error('Failed to toggle like on post detail:', err);
-      // 3. Rollback nếu API thất bại
-      setIsLiked(prevIsLiked);
-      setLikes(prevLikes);
-      if (targetPostId) {
-        dispatch(
-          updatePostInteraction({
-            postId: targetPostId,
-            updates: { isLiked: prevIsLiked, likes: prevLikes },
-          })
-        );
-      }
-      showToast('Không thể cập nhật lượt thích. Vui lòng thử lại.');
-    }
-  };
-
-  const handleRepostPost = () => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
-      return;
-    }
-    if (isReposted) {
-      setReposts((prev) => Math.max(0, prev - 1));
-      setIsReposted(false);
-      showToast('Đã hủy đăng lại');
-    } else {
-      setReposts((prev) => prev + 1);
-      setIsReposted(true);
-      showToast('Đã đăng lại bài viết');
-    }
-  };
 
   // Thêm câu trả lời mới
   const handleAddReply = (e) => {
@@ -623,53 +567,24 @@ function PostNotFound({ onGoHome }) {
 
 // Component từng dòng Reply trong chuỗi phản hồi
 function ReplyItem({ reply, onToast, isAuthenticated }) {
-  const [likes, setLikes] = useState(reply.likes || 0);
-  const [isLiked, setIsLiked] = useState(Boolean(reply.isLiked));
-  const [reposts, setReposts] = useState(reply.reposts || 0);
-  const [isReposted, setIsReposted] = useState(Boolean(reply.isReposted));
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleLike = async () => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'like' } }));
-      return;
-    }
-    const prevIsLiked = isLiked;
-    const prevLikes = likes;
-    const nextIsLiked = !prevIsLiked;
-    const nextLikes = nextIsLiked ? prevLikes + 1 : Math.max(0, prevLikes - 1);
-
-    // Optimistic update
-    setIsLiked(nextIsLiked);
-    setLikes(nextLikes);
-
-    try {
-      if (reply?.id) {
-        await likePostApi(reply.id);
-      }
-    } catch (err) {
-      console.error('Failed to toggle like on reply:', err);
-      setIsLiked(prevIsLiked);
-      setLikes(prevLikes);
-      onToast?.('Không thể cập nhật lượt thích. Vui lòng thử lại.');
-    }
-  };
-
-  const handleRepost = () => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
-      return;
-    }
-    if (isReposted) {
-      setReposts((prev) => Math.max(0, prev - 1));
-      setIsReposted(false);
-      onToast('Đã hủy đăng lại');
-    } else {
-      setReposts((prev) => prev + 1);
-      setIsReposted(true);
-      onToast('Đã đăng lại câu trả lời');
-    }
-  };
+  const {
+    isLiked,
+    likes,
+    toggleLike: handleLike,
+    isReposted,
+    reposts,
+    toggleRepost: handleRepost,
+  } = usePostInteraction({
+    postId: reply?.id,
+    initialLikes: reply?.likes || 0,
+    initialIsLiked: reply?.isLiked || false,
+    initialReposts: reply?.reposts || 0,
+    initialIsReposted: reply?.isReposted || false,
+    onToast,
+    syncRedux: false,
+  });
 
   return (
     <article className="p-4 sm:p-5 hover:bg-zinc-50/40 dark:hover:bg-zinc-900/20 transition-colors">
