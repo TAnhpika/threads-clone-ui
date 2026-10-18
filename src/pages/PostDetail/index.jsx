@@ -22,7 +22,6 @@ import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSl
 import userAvatar from '@/assets/images/ava.png';
 import PostMenu from '@/components/post/PostMenu';
 import RepostModal from '@/components/post/RepostModal';
-import QuoteModal from '@/components/post/QuoteModal';
 import QuotedPostCard from '@/components/post/QuotedPostCard';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
@@ -44,7 +43,6 @@ export default function PostDetailPage() {
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [quoteTargetPost, setQuoteTargetPost] = useState(null);
   const [replyInput, setReplyInput] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -379,7 +377,8 @@ export default function PostDetailPage() {
                       onQuote={() => {
                         setIsRepostModalOpen(false);
                         setQuoteTargetPost(post);
-                        setIsQuoteModalOpen(true);
+                        setCreateModalPlacement('center');
+                        setIsCreateModalOpen(true);
                       }}
                     />
                   )}
@@ -494,7 +493,8 @@ export default function PostDetailPage() {
                     isAuthenticated={isAuthenticated}
                     onQuoteReply={(target) => {
                       setQuoteTargetPost(target);
-                      setIsQuoteModalOpen(true);
+                      setCreateModalPlacement('center');
+                      setIsCreateModalOpen(true);
                     }}
                   />
                 ))
@@ -529,6 +529,7 @@ export default function PostDetailPage() {
         <button
           id="floating-new-thread-btn"
           onClick={() => {
+            setQuoteTargetPost(null);
             setCreateModalPlacement('bottom-right');
             setIsCreateModalOpen(true);
           }}
@@ -540,31 +541,17 @@ export default function PostDetailPage() {
         </button>
       )}
 
-      {/* Modal tạo bài viết */}
+      {/* Modal Tạo bài viết / Trích dẫn (Unified Modal) */}
       <CreatePostModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        currentUser={currentUser}
-        onSubmitPost={() => {
-          showToast('Đã đăng bài viết mới thành công ✨');
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setQuoteTargetPost(null);
         }}
+        currentUser={currentUser}
+        quotedPost={quoteTargetPost}
         placement={createModalPlacement}
       />
-
-      {/* Modal Quote Post */}
-      {isAuthenticated && (
-        <QuoteModal
-          isOpen={isQuoteModalOpen}
-          onClose={() => {
-            setIsQuoteModalOpen(false);
-            setQuoteTargetPost(null);
-          }}
-          quotedPost={quoteTargetPost || post}
-          onSubmitQuote={(newPost) => {
-            showToast('Đã đăng bài trích dẫn thành công ✨');
-          }}
-        />
-      )}
 
       {/* Toast thông báo */}
       {toastMessage && (

@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { prependFeedPost } from '@/features/feed/feedSlice';
 import userAvatar from '@/assets/images/ava.png';
+import QuotedPostCard from './QuotedPostCard';
 import {
   X,
   Image,
@@ -19,8 +22,11 @@ export default function CreatePostModal({
   onClose,
   currentUser,
   onSubmitPost,
+  quotedPost = null,
   placement = 'center', // 'center' | 'bottom-right'
+  feedType = 'for_you',
 }) {
+  const dispatch = useDispatch();
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [showImageInput, setShowImageInput] = useState(false);
@@ -38,6 +44,10 @@ export default function CreatePostModal({
 
   const avatarUrl = currentUser?.avatar || userAvatar;
   const username = currentUser?.username || currentUser?.name || 'tuananhpika';
+
+  const placeholderText = quotedPost
+    ? 'Share your thoughts...'
+    : t('createPost.whatsNew', "What's new?");
 
   const availableTopics = [
     'Smart Casual Men',
@@ -106,17 +116,54 @@ export default function CreatePostModal({
     e.preventDefault();
     if (!content.trim() && !imageUrl) return;
 
+    const postPayload = {
+      content: content.trim(),
+      topic: selectedTopic || null,
+      quotedPost: quotedPost || null,
+      media: imageUrl
+        ? {
+            url: imageUrl,
+            alt: 'User posted media',
+          }
+        : null,
+    };
+
     if (onSubmitPost) {
-      onSubmitPost({
-        content: content.trim(),
-        topic: selectedTopic || null,
-        media: imageUrl
-          ? {
-              url: imageUrl,
-              alt: 'User posted media',
-            }
-          : null,
-      });
+      onSubmitPost(postPayload);
+    } else {
+      const newPost = {
+        id: `post-${Date.now()}`,
+        author: {
+          id: currentUser?.id,
+          name: currentUser?.name || 'User',
+          username: currentUser?.username || currentUser?.name || 'user',
+          avatar: avatarUrl,
+          isVerified: true,
+        },
+        tag: postPayload.topic,
+        timestamp: 'vừa xong',
+        content: postPayload.content,
+        quotedPost: postPayload.quotedPost,
+        media: postPayload.media,
+        likes: 0,
+        comments: 0,
+        reposts: 0,
+        shares: 0,
+        isLiked: false,
+        isSaved: false,
+        isReposted: false,
+      };
+
+      dispatch(prependFeedPost({ feedType, post: newPost }));
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: quotedPost
+              ? 'Đã đăng bài trích dẫn thành công ✨'
+              : 'Đã đăng bài viết mới thành công ✨',
+          },
+        })
+      );
     }
 
     onClose();
@@ -289,7 +336,7 @@ export default function CreatePostModal({
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={t('createPost.whatsNew', "What's new?")}
+              placeholder={placeholderText}
               rows={3}
               className="w-full bg-transparent resize-none text-[15px] placeholder-zinc-500 text-white focus:outline-none leading-relaxed"
             />
@@ -442,6 +489,13 @@ export default function CreatePostModal({
                 <Music className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Quoted Post Card (nếu đang ở chế độ Quote) */}
+            {quotedPost && (
+              <div className="mt-3">
+                <QuotedPostCard post={quotedPost} />
+              </div>
+            )}
           </div>
         </div>
 
