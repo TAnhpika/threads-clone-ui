@@ -6,6 +6,7 @@ import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { saveFeedScroll } from '@/features/feed/feedSlice';
 import { usePostInteraction } from '@/hooks/usePostInteraction';
 import RepostModal from './RepostModal';
+import QuoteModal from './QuoteModal';
 import ShareModal from './ShareModal';
 
 export default function InteractionBar({
@@ -18,11 +19,13 @@ export default function InteractionBar({
   postId,
   authorUsername,
   feedType = 'for_you',
+  post,
 }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -64,6 +67,15 @@ export default function InteractionBar({
     }
   };
 
+  const handleRepostClick = (e) => {
+    e?.stopPropagation?.();
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
+      return;
+    }
+    setIsRepostModalOpen((prev) => !prev);
+  };
+
   const handleShareClick = () => {
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('open-say-more'));
@@ -73,7 +85,12 @@ export default function InteractionBar({
   };
 
   const handleQuote = () => {
-    showToast('Đang mở trích dẫn bài viết...');
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } }));
+      return;
+    }
+    setIsRepostModalOpen(false);
+    setIsQuoteModalOpen(true);
   };
 
   const handleFeedback = (msg) => {
@@ -119,11 +136,12 @@ export default function InteractionBar({
       {/* 3. Repost Button & Modal */}
       <div className="relative">
         <button
-          onClick={toggleRepost}
+          onClick={handleRepostClick}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
             isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
           }`}
           title={isReposted ? 'Hủy đăng lại' : 'Đăng lại'}
+          aria-expanded={isRepostModalOpen}
         >
           <Repeat2
             className={`w-4 h-4 transition-transform group-hover:scale-110 ${
@@ -133,7 +151,7 @@ export default function InteractionBar({
           <span>{formatCount(reposts)}</span>
         </button>
 
-        {/* Modal Repost / Quote (nếu mở) */}
+        {/* Modal Repost / Quote */}
         {isAuthenticated && (
           <RepostModal
             isOpen={isRepostModalOpen}
@@ -165,6 +183,16 @@ export default function InteractionBar({
           />
         )}
       </div>
+
+      {/* Modal Quote Post */}
+      {isAuthenticated && (
+        <QuoteModal
+          isOpen={isQuoteModalOpen}
+          onClose={() => setIsQuoteModalOpen(false)}
+          quotedPost={post}
+          feedType={feedType}
+        />
+      )}
 
       {/* Toast thông báo nhanh */}
       {toastMessage && (

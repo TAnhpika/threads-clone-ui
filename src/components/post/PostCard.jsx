@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { saveFeedScroll } from '@/features/feed/feedSlice';
 import PostHeader from '@/components/post/PostHeader';
 import PostContent from '@/components/post/PostContent';
+import QuotedPostCard from '@/components/post/QuotedPostCard';
 import InteractionBar from '@/components/post/InteractionBar';
 
 export default function PostCard({ post, feedType = 'for_you' }) {
@@ -48,8 +49,16 @@ export default function PostCard({ post, feedType = 'for_you' }) {
           media={post.media}
         />
 
+        {/* 2.1. Card bài viết trích dẫn (nếu có) */}
+        {post.quotedPost && (
+          <div className="mt-2.5">
+            <QuotedPostCard post={post.quotedPost} />
+          </div>
+        )}
+
         {/* 3. Thanh tương tác (Like, Comment, Repost, Share) */}
         <InteractionBar
+          post={post}
           postId={post.id}
           authorUsername={post.author?.username}
           feedType={feedType}

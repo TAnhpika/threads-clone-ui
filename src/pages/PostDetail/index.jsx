@@ -21,6 +21,9 @@ import PostContent from '@/components/post/PostContent';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/ava.png';
 import PostMenu from '@/components/post/PostMenu';
+import RepostModal from '@/components/post/RepostModal';
+import QuoteModal from '@/components/post/QuoteModal';
+import QuotedPostCard from '@/components/post/QuotedPostCard';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
 export default function PostDetailPage() {
@@ -40,6 +43,9 @@ export default function PostDetailPage() {
   // Menu và input states
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
+  const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [quoteTargetPost, setQuoteTargetPost] = useState(null);
   const [replyInput, setReplyInput] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
@@ -296,6 +302,13 @@ export default function PostDetailPage() {
                 <PostContent text={post.content} media={post.media} />
               </div>
 
+              {/* Card bài viết trích dẫn (nếu có) */}
+              {post.quotedPost && (
+                <div className="mt-3">
+                  <QuotedPostCard post={post.quotedPost} />
+                </div>
+              )}
+
               {/* Thanh tương tác bài viết chính: Heart | Comment | Repost | Share */}
               <div className="flex items-center gap-4 sm:gap-6 mt-4 text-zinc-600 dark:text-zinc-400 text-sm font-medium">
                 {/* Like */}
@@ -331,19 +344,46 @@ export default function PostDetailPage() {
                 </button>
 
                 {/* Repost */}
-                <button
-                  onClick={handleRepostPost}
-                  className={`flex items-center gap-1.5 transition-colors cursor-pointer group ${
-                    isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
-                  }`}
-                >
-                  <Repeat2
-                    className={`w-4.5 h-4.5 transition-transform group-hover:scale-110 ${
-                      isReposted ? 'stroke-green-500 stroke-2' : ''
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        window.dispatchEvent(
+                          new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } })
+                        );
+                        return;
+                      }
+                      setIsRepostModalOpen((prev) => !prev);
+                    }}
+                    className={`flex items-center gap-1.5 transition-colors cursor-pointer group ${
+                      isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
                     }`}
-                  />
-                  <span>{reposts}</span>
-                </button>
+                    title={isReposted ? 'Hủy đăng lại' : 'Đăng lại'}
+                    aria-expanded={isRepostModalOpen}
+                  >
+                    <Repeat2
+                      className={`w-4.5 h-4.5 transition-transform group-hover:scale-110 ${
+                        isReposted ? 'stroke-green-500 stroke-2 text-green-500' : ''
+                      }`}
+                    />
+                    <span>{reposts}</span>
+                  </button>
+
+                  {/* Modal Repost / Quote */}
+                  {isAuthenticated && (
+                    <RepostModal
+                      isOpen={isRepostModalOpen}
+                      onClose={() => setIsRepostModalOpen(false)}
+                      isReposted={isReposted}
+                      onRepost={handleRepostPost}
+                      onQuote={() => {
+                        setIsRepostModalOpen(false);
+                        setQuoteTargetPost(post);
+                        setIsQuoteModalOpen(true);
+                      }}
+                    />
+                  )}
+                </div>
 
                 {/* Share */}
                 <button
@@ -452,6 +492,10 @@ export default function PostDetailPage() {
                     reply={reply}
                     onToast={showToast}
                     isAuthenticated={isAuthenticated}
+                    onQuoteReply={(target) => {
+                      setQuoteTargetPost(target);
+                      setIsQuoteModalOpen(true);
+                    }}
                   />
                 ))
               )}
@@ -506,6 +550,21 @@ export default function PostDetailPage() {
         }}
         placement={createModalPlacement}
       />
+
+      {/* Modal Quote Post */}
+      {isAuthenticated && (
+        <QuoteModal
+          isOpen={isQuoteModalOpen}
+          onClose={() => {
+            setIsQuoteModalOpen(false);
+            setQuoteTargetPost(null);
+          }}
+          quotedPost={quoteTargetPost || post}
+          onSubmitQuote={(newPost) => {
+            showToast('Đã đăng bài trích dẫn thành công ✨');
+          }}
+        />
+      )}
 
       {/* Toast thông báo */}
       {toastMessage && (
@@ -566,8 +625,9 @@ function PostNotFound({ onGoHome }) {
 }
 
 // Component từng dòng Reply trong chuỗi phản hồi
-function ReplyItem({ reply, onToast, isAuthenticated }) {
+function ReplyItem({ reply, onToast, isAuthenticated, onQuoteReply }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
 
   const {
     isLiked,
@@ -701,19 +761,44 @@ function ReplyItem({ reply, onToast, isAuthenticated }) {
               {reply.comments > 0 && <span>{reply.comments}</span>}
             </button>
 
-            <button
-              onClick={handleRepost}
-              className={`flex items-center gap-1 transition-colors cursor-pointer group ${
-                isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
-              }`}
-            >
-              <Repeat2
-                className={`w-4 h-4 transition-transform group-hover:scale-110 ${
-                  isReposted ? 'stroke-green-500 stroke-2' : ''
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    window.dispatchEvent(
+                      new CustomEvent('open-auth-prompt', { detail: { type: 'repost' } })
+                    );
+                    return;
+                  }
+                  setIsRepostModalOpen((prev) => !prev);
+                }}
+                className={`flex items-center gap-1 transition-colors cursor-pointer group ${
+                  isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
                 }`}
-              />
-              {reposts > 0 && <span>{reposts}</span>}
-            </button>
+                title={isReposted ? 'Hủy đăng lại' : 'Đăng lại'}
+                aria-expanded={isRepostModalOpen}
+              >
+                <Repeat2
+                  className={`w-4 h-4 transition-transform group-hover:scale-110 ${
+                    isReposted ? 'stroke-green-500 stroke-2 text-green-500' : ''
+                  }`}
+                />
+                {reposts > 0 && <span>{reposts}</span>}
+              </button>
+
+              {isAuthenticated && (
+                <RepostModal
+                  isOpen={isRepostModalOpen}
+                  onClose={() => setIsRepostModalOpen(false)}
+                  isReposted={isReposted}
+                  onRepost={handleRepost}
+                  onQuote={() => {
+                    setIsRepostModalOpen(false);
+                    onQuoteReply?.(reply);
+                  }}
+                />
+              )}
+            </div>
 
             <button
               onClick={() => {
