@@ -45,6 +45,19 @@ export const register = async (data) => {
 };
 
 /**
+ * API "Verify Email": Xác thực tài khoản email
+ * Endpoint: POST /auth/verify-email
+ * @param {Object} params - { token, email }
+ */
+export const verifyEmail = async ({ token, email }) => {
+    const response = await http.post("/auth/verify-email", {
+        token,
+        ...(email ? { email } : {}),
+    });
+    return response?.data || response;
+};
+
+/**
  * API "Forgot Password": Gửi yêu cầu đặt lại mật khẩu qua email
  */
 export const forgotPassword = async (email) => {

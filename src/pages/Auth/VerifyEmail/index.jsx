@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import http from "@/utils/http";
+import { verifyEmail } from "@/services/authService";
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -18,7 +18,7 @@ export default function VerifyEmailPage() {
       // Nếu có token gửi từ email
       if (token) {
         try {
-          const res = await http.get(`/auth/verify-email?token=${encodeURIComponent(token)}${email ? `&email=${encodeURIComponent(email)}` : ""}`);
+          const res = await verifyEmail({ token, email });
           if (isMounted) {
             setStatus("success");
             setMessage(res?.message || "Tài khoản của bạn đã được xác thực thành công!");
@@ -26,14 +26,21 @@ export default function VerifyEmailPage() {
         } catch (error) {
           if (isMounted) {
             setStatus("error");
-            setMessage(error.response?.data?.message || "Liên kết xác thực không hợp lệ hoặc đã hết hạn.");
+            const resData = error.response?.data;
+            let errMsg = resData?.message || "Liên kết xác thực không hợp lệ hoặc đã hết hạn.";
+            if (resData?.errors?.token) {
+              errMsg = Array.isArray(resData.errors.token)
+                ? resData.errors.token[0]
+                : resData.errors.token;
+            }
+            setMessage(errMsg);
           }
         }
       } else {
-        // Nếu không có token param nhưng mở trang trực tiếp
+        // Nếu không có token param
         if (isMounted) {
-          setStatus("success");
-          setMessage("Tài khoản của bạn đã được xác thực thành công!");
+          setStatus("error");
+          setMessage("Không tìm thấy mã xác thực. Vui lòng kiểm tra lại liên kết trong email.");
         }
       }
     };
@@ -86,10 +93,16 @@ export default function VerifyEmailPage() {
               <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 {message}
               </p>
-              <div className="w-full pt-2">
+              <div className="w-full pt-2 flex flex-col gap-2.5">
+                <Link
+                  to="/login"
+                  className="w-full h-12 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm flex items-center justify-center transition-all shadow-md"
+                >
+                  Đăng nhập
+                </Link>
                 <Link
                   to="/register"
-                  className="w-full h-12 rounded-2xl bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white hover:bg-zinc-300 dark:hover:bg-zinc-700 font-bold text-sm flex items-center justify-center transition-all"
+                  className="w-full h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 text-black dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 font-bold text-sm flex items-center justify-center transition-all"
                 >
                   Quay lại đăng ký
                 </Link>
