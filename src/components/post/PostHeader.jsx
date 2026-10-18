@@ -7,6 +7,7 @@ import { MoreHorizontal, CheckCircle2, Plus, Check } from 'lucide-react';
 import PostMenu from './PostMenu';
 import AuthorProfileModal from './AuthorProfileModal';
 import UnfollowConfirmModal from './UnfollowConfirmModal';
+import EmbedModal from './EmbedModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
 
@@ -17,6 +18,7 @@ export default function PostHeader({
   postId,
   showFollowBadge = true,
   onFollow,
+  post,
 }) {
   const { name = 'Anonymous', username = 'user', avatar, isVerified = false } = author;
   const shareUrl = getShareUrl({ author }, postId);
@@ -24,6 +26,7 @@ export default function PostHeader({
   const currentUser = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isFollowed, setIsFollowed] = useState(Boolean(author?.isFollowed));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -143,6 +146,8 @@ export default function PostHeader({
     if (action === 'copy_link') {
       setToastMessage('Đã sao chép liên kết vào bộ nhớ tạm');
       setTimeout(() => setToastMessage(null), 2500);
+    } else if (action === 'embed') {
+      setIsEmbedModalOpen(true);
     } else if (action === 'save') {
       setToastMessage('Đã lưu bài viết');
       setTimeout(() => setToastMessage(null), 2500);
@@ -255,6 +260,18 @@ export default function PostHeader({
         onClose={() => setIsUnfollowModalOpen(false)}
         author={author}
         onConfirmUnfollow={handleConfirmUnfollow}
+      />
+
+      {/* Modal Get Embed Code */}
+      <EmbedModal
+        isOpen={isEmbedModalOpen}
+        onClose={() => setIsEmbedModalOpen(false)}
+        post={post || { id: postId, author, timestamp, tag }}
+        postId={postId}
+        onSuccessFeedback={(msg) => {
+          setToastMessage(msg);
+          setTimeout(() => setToastMessage(null), 2500);
+        }}
       />
 
       {/* Toast thông báo tương tác nhanh */}

@@ -20,7 +20,9 @@ import { getPostByIdApi, getRepliesApi, createReplyApi } from '@/services/postSe
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import { getAuthorAvatar } from '@/utils/avatar';
+import { getShareUrl } from '@/utils/postUrl';
 import PostMenu from '@/components/post/PostMenu';
+import EmbedModal from '@/components/post/EmbedModal';
 import CreatePostModal from '@/components/post/CreatePostModal';
 import PostCard from '@/components/post/PostCard';
 import PostContent from '@/components/post/PostContent';
@@ -52,6 +54,7 @@ export default function PostDetailPage() {
 
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('bottom-right');
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -206,9 +209,11 @@ export default function PostDetailPage() {
               isOpen={isHeaderMenuOpen}
               onClose={() => setIsHeaderMenuOpen(false)}
               onAction={(action) => {
-                if (action === 'copy_link') showToast('Đã sao chép liên kết');
+                if (action === 'copy_link') showToast('Đã sao chép liên kết vào bộ nhớ tạm');
                 if (action === 'save') showToast('Đã lưu bài viết');
+                if (action === 'embed') setIsEmbedModalOpen(true);
               }}
+              postUrl={getShareUrl(post, postId)}
             />
           </div>
         </header>
@@ -391,9 +396,20 @@ export default function PostDetailPage() {
         placement={createModalPlacement}
       />
 
+      {/* Modal Get Embed Code */}
+      {post && (
+        <EmbedModal
+          isOpen={isEmbedModalOpen}
+          onClose={() => setIsEmbedModalOpen(false)}
+          post={post}
+          postId={postId}
+          onSuccessFeedback={showToast}
+        />
+      )}
+
       {/* Toast thông báo */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
           {toastMessage}
         </div>
       )}

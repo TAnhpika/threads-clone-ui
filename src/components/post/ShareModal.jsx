@@ -100,6 +100,12 @@ export default function ShareModal({
     };
   }, [isOpen]);
 
+  const { copyShareUrl } = useShareUrl({
+    post,
+    postId,
+    onToast: onActionFeedback,
+  });
+
   if (!isOpen) return null;
 
   const filteredProfiles = defaultProfiles.filter(
@@ -107,12 +113,6 @@ export default function ShareModal({
       profile.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       profile.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
-
-  const { copyShareUrl } = useShareUrl({
-    post,
-    postId,
-    onToast: onActionFeedback,
-  });
 
   const handleAction = (type) => {
     if (type === 'copy_link') {

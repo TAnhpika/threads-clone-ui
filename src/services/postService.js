@@ -1,6 +1,6 @@
-import http from '@/utils/http';
-import { mockPosts } from '@/components/post/mockPosts';
-import { getAuthorAvatar } from '@/utils/avatar';
+import http from "@/utils/http";
+import { mockPosts } from "@/components/post/mockPosts";
+import { getAuthorAvatar } from "@/utils/avatar";
 
 /**
  * Format thời gian từ chuỗi ISO thành dạng hiển thị tương đối: vừa xong, 5m, 2h, 3d, 12 thg 10
@@ -8,40 +8,40 @@ import { getAuthorAvatar } from '@/utils/avatar';
  * @returns {string}
  */
 export function formatTimeAgo(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
 
-  if (diffMs < 0 || isNaN(diffMs)) {
-    return 'vừa xong';
-  }
+    if (diffMs < 0 || isNaN(diffMs)) {
+        return "vừa xong";
+    }
 
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
 
-  if (diffSec < 60) {
-    return 'vừa xong';
-  }
-  if (diffMin < 60) {
-    return `${diffMin}m`;
-  }
-  if (diffHour < 24) {
-    return `${diffHour}h`;
-  }
-  if (diffDay < 7) {
-    return `${diffDay}d`;
-  }
+    if (diffSec < 60) {
+        return "vừa xong";
+    }
+    if (diffMin < 60) {
+        return `${diffMin}m`;
+    }
+    if (diffHour < 24) {
+        return `${diffHour}h`;
+    }
+    if (diffDay < 7) {
+        return `${diffDay}d`;
+    }
 
-  // Nếu quá 7 ngày: hiển thị ngày/tháng
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  if (date.getFullYear() === now.getFullYear()) {
-    return `${day} thg ${month}`;
-  }
-  return `${day}/${month}/${date.getFullYear()}`;
+    // Nếu quá 7 ngày: hiển thị ngày/tháng
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    if (date.getFullYear() === now.getFullYear()) {
+        return `${day} thg ${month}`;
+    }
+    return `${day}/${month}/${date.getFullYear()}`;
 }
 
 /**
@@ -50,46 +50,46 @@ export function formatTimeAgo(dateString) {
  * @returns {Object}
  */
 export function adaptPost(item) {
-  if (!item) return null;
-  const user = item.user || {};
-  const mediaList = Array.isArray(item.media_urls)
-    ? item.media_urls.filter(Boolean)
-    : [];
+    if (!item) return null;
+    const user = item.user || {};
+    const mediaList = Array.isArray(item.media_urls)
+        ? item.media_urls.filter(Boolean)
+        : [];
 
-  return {
-    id: item.id,
-    author: {
-      id: user.id,
-      name: user.name || user.username || 'User',
-      username: user.username || 'user',
-      avatar: user.avatar_url || getAuthorAvatar(user),
-      isVerified: Boolean(user.verified),
-      isFollowed: Boolean(user.is_followed_by_auth),
-      bio: user.bio || user.biography || '',
-      followers: user.followers_count
-        ? `${Number(user.followers_count).toLocaleString()} followers`
-        : '4,001 followers',
-    },
-    timestamp: formatTimeAgo(item.created_at),
-    createdAt: item.created_at,
-    tag: item.topic?.name || null,
-    content: item.content || '',
-    media:
-      mediaList.length > 0
-        ? {
-            url: mediaList[0],
-            urls: mediaList,
-          }
-        : null,
-    likes: item.likes_count || 0,
-    comments: item.replies_count || 0,
-    reposts: item.reposts_and_quotes_count || 0,
-    shares: 0,
-    isLiked: Boolean(item.is_liked_by_auth),
-    isSaved: Boolean(item.is_saved_by_auth),
-    isReposted: Boolean(item.is_reposted_by_auth),
-    raw: item,
-  };
+    return {
+        id: item.id,
+        author: {
+            id: user.id,
+            name: user.name || user.username || "User",
+            username: user.username || "user",
+            avatar: user.avatar_url || getAuthorAvatar(user),
+            isVerified: Boolean(user.verified),
+            isFollowed: Boolean(user.is_followed_by_auth),
+            bio: user.bio || user.biography || "",
+            followers: user.followers_count
+                ? `${Number(user.followers_count).toLocaleString()} followers`
+                : "4,001 followers",
+        },
+        timestamp: formatTimeAgo(item.created_at),
+        createdAt: item.created_at,
+        tag: item.topic?.name || null,
+        content: item.content || "",
+        media:
+            mediaList.length > 0
+                ? {
+                      url: mediaList[0],
+                      urls: mediaList,
+                  }
+                : null,
+        likes: item.likes_count || 0,
+        comments: item.replies_count || 0,
+        reposts: item.reposts_and_quotes_count || 0,
+        shares: 0,
+        isLiked: Boolean(item.is_liked_by_auth),
+        isSaved: Boolean(item.is_saved_by_auth),
+        isReposted: Boolean(item.is_reposted_by_auth),
+        raw: item,
+    };
 }
 
 /**
@@ -97,25 +97,35 @@ export function adaptPost(item) {
  * @param {Object} params - { type = 'for_you', page = 1, per_page = 4 }
  * @returns {Promise<{ success: boolean, data: Array, pagination: Object }>}
  */
-export async function getFeed({ type = 'for_you', page = 1, per_page = 4 } = {}) {
-  const response = await http.get('/posts/feed', {
-    params: {
-      type,
-      page,
-      per_page,
-    },
-  });
+export async function getFeed({
+    type = "for_you",
+    page = 1,
+    per_page = 4,
+} = {}) {
+    const response = await http.get("/posts/feed", {
+        params: {
+            type,
+            page,
+            per_page,
+        },
+    });
 
-  // httpClient response interceptor trả về response.data trực tiếp
-  const res = response?.data ? response : { data: response, pagination: null };
-  const rawPosts = Array.isArray(res.data) ? res.data : Array.isArray(response) ? response : [];
-  const posts = rawPosts.map(adaptPost);
+    // httpClient response interceptor trả về response.data trực tiếp
+    const res = response?.data
+        ? response
+        : { data: response, pagination: null };
+    const rawPosts = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(response)
+          ? response
+          : [];
+    const posts = rawPosts.map(adaptPost);
 
-  return {
-    success: true,
-    data: posts,
-    pagination: res.pagination || null,
-  };
+    return {
+        success: true,
+        data: posts,
+        pagination: res.pagination || null,
+    };
 }
 
 /**
@@ -123,22 +133,25 @@ export async function getFeed({ type = 'for_you', page = 1, per_page = 4 } = {})
  * @param {string|number} id
  */
 export async function getPostByIdApi(id) {
-  try {
-    const response = await http.get(`/posts/${id}`);
-    const resData = response?.data || response;
-    if (resData) {
-      return adaptPost(resData);
+    try {
+        const response = await http.get(`/posts/${id}`);
+        const resData = response?.data || response;
+        if (resData) {
+            return adaptPost(resData);
+        }
+    } catch (error) {
+        console.warn(
+            `Could not fetch post ${id} from API, falling back to mock:`,
+            error,
+        );
     }
-  } catch (error) {
-    console.warn(`Could not fetch post ${id} from API, falling back to mock:`, error);
-  }
 
-  // Fallback sang mockPosts nếu API lỗi hoặc đang chạy offline
-  const post = mockPosts.find((p) => String(p.id) === String(id));
-  if (post) {
-    return { ...post };
-  }
-  throw new Error('Post not found');
+    // Fallback sang mockPosts nếu API lỗi hoặc đang chạy offline
+    const post = mockPosts.find((p) => String(p.id) === String(id));
+    if (post) {
+        return { ...post };
+    }
+    throw new Error("Post not found");
 }
 
 /**
@@ -147,15 +160,15 @@ export async function getPostByIdApi(id) {
  * @returns {Promise<Array>}
  */
 export async function getRepliesApi(postId) {
-  try {
-    const response = await http.get(`/posts/${postId}/replies`);
-    const rawList = response?.data || response;
-    const list = Array.isArray(rawList) ? rawList : [];
-    return list.map(adaptPost);
-  } catch (error) {
-    console.warn(`Could not fetch replies for post ${postId}:`, error);
-    return [];
-  }
+    try {
+        const response = await http.get(`/posts/${postId}/replies`);
+        const rawList = response?.data || response;
+        const list = Array.isArray(rawList) ? rawList : [];
+        return list.map(adaptPost);
+    } catch (error) {
+        console.warn(`Could not fetch replies for post ${postId}:`, error);
+        return [];
+    }
 }
 
 /**
@@ -165,9 +178,9 @@ export async function getRepliesApi(postId) {
  * @returns {Promise<Object>}
  */
 export async function createReplyApi(postId, { content }) {
-  const response = await http.post(`/posts/${postId}/reply`, { content });
-  const resData = response?.data || response;
-  return adaptPost(resData);
+    const response = await http.post(`/posts/${postId}/reply`, { content });
+    const resData = response?.data || response;
+    return adaptPost(resData);
 }
 
 /**
@@ -176,8 +189,8 @@ export async function createReplyApi(postId, { content }) {
  * @returns {Promise<Object>}
  */
 export async function likePostApi(postId) {
-  const response = await http.post(`/posts/${postId}/like`);
-  return response?.data || response;
+    const response = await http.post(`/posts/${postId}/like`);
+    return response?.data || response;
 }
 
 /**
@@ -186,19 +199,17 @@ export async function likePostApi(postId) {
  * @returns {Promise<Object>}
  */
 export async function repostPostApi(postId) {
-  const response = await http.post(`/posts/${postId}/repost`);
-  return response?.data || response;
+    const response = await http.post(`/posts/${postId}/repost`);
+    return response?.data || response;
 }
 
 /**
  * Giả lập API gọi danh sách bài viết thời trang (backward-compatibility)
  */
 export async function getPostsApi(delay = 100) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([...mockPosts]);
-    }, delay);
-  });
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve([...mockPosts]);
+        }, delay);
+    });
 }
-
-

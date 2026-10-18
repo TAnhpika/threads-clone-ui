@@ -62,6 +62,7 @@ export default function PostCard({
         tag={post.tag}
         postId={post.id}
         showFollowBadge={showFollowBadge}
+        post={post}
       />
 
       {/* 2. Nội dung bài viết (Text + Media) */}
