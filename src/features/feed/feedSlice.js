@@ -75,6 +75,22 @@ export const feedSlice = createSlice({
       });
     },
 
+    // Cập nhật trạng thái follow của một tác giả trên toàn bộ feed
+    updateAuthorFollowStatus: (state, action) => {
+      const { userId, username, isFollowed } = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        state[key].posts.forEach((post) => {
+          const matchId = userId && post.author?.id && String(post.author.id) === String(userId);
+          const matchUsername = username && post.author?.username === username;
+          if (matchId || matchUsername) {
+            if (post.author) {
+              post.author.isFollowed = isFollowed;
+            }
+          }
+        });
+      });
+    },
+
     // Reset dữ liệu feed
     clearFeed: (state, action) => {
       const feedType = action.payload;
@@ -95,6 +111,7 @@ export const {
   saveFeedScroll,
   prependFeedPost,
   updatePostInteraction,
+  updateAuthorFollowStatus,
   clearFeed,
 } = feedSlice.actions;
 

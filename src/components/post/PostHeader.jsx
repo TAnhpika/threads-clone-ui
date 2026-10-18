@@ -1,6 +1,12 @@
-import { useState } from 'react';
-import { MoreHorizontal, CheckCircle2, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
+import { updateAuthorFollowStatus } from '@/features/feed/feedSlice';
+import { followUserApi } from '@/services/userService';
+import { MoreHorizontal, CheckCircle2, Plus, Check } from 'lucide-react';
 import PostMenu from './PostMenu';
+import AuthorProfileModal from './AuthorProfileModal';
+import UnfollowConfirmModal from './UnfollowConfirmModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
 
 export default function PostHeader({
@@ -8,11 +14,128 @@ export default function PostHeader({
   timestamp = '2h',
   tag,
   postId,
-  showFollowBadge = false,
+  showFollowBadge = true,
+  onFollow,
 }) {
   const { name = 'Anonymous', username = 'user', avatar, isVerified = false } = author;
+  const dispatch = useDispatch();
+  const currentUser = useSelector(selectCurrentUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [isFollowed, setIsFollowed] = useState(Boolean(author?.isFollowed));
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
+
+  // Tự động đồng bộ khi Redux feedSlice cập nhật trạng thái follow của tác giả này
+  useEffect(() => {
+    if (author?.isFollowed !== undefined) {
+      setIsFollowed(Boolean(author.isFollowed));
+    }
+  }, [author?.isFollowed]);
+
+  // Không hiển thị follow badge nếu là bài của chính mình
+  const isSelf = Boolean(
+    currentUser &&
+      (currentUser.username === username || (currentUser.id && currentUser.id === author?.id))
+  );
+
+  const shouldRenderFollow = showFollowBadge && !isSelf;
+
+  const handleFollowClick = async (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!isAuthenticated) {
+      window.dispatchEvent(
+        new CustomEvent('open-auth-prompt', { detail: { type: 'follow' } })
+      );
+      return;
+    }
+
+    // 1. Optimistic Update tại chỗ & đồng bộ toàn feed qua Redux -> chuyển sang tick [✓]
+    setIsFollowed(true);
+    dispatch(
+      updateAuthorFollowStatus({
+        userId: author?.id,
+        username,
+        isFollowed: true,
+      })
+    );
+    setToastMessage(`Đang theo dõi @${username}`);
+    setTimeout(() => setToastMessage(null), 2500);
+
+    // 2. Gọi API POST /users/:id/follow
+    try {
+      if (author?.id) {
+        await followUserApi(author.id);
+      }
+      onFollow?.(author);
+    } catch (error) {
+      console.error('Follow user API failed:', error);
+      // 3. Rollback nếu có lỗi mạng hoặc API thất bại
+      setIsFollowed(false);
+      dispatch(
+        updateAuthorFollowStatus({
+          userId: author?.id,
+          username,
+          isFollowed: false,
+        })
+      );
+      setToastMessage(`Không thể theo dõi @${username}. Vui lòng thử lại.`);
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
+  // Click vào dấu tick [✓] (Following) -> mở Profile Modal
+  const handleFollowingBadgeClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsProfileModalOpen(true);
+  };
+
+  // Click vào nút Following trong Profile Modal -> mở Unfollow Modal (vẫn hiển thị Profile Modal bên dưới)
+  const handleOpenUnfollow = () => {
+    setIsUnfollowModalOpen(true);
+  };
+
+  // Xác nhận Unfollow trong Unfollow Modal
+  const handleConfirmUnfollow = async () => {
+    setIsUnfollowModalOpen(false);
+    setIsProfileModalOpen(false);
+
+    // 1. Optimistic Update tại chỗ & đồng bộ toàn feed qua Redux -> chuyển lại thành [+]
+    setIsFollowed(false);
+    dispatch(
+      updateAuthorFollowStatus({
+        userId: author?.id,
+        username,
+        isFollowed: false,
+      })
+    );
+    setToastMessage(`Đã bỏ theo dõi @${username}`);
+    setTimeout(() => setToastMessage(null), 2500);
+
+    // 2. Gọi API huỷ theo dõi (toggle)
+    try {
+      if (author?.id) {
+        await followUserApi(author.id);
+      }
+    } catch (error) {
+      console.error('Unfollow user API failed:', error);
+      // 3. Rollback nếu lỗi
+      setIsFollowed(true);
+      dispatch(
+        updateAuthorFollowStatus({
+          userId: author?.id,
+          username,
+          isFollowed: true,
+        })
+      );
+      setToastMessage(`Không thể huỷ theo dõi @${username}. Vui lòng thử lại.`);
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
 
   const handleAction = (action) => {
     if (action === 'copy_link') {
@@ -41,10 +164,30 @@ export default function PostHeader({
             className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
             loading="lazy"
           />
-          {showFollowBadge && (
-            <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
-              <Plus className="w-3 h-3 stroke-3" />
-            </div>
+          {shouldRenderFollow && (
+            isFollowed ? (
+              // Badge [✓] khi ĐÃ THEO DÕI -> click mở Profile Modal
+              <button
+                type="button"
+                onClick={handleFollowingBadgeClick}
+                title="Following"
+                aria-label={`Following @${username}`}
+                className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white dark:bg-white text-black dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+              >
+                <Check className="w-3 h-3 stroke-[3]" />
+              </button>
+            ) : (
+              // Badge [+] khi CHƯA THEO DÕI -> click thực hiện Follow
+              <button
+                type="button"
+                onClick={handleFollowClick}
+                title="Follow"
+                aria-label={`Follow @${username}`}
+                className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black dark:bg-white text-white dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+              >
+                <Plus className="w-3 h-3 stroke-[3]" />
+              </button>
+            )
           )}
         </div>
 
@@ -94,6 +237,22 @@ export default function PostHeader({
           onAction={handleAction}
         />
       </div>
+
+      {/* Modal Profile tác giả khi click vào tick [✓] */}
+      <AuthorProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        author={author}
+        onOpenUnfollow={handleOpenUnfollow}
+      />
+
+      {/* Modal xác nhận Unfollow khi click nút Following trong Profile Modal */}
+      <UnfollowConfirmModal
+        isOpen={isUnfollowModalOpen}
+        onClose={() => setIsUnfollowModalOpen(false)}
+        author={author}
+        onConfirmUnfollow={handleConfirmUnfollow}
+      />
 
       {/* Toast thông báo tương tác nhanh */}
       {toastMessage && (

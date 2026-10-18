@@ -14,6 +14,7 @@ import {
   Repeat2,
   Send,
   Plus,
+  Check,
 } from 'lucide-react';
 import { getPostByIdApi, getRepliesApi, createReplyApi } from '@/services/postService';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
@@ -24,7 +25,10 @@ import CreatePostModal from '@/components/post/CreatePostModal';
 import PostCard from '@/components/post/PostCard';
 import PostContent from '@/components/post/PostContent';
 import RepostModal from '@/components/post/RepostModal';
+import AuthorProfileModal from '@/components/post/AuthorProfileModal';
+import UnfollowConfirmModal from '@/components/post/UnfollowConfirmModal';
 import { usePostInteraction } from '@/hooks/usePostInteraction';
+import { followUserApi } from '@/services/userService';
 
 export default function PostDetailPage() {
   const { username, postId } = useParams();
@@ -322,6 +326,7 @@ export default function PostDetailPage() {
                   <ReplyItem
                     key={reply.id}
                     reply={reply}
+                    currentUser={currentUser}
                     onToast={showToast}
                     isAuthenticated={isAuthenticated}
                     onQuoteReply={(target) => {
@@ -445,9 +450,76 @@ function PostNotFound({ onGoHome }) {
 }
 
 // Component từng dòng Reply trong chuỗi phản hồi
-function ReplyItem({ reply, onToast, isAuthenticated, onQuoteReply }) {
+function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [isFollowed, setIsFollowed] = useState(Boolean(reply.author?.isFollowed));
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
+
+  const isSelf = Boolean(
+    currentUser &&
+      (currentUser.username === reply.author?.username ||
+        (currentUser.id && currentUser.id === reply.author?.id))
+  );
+
+  const shouldRenderFollow = !isSelf;
+
+  const handleFollow = async (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!isAuthenticated) {
+      window.dispatchEvent(
+        new CustomEvent('open-auth-prompt', { detail: { type: 'follow' } })
+      );
+      return;
+    }
+
+    setIsFollowed(true);
+    onToast?.(`Đang theo dõi @${reply.author?.username || 'user'}`);
+
+    try {
+      if (reply.author?.id) {
+        await followUserApi(reply.author.id);
+      }
+    } catch (error) {
+      console.error('Follow reply author failed:', error);
+      setIsFollowed(false);
+      onToast?.(
+        `Không thể theo dõi @${reply.author?.username || 'user'}. Vui lòng thử lại.`
+      );
+    }
+  };
+
+  const handleFollowingClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsProfileModalOpen(true);
+  };
+
+  const handleOpenUnfollow = () => {
+    setIsUnfollowModalOpen(true);
+  };
+
+  const handleConfirmUnfollow = async () => {
+    setIsUnfollowModalOpen(false);
+    setIsProfileModalOpen(false);
+    setIsFollowed(false);
+    onToast?.(`Đã bỏ theo dõi @${reply.author?.username || 'user'}`);
+
+    try {
+      if (reply.author?.id) {
+        await followUserApi(reply.author.id);
+      }
+    } catch (error) {
+      console.error('Unfollow reply author failed:', error);
+      setIsFollowed(true);
+      onToast?.(
+        `Không thể huỷ theo dõi @${reply.author?.username || 'user'}. Vui lòng thử lại.`
+      );
+    }
+  };
 
   const {
     isLiked,
@@ -480,9 +552,29 @@ function ReplyItem({ reply, onToast, isAuthenticated, onQuoteReply }) {
               }}
               className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-800"
             />
-            <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-black border border-zinc-700 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform">
-              <Plus className="w-3 h-3 stroke-3" />
-            </div>
+            {shouldRenderFollow && (
+              isFollowed ? (
+                <button
+                  type="button"
+                  onClick={handleFollowingClick}
+                  title="Following"
+                  aria-label={`Following @${reply.author?.username || 'user'}`}
+                  className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white dark:bg-white text-black dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+                >
+                  <Check className="w-3 h-3 stroke-[3]" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleFollow}
+                  title="Follow"
+                  aria-label={`Follow @${reply.author?.username || 'user'}`}
+                  className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black dark:bg-white text-white dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+                >
+                  <Plus className="w-3 h-3 stroke-[3]" />
+                </button>
+              )
+            )}
           </div>
           {reply.hasConnector && (
             <div className="w-0.5 bg-zinc-200 dark:bg-zinc-800 flex-1 my-1.5 rounded-full" />
@@ -639,6 +731,22 @@ function ReplyItem({ reply, onToast, isAuthenticated, onQuoteReply }) {
           </div>
         </div>
       </div>
+
+      {/* Modal Profile tác giả khi click vào tick [✓] */}
+      <AuthorProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        author={reply.author}
+        onOpenUnfollow={handleOpenUnfollow}
+      />
+
+      {/* Modal xác nhận Unfollow khi click nút Following trong Profile Modal */}
+      <UnfollowConfirmModal
+        isOpen={isUnfollowModalOpen}
+        onClose={() => setIsUnfollowModalOpen(false)}
+        author={reply.author}
+        onConfirmUnfollow={handleConfirmUnfollow}
+      />
     </article>
   );
 }

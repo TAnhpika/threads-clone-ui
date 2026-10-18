@@ -10,6 +10,7 @@ export default function PostCard({
   post,
   feedType = 'for_you',
   isDetail = false,
+  showFollowBadge = true,
   onCommentClick,
   onQuote,
   className = '',
@@ -52,7 +53,7 @@ export default function PostCard({
         timestamp={post.timestamp}
         tag={post.tag}
         postId={post.id}
-        showFollowBadge={isDetail}
+        showFollowBadge={showFollowBadge}
       />
 
       {/* 2. Nội dung bài viết (Text + Media) */}
