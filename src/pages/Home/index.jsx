@@ -353,8 +353,8 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
         {posts.flatMap((post, index) => {
           const items = [<PostCard key={post.id} post={post} feedType={feedType} />];
-          // Đặt cố định sau bài viết thứ 4 (cuối đợt tải 1) giúp cuộn 100% mượt mà, không giật
-          const isTarget = index === 3 || (posts.length < 4 && index === posts.length - 1);
+          // Hiển thị sau bài viết thứ 8 (index === 7)
+          const isTarget = index === 7;
           if (isTarget) {
             items.push(
               <SuggestedProfiles
