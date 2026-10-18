@@ -155,7 +155,6 @@ export default function ResetPasswordPage() {
             <AuthInput
               label="Mật khẩu mới"
               type="password"
-              placeholder="••••••••••"
               error={errors.password}
               {...register("password", {
                 onChange: () => handleInputChange("password"),
@@ -171,7 +170,6 @@ export default function ResetPasswordPage() {
             <AuthInput
               label="Xác nhận mật khẩu"
               type="password"
-              placeholder="••••••••"
               error={errors.password_confirmation}
               {...register("password_confirmation", {
                 onChange: () => handleInputChange("password_confirmation"),

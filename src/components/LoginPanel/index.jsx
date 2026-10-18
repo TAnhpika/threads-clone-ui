@@ -56,9 +56,9 @@ export default function LoginPanel() {
         <div className="px-2 text-[11px] text-zinc-400 dark:text-zinc-600 leading-relaxed text-center space-y-1">
           <p className="flex items-center justify-center gap-1.5 flex-wrap">
             <span>© 2026</span>
-            <Link to="/login" className="hover:underline hover:text-black dark:hover:text-zinc-300">Threads Terms</Link>
-            <Link to="/login" className="hover:underline hover:text-black dark:hover:text-zinc-300">Privacy Policy</Link>
-            <Link to="/login" className="hover:underline hover:text-black dark:hover:text-zinc-300">Cookies Policy</Link>
+            <Link to="#" className="hover:underline hover:text-black dark:hover:text-zinc-300">Threads Terms</Link>
+            <Link to="#" className="hover:underline hover:text-black dark:hover:text-zinc-300">Privacy Policy</Link>
+            <Link to="#" className="hover:underline hover:text-black dark:hover:text-zinc-300">Cookies Policy</Link>
           </p>
           <p>
             <button

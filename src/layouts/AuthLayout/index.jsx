@@ -43,8 +43,8 @@ export default function AuthLayout() {
       <footer className="w-full relative z-10 pt-8 pb-2">
         <div className="flex items-center justify-center gap-3.5 text-xs text-zinc-400 dark:text-zinc-600 font-normal flex-wrap">
           <span>© 2026</span>
-          <Link to="/login" className="hover:underline">Threads Terms</Link>
-          <Link to="/login" className="hover:underline">Privacy Policy</Link>
+          <Link to="#" className="hover:underline">Threads Terms</Link>
+          <Link to="#" className="hover:underline">Privacy Policy</Link>
         </div>
       </footer>
     </div>

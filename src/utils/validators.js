@@ -98,3 +98,31 @@ export const registerSchema = object({
     .required("Vui lòng xác nhận mật khẩu")
     .oneOf([ref("password")], "Mật khẩu xác nhận không khớp"),
 });
+
+export const checkEmailExistsForReset = async (email) => {
+  if (!email || !EMAIL_REGEX.test(email)) {
+    return true;
+  }
+  try {
+    const exists = await checkExistsEmail(email);
+    return exists;
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra email tồn tại:", error);
+    return true;
+  }
+};
+
+export const forgotPasswordSchema = object({
+  email: string()
+    .trim()
+    .required("Vui lòng nhập email")
+    .email("Email không đúng định dạng")
+    .test(
+      "email-exists",
+      "Email này chưa được đăng ký trong hệ thống",
+      async (value) => {
+        return await checkEmailExistsForReset(value);
+      }
+    ),
+});
+

@@ -2,19 +2,13 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
+import { CheckCircle2, X } from "lucide-react";
 import AuthInput from "@/components/common/AuthInput";
 import AuthButton from "@/components/common/AuthButton";
 import AuthAlert from "@/components/common/AuthAlert";
-import { EMAIL_REGEX } from "@/utils/validators";
+import useEmailCheck from "@/hooks/useEmailCheck";
+import { forgotPasswordSchema } from "@/utils/validators";
 import * as authService from "@/services/authService";
-
-const forgotPasswordSchema = yup.object().shape({
-  email: yup
-    .string()
-    .required("Vui lòng nhập email")
-    .matches(EMAIL_REGEX, "Email không đúng định dạng"),
-});
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -37,6 +31,9 @@ export default function ForgotPasswordPage() {
     handleSubmit,
     clearErrors,
     setError,
+    setValue,
+    watch,
+    trigger,
     formState: { errors },
   } = useForm({
     mode: "onBlur",
@@ -47,11 +44,28 @@ export default function ForgotPasswordPage() {
     },
   });
 
+  const emailValue = watch("email");
+  const emailCheck = useEmailCheck({
+    emailValue,
+    trigger,
+    clearErrors,
+  });
+
+  const hasEmailError = Boolean(errors.email);
+  const currentEmailStatus =
+    emailCheck.status === "checking"
+      ? "checking"
+      : hasEmailError
+      ? "error"
+      : emailCheck.status === "success" || emailCheck.status === "typing"
+      ? "success"
+      : "idle";
 
   const handleInputChange = () => {
     if (errors.email) {
       clearErrors("email");
     }
+    emailCheck.resetStatus();
     if (errorMessage) {
       setErrorMessage(null);
     }
@@ -77,11 +91,13 @@ export default function ForgotPasswordPage() {
           type: "server",
           message: resData.errors.email[0] || "Email không hợp lệ",
         });
+        emailCheck.setStatus("error");
       } else if (typeof resMsg === "string" && resMsg.toLowerCase().includes("email")) {
         setError("email", {
           type: "server",
           message: resMsg,
         });
+        emailCheck.setStatus("error");
       } else {
         setErrorMessage(
           typeof resMsg === "string" ? resMsg : "Gửi yêu cầu thất bại, vui lòng thử lại!"
@@ -116,10 +132,37 @@ export default function ForgotPasswordPage() {
           <AuthInput
             label="Email"
             type="email"
-            placeholder="nguyenvana@gmail.com"
             error={errors.email}
+            rightSlot={
+              currentEmailStatus === "checking" ? (
+                <div
+                  title="Đang kiểm tra..."
+                  className="w-4.5 h-4.5 rounded-full border-2 border-zinc-400/30 border-t-blue-500 dark:border-zinc-600/40 dark:border-t-blue-400 animate-spin"
+                />
+              ) : currentEmailStatus === "success" && !hasEmailError ? (
+                <CheckCircle2
+                  className="w-5 h-5 text-green-500 shrink-0"
+                  strokeWidth={2}
+                />
+              ) : emailValue ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue("email", "");
+                    emailCheck.resetStatus();
+                    clearErrors("email");
+                  }}
+                  tabIndex={-1}
+                  className="text-zinc-400 hover:text-black dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center p-1"
+                  title="Xóa email"
+                >
+                  <X className="w-5 h-5 shrink-0" strokeWidth={2} />
+                </button>
+              ) : null
+            }
             {...register("email", {
               onChange: handleInputChange,
+              onBlur: emailCheck.handleBlur,
             })}
           />
 
