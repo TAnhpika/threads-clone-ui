@@ -94,15 +94,20 @@ export default function AddToIgStoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-200"
       onClick={(e) => {
+        e.stopPropagation();
         if (e.target === e.currentTarget) onClose();
       }}
+      onMouseDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="ig-story-modal-title"
     >
-      <div className="w-full max-w-4xl h-[88vh] max-h-[720px] bg-[#111111] border border-zinc-800/90 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white animate-in zoom-in-95 duration-200">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-4xl h-[88vh] max-h-[720px] bg-[#111111] border border-zinc-800/90 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white animate-in zoom-in-95 duration-200"
+      >
         {/* 1. Header Modal */}
         <header className="px-6 py-3.5 bg-[#141414] border-b border-zinc-850 flex items-center justify-center relative shrink-0">
           <div className="text-center">

@@ -21,8 +21,16 @@ export default function PostCard({
 
   const handlePostClick = (e) => {
     if (isDetail) return;
-    // Không chuyển trang nếu bấm vào nút tương tác, avatar, menu
-    if (e.target.closest('button') || e.target.closest('a')) {
+    // Không chuyển trang nếu bấm vào nút tương tác, liên kết, avatar, menu, input hoặc bất kỳ modal nào
+    if (
+      e.target.closest('button') ||
+      e.target.closest('a') ||
+      e.target.closest('input') ||
+      e.target.closest('textarea') ||
+      e.target.closest('[role="dialog"]') ||
+      e.target.closest('[role="menu"]') ||
+      e.target.closest('.fixed')
+    ) {
       return;
     }
     const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;

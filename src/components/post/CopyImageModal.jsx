@@ -164,14 +164,19 @@ export default function CopyImageModal({
     <div
       className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-150"
       onClick={(e) => {
+        e.stopPropagation();
         if (e.target === e.currentTarget) onClose();
       }}
+      onMouseDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="copy-modal-title"
     >
       {/* Khung Modal chính: bo tròn bo góc lớn chuẩn mẫu Threads */}
-      <div className="w-full max-w-[560px] bg-[#1c1c1e] border border-zinc-800 rounded-[28px] shadow-2xl p-4 sm:p-6 text-white animate-in zoom-in-95 duration-150 flex flex-col gap-4">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[560px] bg-[#1c1c1e] border border-zinc-800 rounded-[28px] shadow-2xl p-4 sm:p-6 text-white animate-in zoom-in-95 duration-150 flex flex-col gap-4"
+      >
         {/* 1. Preview Card DOM Node được chụp bởi html-to-image */}
         <div
           ref={cardRef}

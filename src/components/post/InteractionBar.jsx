@@ -10,6 +10,7 @@ import QuoteModal from './QuoteModal';
 import ShareModal from './ShareModal';
 import AddToIgStoryModal from './AddToIgStoryModal';
 import CopyImageModal from './CopyImageModal';
+import EmbedModal from './EmbedModal';
 
 export default function InteractionBar({
   initialLikes = 0,
@@ -33,6 +34,7 @@ export default function InteractionBar({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isIgStoryModalOpen, setIsIgStoryModalOpen] = useState(false);
   const [isCopyImageModalOpen, setIsCopyImageModalOpen] = useState(false);
+  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
@@ -198,6 +200,7 @@ export default function InteractionBar({
             onActionFeedback={handleFeedback}
             onOpenIgStory={() => setIsIgStoryModalOpen(true)}
             onOpenCopyImage={() => setIsCopyImageModalOpen(true)}
+            onOpenEmbed={() => setIsEmbedModalOpen(true)}
           />
         )}
       </div>
@@ -222,6 +225,17 @@ export default function InteractionBar({
         />
       )}
 
+      {/* Modal Get Embed Code */}
+      {isAuthenticated && (
+        <EmbedModal
+          isOpen={isEmbedModalOpen}
+          onClose={() => setIsEmbedModalOpen(false)}
+          post={post}
+          postId={postId || post?.id}
+          onSuccessFeedback={handleFeedback}
+        />
+      )}
+
       {/* Modal Quote Post */}
       {isAuthenticated && (
         <QuoteModal
@@ -234,7 +248,7 @@ export default function InteractionBar({
 
       {/* Toast thông báo nhanh */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
           {toastMessage}
         </div>
       )}

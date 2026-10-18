@@ -65,6 +65,7 @@ export default function ShareModal({
   onActionFeedback,
   onOpenIgStory,
   onOpenCopyImage,
+  onOpenEmbed,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showBanner, setShowBanner] = useState(true);
@@ -112,26 +113,26 @@ export default function ShareModal({
       const shareUrl = `${window.location.origin}/share/${shareId}/`;
       copy(shareUrl);
       if (onActionFeedback) onActionFeedback('Đã sao chép liên kết vào bộ nhớ tạm');
-    } else if (type === 'instagram_story') {
       onClose();
+    } else if (type === 'instagram_story') {
+      // Giữ ShareModal hiển thị ở nền, không gọi onClose()
       if (onOpenIgStory) {
         onOpenIgStory();
-      } else if (onActionFeedback) {
-        onActionFeedback('Đang chuyển hướng chia sẻ lên Instagram Story...');
       }
       return;
     } else if (type === 'copy_image') {
       onClose();
       if (onOpenCopyImage) {
         onOpenCopyImage();
-      } else if (onActionFeedback) {
-        onActionFeedback('Đang chuẩn bị xuất ảnh bài viết...');
       }
       return;
     } else if (type === 'embed_code') {
-      if (onActionFeedback) onActionFeedback('Đã sao chép mã nhúng bài viết');
+      // Giữ ShareModal hiển thị ở nền, không gọi onClose()
+      if (onOpenEmbed) {
+        onOpenEmbed();
+      }
+      return;
     }
-    onClose();
   };
 
   const handleSendToUser = (profile) => {
@@ -148,22 +149,28 @@ export default function ShareModal({
     <div
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 select-none"
       onClick={(e) => {
+        e.stopPropagation();
         if (modalContentRef.current && !modalContentRef.current.contains(e.target)) {
           onClose();
         }
       }}
+      onMouseDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="share-modal-title"
     >
       <div
         ref={modalContentRef}
+        onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 text-black dark:text-white"
       >
         {/* Header Modal */}
         <div className="relative px-4 py-3.5 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80">
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 hover:opacity-75 transition-opacity cursor-pointer"
           >
             {t('shareModal.cancel', 'Cancel')}
