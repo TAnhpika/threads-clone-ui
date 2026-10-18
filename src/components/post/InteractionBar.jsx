@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
@@ -13,7 +14,9 @@ export default function InteractionBar({
   initialIsLiked = false,
   initialIsReposted = false,
   postId,
+  authorUsername,
 }) {
+  const navigate = useNavigate();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
@@ -37,10 +40,11 @@ export default function InteractionBar({
     }
   };
 
-  const handleComment = () => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } }));
-      return;
+  const handleComment = (e) => {
+    e?.stopPropagation?.();
+    if (postId) {
+      const username = authorUsername || 'user';
+      navigate(`/@${username}/post/${postId}#reply`, { state: { focusReply: true } });
     }
   };
 

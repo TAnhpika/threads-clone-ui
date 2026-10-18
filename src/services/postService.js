@@ -137,6 +137,35 @@ export async function getPostByIdApi(id) {
 }
 
 /**
+ * API lấy danh sách bình luận (replies) của một bài viết
+ * @param {string|number} postId
+ * @returns {Promise<Array>}
+ */
+export async function getRepliesApi(postId) {
+  try {
+    const response = await http.get(`/posts/${postId}/replies`);
+    const rawList = response?.data || response;
+    const list = Array.isArray(rawList) ? rawList : [];
+    return list.map(adaptPost);
+  } catch (error) {
+    console.warn(`Could not fetch replies for post ${postId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * API tạo phản hồi / bình luận cho bài viết
+ * @param {string|number} postId
+ * @param {Object} data - { content: string }
+ * @returns {Promise<Object>}
+ */
+export async function createReplyApi(postId, { content }) {
+  const response = await http.post(`/posts/${postId}/reply`, { content });
+  const resData = response?.data || response;
+  return adaptPost(resData);
+}
+
+/**
  * Giả lập API gọi danh sách bài viết thời trang (backward-compatibility)
  */
 export async function getPostsApi(delay = 100) {
@@ -146,3 +175,4 @@ export async function getPostsApi(delay = 100) {
     }, delay);
   });
 }
+
