@@ -64,9 +64,15 @@ export default function ResetPasswordPage() {
       }
 
       try {
-        await authService.validateResetToken(token);
+        const res = await authService.validateResetToken(token);
+        const isValid = res?.data?.valid ?? res?.valid ?? false;
         if (isMounted) {
-          setTokenStatus("valid");
+          if (isValid) {
+            setTokenStatus("valid");
+          } else {
+            setTokenStatus("invalid");
+            setTokenErrorMessage("Liên kết đã hết hạn hoặc không hợp lệ");
+          }
         }
       } catch (error) {
         if (isMounted) {
@@ -74,7 +80,11 @@ export default function ResetPasswordPage() {
             error.response?.data?.message ||
             "Liên kết đã hết hạn hoặc không hợp lệ";
           setTokenStatus("invalid");
-          setTokenErrorMessage(resMsg);
+          setTokenErrorMessage(
+            resMsg.toLowerCase().includes("invalid or expired")
+              ? "Liên kết đã hết hạn hoặc không hợp lệ"
+              : resMsg
+          );
         }
       }
     };
@@ -116,7 +126,11 @@ export default function ResetPasswordPage() {
       const resMsg =
         error.response?.data?.message ||
         "Đặt lại mật khẩu thất bại. Vui lòng thử lại!";
-      setSubmitErrorMessage(resMsg);
+      setSubmitErrorMessage(
+        typeof resMsg === "string" && resMsg.toLowerCase().includes("invalid or expired")
+          ? "Liên kết đã hết hạn hoặc không hợp lệ"
+          : resMsg
+      );
     } finally {
       setIsLoading(false);
     }
