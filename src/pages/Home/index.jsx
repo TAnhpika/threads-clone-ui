@@ -70,7 +70,6 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     defaultCreateFeedOpen || location.pathname === '/custom_feed/create'
   );
   const [toastMessage, setToastMessage] = useState(null);
-  const [showSuggested, setShowSuggested] = useState(false);
 
   // Tránh fetch trùng lặp trong React StrictMode
   const isFetchingRef = useRef(false);
@@ -197,22 +196,6 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     rootMargin: '300px 0px',
   });
 
-  // Khi lướt xuống khoảng 150% viewheight (scrollY >= 1.5 * viewHeight) thì hiển thị Suggested for you
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      const viewHeight = window.innerHeight || 800;
-
-      if (scrollY >= viewHeight * 1.5) {
-        setShowSuggested(true);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   // Lắng nghe sự kiện mở Create Post Modal từ sidebar
   useEffect(() => {
     const handleOpenThread = (e) => {
@@ -328,9 +311,10 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     return (
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
         {posts.flatMap((post, index) => {
-          const isTarget = index === 1;
           const items = [<PostCard key={post.id} post={post} feedType={feedType} />];
-          if (showSuggested && isTarget) {
+          // Đặt cố định sau bài viết thứ 4 (cuối đợt tải 1) giúp cuộn 100% mượt mà, không giật
+          const isTarget = index === 3 || (posts.length < 4 && index === posts.length - 1);
+          if (isTarget) {
             items.push(
               <SuggestedProfiles
                 key={isAuthenticated ? 'suggested-profiles-auth' : 'suggested-profiles-unauth'}
