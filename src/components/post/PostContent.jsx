@@ -22,29 +22,24 @@ export default function PostContent({ text, media }) {
         </div>
       )}
 
-      {/* Nhiều ảnh / media: Grid layout chuẩn mạng xã hội */}
+      {/* Nhiều ảnh: Horizontal Carousel lướt ngang thuần túy, ẩn scrollbar, không nút next/prev */}
       {urls.length > 1 && (
-        <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden">
-          {urls.slice(0, 4).map((url, idx) => (
-            <div
-              key={idx}
-              className={`relative overflow-hidden border border-zinc-200/80 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 rounded-xl h-48 sm:h-56 ${
-                urls.length === 3 && idx === 0 ? 'col-span-2 h-64' : ''
-              }`}
-            >
-              <img
-                src={url}
-                alt={`Media ${idx + 1}`}
-                className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300"
-                loading="lazy"
-              />
-              {urls.length > 4 && idx === 3 && (
-                <div className="absolute inset-0 bg-black/55 backdrop-blur-[2px] flex items-center justify-center text-white font-bold text-lg select-none">
-                  +{urls.length - 4}
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="my-1 select-none">
+          <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-1">
+            {urls.map((url, idx) => (
+              <div
+                key={idx}
+                className="relative shrink-0 snap-start h-80 sm:h-96 w-[230px] sm:w-[270px] rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 shadow-xs"
+              >
+                <img
+                  src={url}
+                  alt={`Media ${idx + 1}`}
+                  className="w-full h-full object-cover select-none hover:scale-[1.01] transition-transform duration-300"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
