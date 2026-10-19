@@ -136,7 +136,7 @@ export default function InteractionBar({
             isLiked ? 'fill-red-500 stroke-red-500' : ''
           }`}
         />
-        <span>{formatCount(likes)}</span>
+        {likes > 0 && <span>{formatCount(likes)}</span>}
       </button>
 
       {/* 2. Comment Button */}
@@ -146,7 +146,7 @@ export default function InteractionBar({
         title="Bình luận"
       >
         <MessageCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
-        <span>{formatCount(initialComments)}</span>
+        {initialComments > 0 && <span>{formatCount(initialComments)}</span>}
       </button>
 
       {/* 3. Repost Button & Modal */}
@@ -164,7 +164,7 @@ export default function InteractionBar({
               isReposted ? 'stroke-green-500 stroke-2 text-green-500' : ''
             }`}
           />
-          <span>{formatCount(reposts)}</span>
+          {reposts > 0 && <span>{formatCount(reposts)}</span>}
         </button>
 
         {/* Modal Repost / Quote */}
@@ -187,7 +187,7 @@ export default function InteractionBar({
           title="Chia sẻ"
         >
           <Send className="w-4 h-4 transition-transform group-hover:scale-110" />
-          <span>{formatCount(initialShares)}</span>
+          {initialShares > 0 && <span>{formatCount(initialShares)}</span>}
         </button>
 
         {/* Modal Share Post */}

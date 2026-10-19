@@ -320,6 +320,43 @@ export async function quotePostApi(postId, formData) {
 }
 
 /**
+ * API Xoá bài viết của chính mình (Delete Post)
+ * Endpoint: POST /posts/:id kèm body { _method: "DELETE" }
+ * @param {string|number} postId
+ * @returns {Promise<Object>}
+ */
+export async function deletePostApi(postId) {
+    const response = await http.post(`/posts/${postId}`, {
+        _method: 'DELETE',
+    });
+    return response?.data || response;
+}
+
+/**
+ * API Sửa bài viết của chính mình (Update Post)
+ * Endpoint: POST /posts/:id kèm _method = "PUT"
+ * @param {string|number} postId
+ * @param {FormData|Object} data
+ * @returns {Promise<Object>}
+ */
+export async function updatePostApi(postId, data) {
+    if (data instanceof FormData) {
+        data.append('_method', 'PUT');
+        const response = await http.post(`/posts/${postId}`, data, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response?.data || response;
+    }
+    const response = await http.post(`/posts/${postId}`, {
+        ...data,
+        _method: 'PUT',
+    });
+    return response?.data || response;
+}
+
+/**
  * Giả lập API gọi danh sách bài viết thời trang (backward-compatibility)
  */
 export async function getPostsApi(delay = 100) {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +20,8 @@ import {
   LogOut,
 } from 'lucide-react';
 import { selectCurrentUser, updateCurrentUser, logout } from '@/features/auth/authSlice';
+import { setFeedData } from '@/features/feed/feedSlice';
+import { getFeed } from '@/services/postService';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import CreatePostBox from '@/components/post/CreatePostBox';
 import CreatePostModal from '@/components/post/CreatePostModal';
@@ -112,6 +114,53 @@ export default function ProfilePage() {
 
   // Danh sách bài viết của user trên trang profile
   const [userPosts, setUserPosts] = useState([]);
+
+  const forYouPosts = useSelector((state) => state.feed?.forYou?.posts || []);
+  const followingPosts = useSelector((state) => state.feed?.following?.posts || []);
+
+  // Tải danh sách bài viết từ API nếu Redux feed đang trống
+  useEffect(() => {
+    async function loadFeedIfEmpty() {
+      try {
+        const res = await getFeed({ type: 'for_you', page: 1, per_page: 50 });
+        if (res?.data && Array.isArray(res.data)) {
+          dispatch(setFeedData({ feedType: 'for_you', posts: res.data }));
+        }
+      } catch (err) {
+        console.error('Failed to load feed on profile:', err);
+      }
+    }
+    if (forYouPosts.length === 0) {
+      loadFeedIfEmpty();
+    }
+  }, [dispatch, forYouPosts.length]);
+
+  const isOwnPost = (post) => {
+    if (!currentUser && !post) return false;
+    const author = post?.author || post?.user || {};
+    const authorId = author?.id || post?.raw?.user?.id;
+    const authorUsername = author?.username || post?.raw?.user?.username;
+
+    const myId = currentUser?.id;
+    const myUsername = currentUser?.username;
+
+    if (myId && authorId && String(authorId) === String(myId)) return true;
+    if (myUsername && authorUsername && authorUsername.toLowerCase() === myUsername.toLowerCase()) return true;
+    if (authorUsername && (authorUsername === 'tuananhpika' || authorUsername === 'anhpika')) return true;
+
+    return false;
+  };
+
+  // Tổng hợp bài viết của user từ Redux Feed + Local Created Posts
+  const myPosts = useMemo(() => {
+    const map = new Map();
+    [...userPosts, ...forYouPosts, ...followingPosts].forEach((p) => {
+      if (p && p.id && !map.has(String(p.id)) && isOwnPost(p)) {
+        map.set(String(p.id), p);
+      }
+    });
+    return Array.from(map.values());
+  }, [userPosts, forYouPosts, followingPosts, currentUser]);
 
   // Form state cho Edit Profile
   const [editName, setEditName] = useState(currentUser?.name || 'Tuan Anh');
@@ -516,9 +565,9 @@ export default function ProfilePage() {
               </div>
 
               {/* Danh sách bài viết cá nhân của user */}
-              {userPosts.length > 0 && (
+              {myPosts.length > 0 && (
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                  {userPosts.map((post) => (
+                  {myPosts.map((post) => (
                     <PostCard key={post.id} post={post} />
                   ))}
                 </div>
@@ -813,7 +862,6 @@ export default function ProfilePage() {
       <CreatePostModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onCreatePost={handleCreatePost}
         placement={createModalPlacement}
         currentUser={currentUser}
       />

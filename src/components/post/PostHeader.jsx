@@ -29,12 +29,14 @@ import {
   hidePostApi,
   unhidePostApi,
   reportPostApi,
+  deletePostApi,
 } from '@/services/postService';
 import { MoreHorizontal, CheckCircle2, Plus, Check } from 'lucide-react';
 import PostMenu from './PostMenu';
 import AuthorProfileModal from './AuthorProfileModal';
 import UnfollowConfirmModal from './UnfollowConfirmModal';
 import BlockConfirmModal from './BlockConfirmModal';
+import DeletePostConfirmModal from './DeletePostConfirmModal';
 import EmbedModal from './EmbedModal';
 import ReportModal from './ReportModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
@@ -70,7 +72,11 @@ export default function PostHeader({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isPinned, setIsPinned] = useState(Boolean(post?.isPinned));
+  const [isArchived, setIsArchived] = useState(Boolean(post?.isArchived));
+  const [isHideLikes, setIsHideLikes] = useState(Boolean(post?.isHideLikes));
 
   // Tự động đồng bộ khi prop author.isMuted thay đổi
   useEffect(() => {
@@ -158,13 +164,23 @@ export default function PostHeader({
     }
   }, [post?.isSaved]);
 
-  // Không hiển thị follow badge nếu là bài của chính mình
+  // Kiểm tra bài viết có phải của chính người dùng hiện tại không
   const isSelf = Boolean(
     currentUser &&
       (currentUser.username === username || (currentUser.id && currentUser.id === author?.id))
   );
 
-  const shouldRenderFollow = showFollowBadge && !isSelf;
+  const isOwnPost = Boolean(
+    isSelf ||
+    (currentUser && (
+      (author?.id && String(author.id) === String(currentUser.id)) ||
+      (author?.username && author.username === currentUser.username) ||
+      (post?.author?.id && String(post.author.id) === String(currentUser.id)) ||
+      (post?.author?.username && post.author.username === currentUser.username)
+    ))
+  );
+
+  const shouldRenderFollow = showFollowBadge && !isOwnPost;
 
   const handleFollowClick = async (e) => {
     e.stopPropagation();
@@ -629,6 +645,74 @@ export default function PostHeader({
       }
     } else if (action === 'report') {
       setIsReportModalOpen(true);
+    } else if (action === 'delete') {
+      setIsDeleteModalOpen(true);
+    } else if (action === 'edit') {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Chức năng chỉnh sửa bài viết' },
+        })
+      );
+    } else if (action === 'insights') {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Số liệu phân tích bài viết (Insights)' },
+        })
+      );
+    } else if (action === 'pin') {
+      setIsPinned((prev) => !prev);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: isPinned ? 'Đã bỏ ghim khỏi trang cá nhân' : 'Đã ghim vào trang cá nhân' },
+        })
+      );
+    } else if (action === 'archive') {
+      setIsArchived((prev) => !prev);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: isArchived ? 'Đã khôi phục từ lưu trữ' : 'Đã lưu trữ bài viết' },
+        })
+      );
+    } else if (action === 'toggle_hide_counts') {
+      setIsHideLikes((prev) => !prev);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: isHideLikes ? 'Đã hiện số lượt thích và chia sẻ' : 'Đã ẩn số lượt thích và chia sẻ' },
+        })
+      );
+    } else if (action === 'post_options') {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Tuỳ chọn bài viết' },
+        })
+      );
+    }
+  };
+
+  // Xác nhận xoá bài viết trong DeletePostConfirmModal
+  const handleConfirmDelete = async () => {
+    setIsDeleteModalOpen(false);
+    const currentPostId = postId || post?.id;
+    if (!currentPostId) return;
+
+    // Xoá lạc quan ngay lập tức khỏi feed Redux
+    dispatch(removeFeedPost(currentPostId));
+
+    window.dispatchEvent(
+      new CustomEvent('app-toast', {
+        detail: { message: 'Đã xoá bài viết ✨' },
+      })
+    );
+
+    try {
+      await deletePostApi(currentPostId);
+    } catch (err) {
+      console.error('Delete post error:', err);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Không thể xoá bài viết. Vui lòng thử lại.' },
+        })
+      );
     }
   };
 
@@ -722,10 +806,15 @@ export default function PostHeader({
           onClose={() => setIsMenuOpen(false)}
           onAction={handleAction}
           postUrl={shareUrl}
+          isOwnPost={isOwnPost}
+          createdAt={post?.createdAt || post?.raw?.created_at}
           isSaved={isSaved}
           isMuted={isMuted}
           isRestricted={isRestricted}
           isBlocked={isBlocked}
+          isPinned={isPinned}
+          isArchived={isArchived}
+          isHideLikes={isHideLikes}
         />
       </div>
 
@@ -751,6 +840,13 @@ export default function PostHeader({
         onClose={() => setIsBlockModalOpen(false)}
         author={author}
         onConfirmBlock={handleConfirmBlock}
+      />
+
+      {/* Modal xác nhận Xoá bài viết của chính mình */}
+      <DeletePostConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirmDelete={handleConfirmDelete}
       />
 
       {/* Modal Get Embed Code */}

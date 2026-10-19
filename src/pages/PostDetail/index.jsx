@@ -679,10 +679,13 @@ function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply 
               <PostMenu
                 isOpen={isMenuOpen}
                 onClose={() => setIsMenuOpen(false)}
+                isOwnPost={isSelf}
+                createdAt={reply.createdAt}
                 onAction={(action) => {
                   if (action === 'copy_link') onToast('Đã sao chép liên kết');
                   if (action === 'save') onToast('Đã lưu câu trả lời');
                   if (action === 'report') setIsReportModalOpen(true);
+                  if (action === 'delete') onToast('Đã xoá câu trả lời');
                 }}
               />
               <ReportModal

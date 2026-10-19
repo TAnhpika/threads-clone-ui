@@ -11,6 +11,10 @@ import {
   MessageCircleWarning,
   ArrowLeft,
   PlusCircle,
+  Pin,
+  RotateCcw,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 
 // Custom Restrict / Unrestrict Icon chuẩn Threads gốc Meta
@@ -70,19 +74,71 @@ function EmbedCodeIcon({ className = 'w-5 h-5' }) {
   );
 }
 
+// Custom Insights Icon chuẩn Threads [||]
+function InsightsIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <line x1="8" y1="17" x2="8" y2="12" />
+      <line x1="12" y1="17" x2="12" y2="7" />
+      <line x1="16" y1="17" x2="16" y2="10" />
+    </svg>
+  );
+}
+
 export default function PostMenu({
   isOpen,
   onClose,
   postUrl = window.location.href,
   onAction,
+  isOwnPost = false,
+  createdAt = null,
   isSaved = false,
   isMuted = false,
   isRestricted = false,
   isBlocked = false,
+  isPinned = false,
+  isArchived = false,
+  isHideLikes = false,
 }) {
-  const [view, setView] = useState('main'); // 'main' | 'add_to_feed'
+  const [view, setView] = useState('main'); // 'main' | 'add_to_feed' | 'post_options'
+  const [remainingText, setRemainingText] = useState(null);
   const menuRef = useRef(null);
   const { t } = useTranslation();
+
+  // Đếm ngược 15 phút chỉnh sửa bài viết của chính mình
+  useEffect(() => {
+    if (!isOpen || !isOwnPost) return;
+
+    function updateCountdown() {
+      if (!createdAt) {
+        setRemainingText('14:59');
+        return;
+      }
+      const createdTime = new Date(createdAt).getTime();
+      const diffMs = 15 * 60 * 1000 - (Date.now() - createdTime);
+      if (diffMs > 0) {
+        const totalSec = Math.floor(diffMs / 1000);
+        const mins = Math.floor(totalSec / 60);
+        const secs = totalSec % 60;
+        setRemainingText(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
+      } else {
+        setRemainingText(null);
+      }
+    }
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen, isOwnPost, createdAt]);
 
   // Reset view về 'main' khi đóng
   useEffect(() => {
@@ -149,7 +205,6 @@ export default function PostMenu({
       {view === 'add_to_feed' ? (
         /* Submenu: Add to feed */
         <div className="space-y-1 animate-in fade-in slide-in-from-right-2 duration-150">
-          {/* Header với nút quay lại */}
           <div className="flex items-center gap-2.5 px-1.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800/80">
             <button
               onClick={(e) => {
@@ -167,7 +222,6 @@ export default function PostMenu({
             </span>
           </div>
 
-          {/* Danh sách hành động */}
           <div className="pt-0.5">
             <button
               onClick={(e) => handleItemClick(e, 'create_feed')}
@@ -178,8 +232,133 @@ export default function PostMenu({
             </button>
           </div>
         </div>
+      ) : isOwnPost ? (
+        /* ================= BÀI VIẾT CỦA CHÍNH MÌNH (OWN POST) ================= */
+        <>
+          {/* Nhóm 1: Insights & Edit */}
+          <div className="space-y-0.5">
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'insights')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{t('postMenu.insights', 'Insights')}</span>
+              <InsightsIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'edit')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{t('common.edit', 'Edit')}</span>
+              {remainingText ? (
+                <span className="text-zinc-400 font-normal text-xs tabular-nums">
+                  {remainingText}
+                </span>
+              ) : (
+                <Pencil className="w-4 h-4 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              )}
+            </button>
+          </div>
+
+          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+
+          {/* Nhóm 2: Copy link & Get embed code */}
+          <div className="space-y-0.5">
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{t('postMenu.copyLink', 'Copy link')}</span>
+              <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'embed')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{t('postMenu.embed', 'Get embed code')}</span>
+              <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+            </button>
+          </div>
+
+          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+
+          {/* Nhóm 3: Save, Pin, Archive, Hide like/share counts, Post options */}
+          <div className="space-y-0.5">
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, isSaved ? 'unsave' : 'save')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{isSaved ? t('postMenu.unsave', 'Unsave') : t('postMenu.save', 'Save')}</span>
+              <Bookmark
+                className={`w-5 h-5 stroke-[2.2] ${
+                  isSaved
+                    ? 'fill-black dark:fill-white text-black dark:text-white'
+                    : 'text-zinc-700 dark:text-zinc-300'
+                }`}
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'pin')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{isPinned ? t('postMenu.unpinFromProfile', 'Unpin from profile') : t('postMenu.pinToProfile', 'Pin to profile')}</span>
+              <Pin className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2] -rotate-45" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'archive')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{isArchived ? t('postMenu.unarchive', 'Unarchive') : t('postMenu.archive', 'Archive')}</span>
+              <RotateCcw className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'toggle_hide_counts')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span className="truncate pr-2">
+                {isHideLikes ? t('postMenu.unhideLikeCounts', 'Unhide like and share counts') : t('postMenu.hideLikeCounts', 'Hide like and share counts')}
+              </span>
+              <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2] shrink-0" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'post_options')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            >
+              <span>{t('postMenu.postOptions', 'Post options')}</span>
+              <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-[2.5]" />
+            </button>
+          </div>
+
+          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+
+          {/* Nhóm 4: Delete */}
+          <div className="space-y-0.5">
+            <button
+              type="button"
+              onClick={(e) => handleItemClick(e, 'delete')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+            >
+              <span>{t('common.delete', 'Delete')}</span>
+              <Trash2 className="w-5 h-5 text-red-500 stroke-[2.2]" />
+            </button>
+          </div>
+        </>
       ) : (
-        /* Menu chính */
+        /* ================= BÀI VIẾT CỦA NGƯỜI KHÁC (OTHER'S POST) ================= */
         <>
           {/* Nhóm 1: Chia sẻ & Mã nhúng */}
           <div className="space-y-0.5">
