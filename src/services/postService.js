@@ -274,6 +274,39 @@ export async function reportPostApi(postId, data = {}) {
 }
 
 /**
+ * API Tạo bài viết mới (Create Post)
+ * Endpoint: POST /posts
+ * Content-Type: multipart/form-data
+ * @param {FormData} formData
+ * @returns {Promise<Object>}
+ */
+export async function createPostApi(formData) {
+    const response = await http.post("/posts", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+    return response?.data || response;
+}
+
+/**
+ * API Quote bài viết (Quote Post)
+ * Endpoint: POST /posts/:id/quote
+ * Content-Type: multipart/form-data
+ * @param {string|number} postId
+ * @param {FormData} formData
+ * @returns {Promise<Object>}
+ */
+export async function quotePostApi(postId, formData) {
+    const response = await http.post(`/posts/${postId}/quote`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+    return response?.data || response;
+}
+
+/**
  * Giả lập API gọi danh sách bài viết thời trang (backward-compatibility)
  */
 export async function getPostsApi(delay = 100) {
@@ -283,3 +316,4 @@ export async function getPostsApi(delay = 100) {
         }, delay);
     });
 }
+

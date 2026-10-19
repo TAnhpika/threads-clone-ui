@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { prependFeedPost } from '@/features/feed/feedSlice';
+import { createPostApi, quotePostApi, adaptPost } from '@/services/postService';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import QuotedPostCard from './QuotedPostCard';
 import {
@@ -29,14 +30,19 @@ export default function CreatePostModal({
   const dispatch = useDispatch();
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mediaPreviews, setMediaPreviews] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImageInput, setShowImageInput] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState('');
   const [showTopicPicker, setShowTopicPicker] = useState(false);
   const [showPostOptions, setShowPostOptions] = useState(false);
-  const [replyPermission, setReplyPermission] = useState('anyone'); // 'anyone' | 'profiles_you_follow' | 'mentioned_only'
+  const [replyPermission, setReplyPermission] = useState('everyone'); // 'everyone' | 'following' | 'followers' | 'mentions'
+  const [requiresReplyApproval, setRequiresReplyApproval] = useState(false);
   const [threadList, setThreadList] = useState([]); // Chained threads if user clicks "Add to thread"
 
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
   const modalRef = useRef(null);
   const { t } = useTranslation();
 
@@ -75,6 +81,14 @@ export default function CreatePostModal({
       setShowTopicPicker(false);
       setShowPostOptions(false);
       setThreadList([]);
+      setReplyPermission('everyone');
+      setRequiresReplyApproval(false);
+      mediaPreviews.forEach((item) => {
+        if (item?.url) URL.revokeObjectURL(item.url);
+      });
+      setMediaFiles([]);
+      setMediaPreviews([]);
+      setIsSubmitting(false);
     }
     return () => {
       document.body.style.overflow = 'unset';
@@ -110,63 +124,124 @@ export default function CreatePostModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
+  const handleFilesSelect = (e) => {
+    const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
+
+    const newPreviews = selected.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+      type: file.type.startsWith('video/') ? 'video' : 'image',
+    }));
+
+    setMediaFiles((prev) => [...prev, ...selected]);
+    setMediaPreviews((prev) => [...prev, ...newPreviews]);
+    e.target.value = '';
+  };
+
+  const handleRemoveMedia = (indexToRemove) => {
+    setMediaPreviews((prev) => {
+      const item = prev[indexToRemove];
+      if (item?.url) URL.revokeObjectURL(item.url);
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
+    setMediaFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim() && !imageUrl) return;
+    if (!content.trim() && mediaFiles.length === 0 && !imageUrl) return;
+    if (isSubmitting) return;
 
-    const postPayload = {
-      content: content.trim(),
-      topic: selectedTopic || null,
-      quotedPost: quotedPost || null,
-      media: imageUrl
-        ? {
-            url: imageUrl,
-            alt: 'User posted media',
-          }
-        : null,
-    };
+    setIsSubmitting(true);
 
-    if (onSubmitPost) {
-      onSubmitPost(postPayload);
-    } else {
-      const newPost = {
-        id: `post-${Date.now()}`,
-        author: {
-          id: currentUser?.id,
-          name: currentUser?.name || 'User',
-          username: currentUser?.username || currentUser?.name || 'user',
-          avatar: avatarUrl,
-          isVerified: true,
-        },
-        tag: postPayload.topic,
-        timestamp: 'vừa xong',
-        content: postPayload.content,
-        quotedPost: postPayload.quotedPost,
-        media: postPayload.media,
-        likes: 0,
-        comments: 0,
-        reposts: 0,
-        shares: 0,
-        isLiked: false,
-        isSaved: false,
-        isReposted: false,
-      };
+    try {
+      if (onSubmitPost) {
+        await onSubmitPost({
+          content: content.trim(),
+          mediaFiles,
+          topic: selectedTopic || null,
+          quotedPost: quotedPost || null,
+          replyPermission,
+          requiresReplyApproval,
+        });
+      } else {
+        const formData = new FormData();
+        formData.append('content', content.trim());
 
-      dispatch(prependFeedPost({ feedType, post: newPost }));
+        mediaFiles.forEach((file) => {
+          formData.append('media[]', file);
+        });
+
+        formData.append('reply_permission', replyPermission || 'everyone');
+        if (requiresReplyApproval) {
+          formData.append('requires_reply_approval', '1');
+        }
+
+        if (selectedTopic) {
+          formData.append('topic_name', selectedTopic);
+        }
+
+        let response;
+        if (quotedPost?.id) {
+          response = await quotePostApi(quotedPost.id, formData);
+        } else {
+          response = await createPostApi(formData);
+        }
+
+        const postData = response?.data || response;
+        const adapted = adaptPost(postData);
+
+        if (adapted) {
+          dispatch(prependFeedPost({ feedType, post: adapted }));
+        }
+
+        window.dispatchEvent(
+          new CustomEvent('app-toast', {
+            detail: {
+              message: quotedPost
+                ? 'Đã đăng bài trích dẫn thành công ✨'
+                : 'Đã đăng bài viết mới thành công ✨',
+            },
+          })
+        );
+      }
+
+      mediaPreviews.forEach((item) => {
+        if (item?.url) URL.revokeObjectURL(item.url);
+      });
+      setMediaFiles([]);
+      setMediaPreviews([]);
+      setContent('');
+      setImageUrl('');
+      setSelectedTopic('');
+      onClose();
+    } catch (err) {
+      console.error('Create post error:', err);
+      const errData = err?.response?.data;
+      let errMsg = 'Không thể đăng bài viết. Vui lòng thử lại.';
+      if (errData?.errors && typeof errData.errors === 'object') {
+        const firstKey = Object.keys(errData.errors)[0];
+        const firstVal = errData.errors[firstKey];
+        errMsg = Array.isArray(firstVal) ? firstVal[0] : String(firstVal);
+      } else if (errData?.message) {
+        errMsg = errData.message;
+      } else if (err?.message) {
+        errMsg = err.message;
+      }
+
       window.dispatchEvent(
         new CustomEvent('app-toast', {
           detail: {
-            message: quotedPost
-              ? 'Đã đăng bài trích dẫn thành công ✨'
-              : 'Đã đăng bài viết mới thành công ✨',
+            message: errMsg,
           },
         })
       );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
   const handleAddThread = () => {
@@ -341,8 +416,52 @@ export default function CreatePostModal({
               className="w-full bg-transparent resize-none text-[15px] placeholder-zinc-500 text-white focus:outline-none leading-relaxed"
             />
 
-            {/* Preview Ảnh (nếu có) */}
-            {imageUrl && (
+            {/* Hidden file input for uploading media files */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={handleFilesSelect}
+            />
+
+            {/* Preview danh sách file đã chọn (mediaPreviews) */}
+            {mediaPreviews.length > 0 && (
+              <div className="flex gap-2.5 mt-2.5 overflow-x-auto pb-2 scrollbar-none">
+                {mediaPreviews.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="relative shrink-0 w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 group"
+                  >
+                    {item.type === 'video' ? (
+                      <video
+                        src={item.url}
+                        className="w-full h-full object-cover"
+                        controls={false}
+                      />
+                    ) : (
+                      <img
+                        src={item.url}
+                        alt="Upload preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMedia(idx)}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md"
+                      title="Xóa tệp"
+                    >
+                      <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Preview Ảnh dán từ URL (nếu có) */}
+            {imageUrl && mediaPreviews.length === 0 && (
               <div className="relative mt-2 rounded-2xl overflow-hidden border border-zinc-800 max-h-56 group">
                 <img
                   src={imageUrl}
@@ -361,7 +480,7 @@ export default function CreatePostModal({
             )}
 
             {/* Input dán URL hình ảnh */}
-            {showImageInput && !imageUrl && (
+            {showImageInput && !imageUrl && mediaPreviews.length === 0 && (
               <div className="mt-2 flex items-center gap-2 animate-in fade-in duration-150">
                 <input
                   type="url"
@@ -382,12 +501,12 @@ export default function CreatePostModal({
 
             {/* Toolbar 9 icons chuẩn Threads */}
             <div className="flex items-center gap-3.5 mt-2.5 text-zinc-500">
-              {/* 1. Image */}
+              {/* 1. Image / Video picker */}
               <button
                 type="button"
-                onClick={() => setShowImageInput((prev) => !prev)}
+                onClick={() => fileInputRef.current?.click()}
                 className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Image"
+                title="Add Image or Video"
               >
                 <Image className="w-5 h-5" />
               </button>
@@ -532,14 +651,15 @@ export default function CreatePostModal({
 
             {/* Menu Post options */}
             {showPostOptions && (
-              <div className="absolute left-0 bottom-full mb-2 bg-[#1e1e1e] border border-zinc-700 rounded-2xl p-2 shadow-2xl w-60 space-y-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute left-0 bottom-full mb-2 bg-[#1e1e1e] border border-zinc-700 rounded-2xl p-2 shadow-2xl w-64 space-y-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-3 py-1 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
                   Who can reply & quote
                 </div>
                 {[
-                  { id: 'anyone', label: 'Anyone' },
-                  { id: 'profiles_you_follow', label: 'Profiles you follow' },
-                  { id: 'mentioned_only', label: 'Profiles you mention' },
+                  { id: 'everyone', label: 'Anyone' },
+                  { id: 'following', label: 'Profiles you follow' },
+                  { id: 'followers', label: 'Followers' },
+                  { id: 'mentions', label: 'Profiles you mention' },
                 ].map((opt) => (
                   <button
                     key={opt.id}
@@ -558,6 +678,23 @@ export default function CreatePostModal({
                     {replyPermission === opt.id && <span>✓</span>}
                   </button>
                 ))}
+
+                {/* Requires reply approval */}
+                <div
+                  className="pt-2 mt-1 border-t border-zinc-800/80 flex items-center justify-between px-3 py-1.5 cursor-pointer hover:bg-zinc-800/40 rounded-xl transition-colors"
+                  onClick={() => setRequiresReplyApproval((prev) => !prev)}
+                >
+                  <span className="text-xs text-zinc-300 font-medium select-none">
+                    Require approval for replies
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={requiresReplyApproval}
+                    onChange={(e) => setRequiresReplyApproval(e.target.checked)}
+                    className="w-4 h-4 rounded accent-white cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -565,14 +702,21 @@ export default function CreatePostModal({
           {/* Nút Post */}
           <button
             type="submit"
-            disabled={!content.trim() && !imageUrl}
-            className={`px-5 py-1.5 rounded-xl text-sm font-bold transition-all ${
-              content.trim() || imageUrl
+            disabled={(!content.trim() && mediaFiles.length === 0 && !imageUrl) || isSubmitting}
+            className={`px-5 py-1.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+              (content.trim() || mediaFiles.length > 0 || imageUrl) && !isSubmitting
                 ? 'bg-white text-black hover:opacity-90 active:scale-95 cursor-pointer shadow-sm'
                 : 'bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-60'
             }`}
           >
-            {t('createPost.postBtn', 'Post')}
+            {isSubmitting ? (
+              <>
+                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                <span>Posting...</span>
+              </>
+            ) : (
+              t('createPost.postBtn', 'Post')
+            )}
           </button>
         </div>
       </form>

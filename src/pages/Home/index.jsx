@@ -511,7 +511,6 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         currentUser={currentUser}
-        onSubmitPost={handleCreatePost}
         placement={createModalPlacement}
       />
 
