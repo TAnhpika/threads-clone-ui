@@ -1,6 +1,7 @@
 import http from "@/utils/http";
 import { mockPosts } from "@/components/post/mockPosts";
 import { getAuthorAvatar } from "@/utils/avatar";
+import { store } from "@/store/store";
 
 /**
  * Format thời gian từ chuỗi ISO thành dạng hiển thị tương đối: vừa xong, 5m, 2h, 3d, 12 thg 10
@@ -56,13 +57,25 @@ export function adaptPost(item) {
         ? item.media_urls.filter(Boolean)
         : [];
 
+    const authUser = store?.getState?.()?.auth?.currentUser;
+    const isMe =
+        authUser &&
+        ((user.id && String(user.id) === String(authUser.id)) ||
+            (user.username && user.username === authUser.username));
+
+    const resolvedAvatar =
+        user.avatar_url ||
+        user.avatar ||
+        (isMe && authUser.avatar ? authUser.avatar : null) ||
+        getAuthorAvatar(user);
+
     return {
         id: item.id,
         author: {
             id: user.id,
             name: user.name || user.username || "User",
             username: user.username || "user",
-            avatar: user.avatar_url || getAuthorAvatar(user),
+            avatar: resolvedAvatar,
             isVerified: Boolean(user.verified),
             isFollowed: Boolean(user.is_followed_by_auth),
             isMuted: Boolean(user.is_muted_by_auth),
