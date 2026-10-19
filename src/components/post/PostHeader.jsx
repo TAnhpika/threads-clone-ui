@@ -5,6 +5,7 @@ import {
   updateAuthorFollowStatus,
   updateAuthorMuteStatus,
   updateAuthorRestrictStatus,
+  updateAuthorBlockStatus,
   updatePostHideStatus,
   hidePostsByAuthor,
   restorePostsByAuthor,
@@ -19,6 +20,8 @@ import {
   unmuteUserApi,
   restrictUserApi,
   unrestrictUserApi,
+  blockUserApi,
+  unblockUserApi,
 } from '@/services/userService';
 import {
   savePostApi,
@@ -31,6 +34,7 @@ import { MoreHorizontal, CheckCircle2, Plus, Check } from 'lucide-react';
 import PostMenu from './PostMenu';
 import AuthorProfileModal from './AuthorProfileModal';
 import UnfollowConfirmModal from './UnfollowConfirmModal';
+import BlockConfirmModal from './BlockConfirmModal';
 import EmbedModal from './EmbedModal';
 import ReportModal from './ReportModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
@@ -62,8 +66,10 @@ export default function PostHeader({
   const [isSaved, setIsSaved] = useState(Boolean(post?.isSaved));
   const [isMuted, setIsMuted] = useState(Boolean(author?.isMuted));
   const [isRestricted, setIsRestricted] = useState(Boolean(author?.isRestricted));
+  const [isBlocked, setIsBlocked] = useState(Boolean(author?.isBlocked));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // Tự động đồng bộ khi prop author.isMuted thay đổi
@@ -79,6 +85,13 @@ export default function PostHeader({
       setIsRestricted(Boolean(author.isRestricted));
     }
   }, [author?.isRestricted]);
+
+  // Tự động đồng bộ khi prop author.isBlocked thay đổi
+  useEffect(() => {
+    if (author?.isBlocked !== undefined) {
+      setIsBlocked(Boolean(author.isBlocked));
+    }
+  }, [author?.isBlocked]);
 
   // Lắng nghe sự kiện author-mute-changed trên toàn ứng dụng
   useEffect(() => {
@@ -112,6 +125,23 @@ export default function PostHeader({
     };
     window.addEventListener('author-restrict-changed', handleRestrictChange);
     return () => window.removeEventListener('author-restrict-changed', handleRestrictChange);
+  }, [author?.id, post?.author?.id, post?.raw?.user?.id, username]);
+
+  // Lắng nghe sự kiện author-block-changed trên toàn ứng dụng
+  useEffect(() => {
+    const handleBlockChange = (e) => {
+      const detail = e?.detail;
+      if (!detail) return;
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username;
+      const matchId = detail.userId && targetUserId && String(detail.userId) === String(targetUserId);
+      const matchUser = detail.username && targetUsername && detail.username === targetUsername;
+      if (matchId || matchUser) {
+        setIsBlocked(Boolean(detail.isBlocked));
+      }
+    };
+    window.addEventListener('author-block-changed', handleBlockChange);
+    return () => window.removeEventListener('author-block-changed', handleBlockChange);
   }, [author?.id, post?.author?.id, post?.raw?.user?.id, username]);
 
   // Tự động đồng bộ khi Redux feedSlice cập nhật trạng thái follow của tác giả này
@@ -228,6 +258,52 @@ export default function PostHeader({
       );
       setToastMessage(`Không thể huỷ theo dõi @${username}. Vui lòng thử lại.`);
       setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
+  // Xác nhận chặn người dùng trong BlockConfirmModal
+  const handleConfirmBlock = async () => {
+    setIsBlockModalOpen(false);
+
+    const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+    const targetUsername = username || 'user';
+
+    setIsBlocked(true);
+    if (targetUserId || targetUsername) {
+      dispatch(updateAuthorBlockStatus({ userId: targetUserId, username: targetUsername, isBlocked: true }));
+      window.dispatchEvent(
+        new CustomEvent('author-block-changed', {
+          detail: { userId: targetUserId, username: targetUsername, isBlocked: true },
+        })
+      );
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('app-toast', {
+        detail: { message: 'Blocked', duration: 3000 },
+      })
+    );
+
+    try {
+      if (targetUserId) {
+        await blockUserApi(targetUserId);
+      }
+    } catch (err) {
+      console.error('Block user failed:', err);
+      setIsBlocked(false);
+      if (targetUserId || targetUsername) {
+        dispatch(updateAuthorBlockStatus({ userId: targetUserId, username: targetUsername, isBlocked: false }));
+        window.dispatchEvent(
+          new CustomEvent('author-block-changed', {
+            detail: { userId: targetUserId, username: targetUsername, isBlocked: false },
+          })
+        );
+      }
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Không thể chặn người dùng. Vui lòng thử lại.' },
+        })
+      );
     }
   };
 
@@ -505,6 +581,52 @@ export default function PostHeader({
           );
         }
       }
+    } else if (action === 'block') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'block' } }));
+        return;
+      }
+      setIsBlockModalOpen(true);
+    } else if (action === 'unblock') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'block' } }));
+        return;
+      }
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username || 'user';
+
+      setIsBlocked(false);
+      if (targetUserId || targetUsername) {
+        dispatch(updateAuthorBlockStatus({ userId: targetUserId, username: targetUsername, isBlocked: false }));
+        window.dispatchEvent(
+          new CustomEvent('author-block-changed', {
+            detail: { userId: targetUserId, username: targetUsername, isBlocked: false },
+          })
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Unblocked', duration: 2500 },
+        })
+      );
+
+      try {
+        if (targetUserId) {
+          await unblockUserApi(targetUserId);
+        }
+      } catch (err) {
+        console.error('Unblock user failed:', err);
+        setIsBlocked(true);
+        if (targetUserId || targetUsername) {
+          dispatch(updateAuthorBlockStatus({ userId: targetUserId, username: targetUsername, isBlocked: true }));
+          window.dispatchEvent(
+            new CustomEvent('author-block-changed', {
+              detail: { userId: targetUserId, username: targetUsername, isBlocked: true },
+            })
+          );
+        }
+      }
     } else if (action === 'report') {
       setIsReportModalOpen(true);
     }
@@ -603,6 +725,7 @@ export default function PostHeader({
           isSaved={isSaved}
           isMuted={isMuted}
           isRestricted={isRestricted}
+          isBlocked={isBlocked}
         />
       </div>
 
@@ -620,6 +743,14 @@ export default function PostHeader({
         onClose={() => setIsUnfollowModalOpen(false)}
         author={author}
         onConfirmUnfollow={handleConfirmUnfollow}
+      />
+
+      {/* Modal xác nhận Block người dùng */}
+      <BlockConfirmModal
+        isOpen={isBlockModalOpen}
+        onClose={() => setIsBlockModalOpen(false)}
+        author={author}
+        onConfirmBlock={handleConfirmBlock}
       />
 
       {/* Modal Get Embed Code */}

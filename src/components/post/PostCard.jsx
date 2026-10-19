@@ -4,9 +4,10 @@ import { useDispatch } from "react-redux";
 import {
     saveFeedScroll,
     updateAuthorMuteStatus,
+    updateAuthorBlockStatus,
     updatePostHideStatus,
 } from "@/features/feed/feedSlice";
-import { unmuteUserApi } from "@/services/userService";
+import { unmuteUserApi, unblockUserApi } from "@/services/userService";
 import { unhidePostApi } from "@/services/postService";
 import PostHeader from "@/components/post/PostHeader";
 import PostContent from "@/components/post/PostContent";
@@ -26,6 +27,7 @@ export default function PostCard({
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [isMuted, setIsMuted] = useState(Boolean(post?.author?.isMuted));
+    const [isBlocked, setIsBlocked] = useState(Boolean(post?.author?.isBlocked));
     const [isHidden, setIsHidden] = useState(Boolean(post?.isHidden));
 
     useEffect(() => {
@@ -33,6 +35,12 @@ export default function PostCard({
             setIsMuted(Boolean(post.author.isMuted));
         }
     }, [post?.author?.isMuted]);
+
+    useEffect(() => {
+        if (post?.author?.isBlocked !== undefined) {
+            setIsBlocked(Boolean(post.author.isBlocked));
+        }
+    }, [post?.author?.isBlocked]);
 
     useEffect(() => {
         if (post?.isHidden !== undefined) {
@@ -61,6 +69,29 @@ export default function PostCard({
         window.addEventListener("author-mute-changed", handleMuteChange);
         return () =>
             window.removeEventListener("author-mute-changed", handleMuteChange);
+    }, [post?.author?.id, post?.author?.username, post?.raw?.user?.id]);
+
+    useEffect(() => {
+        const handleBlockChange = (e) => {
+            const detail = e?.detail;
+            if (!detail) return;
+            const targetUserId = post?.author?.id || post?.raw?.user?.id;
+            const targetUsername = post?.author?.username;
+            const matchId =
+                detail.userId &&
+                targetUserId &&
+                String(detail.userId) === String(targetUserId);
+            const matchUser =
+                detail.username &&
+                targetUsername &&
+                detail.username === targetUsername;
+            if (matchId || matchUser) {
+                setIsBlocked(Boolean(detail.isBlocked));
+            }
+        };
+        window.addEventListener("author-block-changed", handleBlockChange);
+        return () =>
+            window.removeEventListener("author-block-changed", handleBlockChange);
     }, [post?.author?.id, post?.author?.username, post?.raw?.user?.id]);
 
     useEffect(() => {
@@ -177,6 +208,60 @@ export default function PostCard({
         }
     };
 
+    const handleUndoBlock = async (e) => {
+        e?.stopPropagation?.();
+        setIsBlocked(false);
+        const targetUserId = post.author?.id || post.raw?.user?.id;
+        const targetUsername = post.author?.username || "user";
+
+        dispatch(
+            updateAuthorBlockStatus({
+                userId: targetUserId,
+                username: targetUsername,
+                isBlocked: false,
+            }),
+        );
+        window.dispatchEvent(
+            new CustomEvent("author-block-changed", {
+                detail: {
+                    userId: targetUserId,
+                    username: targetUsername,
+                    isBlocked: false,
+                },
+            }),
+        );
+        window.dispatchEvent(
+            new CustomEvent("app-toast", {
+                detail: { message: "Unblocked", duration: 2500 },
+            }),
+        );
+
+        try {
+            if (targetUserId) {
+                await unblockUserApi(targetUserId);
+            }
+        } catch (err) {
+            console.error("Unblock user failed:", err);
+            setIsBlocked(true);
+            dispatch(
+                updateAuthorBlockStatus({
+                    userId: targetUserId,
+                    username: targetUsername,
+                    isBlocked: true,
+                }),
+            );
+            window.dispatchEvent(
+                new CustomEvent("author-block-changed", {
+                    detail: {
+                        userId: targetUserId,
+                        username: targetUsername,
+                        isBlocked: true,
+                    },
+                }),
+            );
+        }
+    };
+
     if (isHidden) {
         return (
             <PostNoticeCard
@@ -195,6 +280,18 @@ export default function PostCard({
                 postId={post.id}
                 message={`Posts from ${post.author?.username || "user"} are muted. You can manage who you mute in settings.`}
                 onUndo={handleUndoMute}
+                isDetail={isDetail}
+                className={className}
+            />
+        );
+    }
+
+    if (isBlocked) {
+        return (
+            <PostNoticeCard
+                postId={post.id}
+                message={`Posts from ${post.author?.username || "user"} are blocked.`}
+                onUndo={handleUndoBlock}
                 isDetail={isDetail}
                 className={className}
             />

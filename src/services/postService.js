@@ -67,6 +67,7 @@ export function adaptPost(item) {
             isFollowed: Boolean(user.is_followed_by_auth),
             isMuted: Boolean(user.is_muted_by_auth),
             isRestricted: Boolean(user.is_restricted_by_auth),
+            isBlocked: Boolean(user.is_blocked_by_auth),
             bio: user.bio || user.biography || "",
             followers: user.followers_count
                 ? `${Number(user.followers_count).toLocaleString()} followers`

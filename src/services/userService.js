@@ -71,3 +71,28 @@ export async function unrestrictUserApi(userId) {
   });
   return response?.data || response;
 }
+
+/**
+ * API Chặn người dùng theo ID
+ * Endpoint: POST /users/:id/block
+ * @param {string|number} userId - ID người dùng cần chặn
+ * @returns {Promise<Object>}
+ */
+export async function blockUserApi(userId) {
+  const response = await http.post(`/users/${userId}/block`);
+  return response?.data || response;
+}
+
+/**
+ * API Bỏ chặn người dùng theo ID (Method Spoofing: _method = DELETE)
+ * Endpoint: POST /users/:id/block kèm body { _method: "DELETE" }
+ * @param {string|number} userId - ID người dùng cần bỏ chặn
+ * @returns {Promise<Object>}
+ */
+export async function unblockUserApi(userId) {
+  const response = await http.post(`/users/${userId}/block`, {
+    _method: 'DELETE',
+  });
+  return response?.data || response;
+}
+

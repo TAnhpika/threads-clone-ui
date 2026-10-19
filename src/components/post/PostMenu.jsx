@@ -78,6 +78,7 @@ export default function PostMenu({
   isSaved = false,
   isMuted = false,
   isRestricted = false,
+  isBlocked = false,
 }) {
   const [view, setView] = useState('main'); // 'main' | 'add_to_feed'
   const menuRef = useRef(null);
@@ -259,10 +260,10 @@ export default function PostMenu({
 
             {/* Các mục cảnh báo màu đỏ */}
             <button
-              onClick={(e) => handleItemClick(e, 'block')}
+              onClick={(e) => handleItemClick(e, isBlocked ? 'unblock' : 'block')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
-              <span>{t('postMenu.block', 'Block')}</span>
+              <span>{isBlocked ? t('postMenu.unblock', 'Unblock') : t('postMenu.block', 'Block')}</span>
               <Ban className="w-5 h-5 text-red-500 stroke-[2.2]" />
             </button>
 

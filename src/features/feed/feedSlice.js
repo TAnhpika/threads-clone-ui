@@ -123,6 +123,22 @@ export const feedSlice = createSlice({
       });
     },
 
+    // Cập nhật trạng thái block của một tác giả trên toàn bộ feed
+    updateAuthorBlockStatus: (state, action) => {
+      const { userId, username, isBlocked } = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        state[key].posts.forEach((post) => {
+          const matchId = userId && post.author?.id && String(post.author.id) === String(userId);
+          const matchUsername = username && post.author?.username === username;
+          if (matchId || matchUsername) {
+            if (post.author) {
+              post.author.isBlocked = isBlocked;
+            }
+          }
+        });
+      });
+    },
+
     // Ẩn tất cả bài viết của tác giả khi bị mute
     hidePostsByAuthor: (state, action) => {
       const { userId, username } = action.payload;
@@ -210,6 +226,7 @@ export const {
   updateAuthorFollowStatus,
   updateAuthorMuteStatus,
   updateAuthorRestrictStatus,
+  updateAuthorBlockStatus,
   updatePostHideStatus,
   hidePostsByAuthor,
   restorePostsByAuthor,
