@@ -4,6 +4,7 @@ import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSl
 import {
   updateAuthorFollowStatus,
   updateAuthorMuteStatus,
+  updatePostHideStatus,
   hidePostsByAuthor,
   restorePostsByAuthor,
   updatePostInteraction,
@@ -278,37 +279,20 @@ export default function PostHeader({
         );
       }
     } else if (action === 'not_interested') {
-      const postBackup = post || { id: currentPostId, author, timestamp, tag };
-      const postIndex = currentFeedPosts?.findIndex((p) => String(p.id) === String(currentPostId));
-
       if (currentPostId) {
-        dispatch(removeFeedPost(currentPostId));
+        dispatch(updatePostHideStatus({ postId: currentPostId, isHidden: true }));
+        window.dispatchEvent(
+          new CustomEvent('post-hide-changed', {
+            detail: { postId: currentPostId, isHidden: true },
+          })
+        );
       }
 
       window.dispatchEvent(
         new CustomEvent('app-toast', {
           detail: {
-            message: 'Đã ẩn bài viết',
-            undoText: 'Hoàn tác',
-            duration: 6000,
-            onUndo: async () => {
-              if (currentPostId) {
-                dispatch(restoreFeedPost({ post: postBackup, index: postIndex }));
-                window.dispatchEvent(
-                  new CustomEvent('app-toast', {
-                    detail: {
-                      message: 'Đã hoàn tác ẩn bài viết',
-                      duration: 2500,
-                    },
-                  })
-                );
-                try {
-                  await unhidePostApi(currentPostId);
-                } catch (err) {
-                  console.error('Unhide post failed:', err);
-                }
-              }
-            },
+            message: 'Hidden',
+            duration: 3000,
           },
         })
       );
@@ -320,7 +304,12 @@ export default function PostHeader({
       } catch (err) {
         console.error('Hide post failed:', err);
         if (currentPostId) {
-          dispatch(restoreFeedPost({ post: postBackup, index: postIndex }));
+          dispatch(updatePostHideStatus({ postId: currentPostId, isHidden: false }));
+          window.dispatchEvent(
+            new CustomEvent('post-hide-changed', {
+              detail: { postId: currentPostId, isHidden: false },
+            })
+          );
         }
         window.dispatchEvent(
           new CustomEvent('app-toast', {

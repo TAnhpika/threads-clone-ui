@@ -160,6 +160,17 @@ export const feedSlice = createSlice({
       });
     },
 
+    // Cập nhật trạng thái ẩn bài viết (để hiển thị PostNoticeCard thay vì xóa khỏi mảng)
+    updatePostHideStatus: (state, action) => {
+      const { postId, isHidden } = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        const post = state[key].posts.find((p) => String(p.id) === String(postId));
+        if (post) {
+          post.isHidden = isHidden;
+        }
+      });
+    },
+
     // Reset dữ liệu feed
     clearFeed: (state, action) => {
       const feedType = action.payload;
@@ -182,6 +193,7 @@ export const {
   updatePostInteraction,
   updateAuthorFollowStatus,
   updateAuthorMuteStatus,
+  updatePostHideStatus,
   hidePostsByAuthor,
   restorePostsByAuthor,
   removeFeedPost,
