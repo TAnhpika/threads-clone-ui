@@ -107,6 +107,22 @@ export const feedSlice = createSlice({
       });
     },
 
+    // Cập nhật trạng thái restrict của một tác giả trên toàn bộ feed
+    updateAuthorRestrictStatus: (state, action) => {
+      const { userId, username, isRestricted } = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        state[key].posts.forEach((post) => {
+          const matchId = userId && post.author?.id && String(post.author.id) === String(userId);
+          const matchUsername = username && post.author?.username === username;
+          if (matchId || matchUsername) {
+            if (post.author) {
+              post.author.isRestricted = isRestricted;
+            }
+          }
+        });
+      });
+    },
+
     // Ẩn tất cả bài viết của tác giả khi bị mute
     hidePostsByAuthor: (state, action) => {
       const { userId, username } = action.payload;
@@ -193,6 +209,7 @@ export const {
   updatePostInteraction,
   updateAuthorFollowStatus,
   updateAuthorMuteStatus,
+  updateAuthorRestrictStatus,
   updatePostHideStatus,
   hidePostsByAuthor,
   restorePostsByAuthor,

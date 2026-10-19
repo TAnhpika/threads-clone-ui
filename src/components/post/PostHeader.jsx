@@ -4,6 +4,7 @@ import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSl
 import {
   updateAuthorFollowStatus,
   updateAuthorMuteStatus,
+  updateAuthorRestrictStatus,
   updatePostHideStatus,
   hidePostsByAuthor,
   restorePostsByAuthor,
@@ -16,6 +17,8 @@ import {
   unfollowUserApi,
   muteUserApi,
   unmuteUserApi,
+  restrictUserApi,
+  unrestrictUserApi,
 } from '@/services/userService';
 import {
   savePostApi,
@@ -58,6 +61,7 @@ export default function PostHeader({
   const [isFollowed, setIsFollowed] = useState(Boolean(author?.isFollowed));
   const [isSaved, setIsSaved] = useState(Boolean(post?.isSaved));
   const [isMuted, setIsMuted] = useState(Boolean(author?.isMuted));
+  const [isRestricted, setIsRestricted] = useState(Boolean(author?.isRestricted));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -68,6 +72,13 @@ export default function PostHeader({
       setIsMuted(Boolean(author.isMuted));
     }
   }, [author?.isMuted]);
+
+  // Tự động đồng bộ khi prop author.isRestricted thay đổi
+  useEffect(() => {
+    if (author?.isRestricted !== undefined) {
+      setIsRestricted(Boolean(author.isRestricted));
+    }
+  }, [author?.isRestricted]);
 
   // Lắng nghe sự kiện author-mute-changed trên toàn ứng dụng
   useEffect(() => {
@@ -84,6 +95,23 @@ export default function PostHeader({
     };
     window.addEventListener('author-mute-changed', handleMuteChange);
     return () => window.removeEventListener('author-mute-changed', handleMuteChange);
+  }, [author?.id, post?.author?.id, post?.raw?.user?.id, username]);
+
+  // Lắng nghe sự kiện author-restrict-changed trên toàn ứng dụng
+  useEffect(() => {
+    const handleRestrictChange = (e) => {
+      const detail = e?.detail;
+      if (!detail) return;
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username;
+      const matchId = detail.userId && targetUserId && String(detail.userId) === String(targetUserId);
+      const matchUser = detail.username && targetUsername && detail.username === targetUsername;
+      if (matchId || matchUser) {
+        setIsRestricted(Boolean(detail.isRestricted));
+      }
+    };
+    window.addEventListener('author-restrict-changed', handleRestrictChange);
+    return () => window.removeEventListener('author-restrict-changed', handleRestrictChange);
   }, [author?.id, post?.author?.id, post?.raw?.user?.id, username]);
 
   // Tự động đồng bộ khi Redux feedSlice cập nhật trạng thái follow của tác giả này
@@ -397,6 +425,86 @@ export default function PostHeader({
           );
         }
       }
+    } else if (action === 'restrict') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'restrict' } }));
+        return;
+      }
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username || 'user';
+
+      setIsRestricted(true);
+      if (targetUserId || targetUsername) {
+        dispatch(updateAuthorRestrictStatus({ userId: targetUserId, username: targetUsername, isRestricted: true }));
+        window.dispatchEvent(
+          new CustomEvent('author-restrict-changed', {
+            detail: { userId: targetUserId, username: targetUsername, isRestricted: true },
+          })
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Restricted', duration: 3000 },
+        })
+      );
+
+      try {
+        if (targetUserId) {
+          await restrictUserApi(targetUserId);
+        }
+      } catch (err) {
+        console.error('Restrict user failed:', err);
+        setIsRestricted(false);
+        if (targetUserId || targetUsername) {
+          dispatch(updateAuthorRestrictStatus({ userId: targetUserId, username: targetUsername, isRestricted: false }));
+          window.dispatchEvent(
+            new CustomEvent('author-restrict-changed', {
+              detail: { userId: targetUserId, username: targetUsername, isRestricted: false },
+            })
+          );
+        }
+      }
+    } else if (action === 'unrestrict') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'restrict' } }));
+        return;
+      }
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username || 'user';
+
+      setIsRestricted(false);
+      if (targetUserId || targetUsername) {
+        dispatch(updateAuthorRestrictStatus({ userId: targetUserId, username: targetUsername, isRestricted: false }));
+        window.dispatchEvent(
+          new CustomEvent('author-restrict-changed', {
+            detail: { userId: targetUserId, username: targetUsername, isRestricted: false },
+          })
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Unrestricted', duration: 2500 },
+        })
+      );
+
+      try {
+        if (targetUserId) {
+          await unrestrictUserApi(targetUserId);
+        }
+      } catch (err) {
+        console.error('Unrestrict user failed:', err);
+        setIsRestricted(true);
+        if (targetUserId || targetUsername) {
+          dispatch(updateAuthorRestrictStatus({ userId: targetUserId, username: targetUsername, isRestricted: true }));
+          window.dispatchEvent(
+            new CustomEvent('author-restrict-changed', {
+              detail: { userId: targetUserId, username: targetUsername, isRestricted: true },
+            })
+          );
+        }
+      }
     } else if (action === 'report') {
       setIsReportModalOpen(true);
     }
@@ -494,6 +602,7 @@ export default function PostHeader({
           postUrl={shareUrl}
           isSaved={isSaved}
           isMuted={isMuted}
+          isRestricted={isRestricted}
         />
       </div>
 

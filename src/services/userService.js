@@ -47,3 +47,27 @@ export async function unmuteUserApi(userId) {
   });
   return response?.data || response;
 }
+
+/**
+ * API Giới hạn người dùng theo ID
+ * Endpoint: POST /users/:id/restrict
+ * @param {string|number} userId - ID của người dùng cần giới hạn
+ * @returns {Promise<Object>}
+ */
+export async function restrictUserApi(userId) {
+  const response = await http.post(`/users/${userId}/restrict`);
+  return response?.data || response;
+}
+
+/**
+ * API Bỏ giới hạn người dùng theo ID (Method Spoofing: _method = DELETE)
+ * Endpoint: POST /users/:id/restrict kèm body { _method: "DELETE" }
+ * @param {string|number} userId - ID của người dùng cần bỏ giới hạn
+ * @returns {Promise<Object>}
+ */
+export async function unrestrictUserApi(userId) {
+  const response = await http.post(`/users/${userId}/restrict`, {
+    _method: 'DELETE',
+  });
+  return response?.data || response;
+}
