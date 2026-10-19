@@ -41,6 +41,7 @@ export default function PostMenu({
   postUrl = window.location.href,
   onAction,
   isSaved = false,
+  isMuted = false,
 }) {
   const [view, setView] = useState('main'); // 'main' | 'add_to_feed'
   const menuRef = useRef(null);
@@ -205,10 +206,10 @@ export default function PostMenu({
             </button>
 
             <button
-              onClick={(e) => handleItemClick(e, 'mute')}
+              onClick={(e) => handleItemClick(e, isMuted ? 'unmute' : 'mute')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
-              <span>{t('postMenu.mute', 'Mute')}</span>
+              <span>{isMuted ? t('postMenu.unmute', 'Unmute') : t('postMenu.mute', 'Mute')}</span>
               <UserX className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
             </button>
 

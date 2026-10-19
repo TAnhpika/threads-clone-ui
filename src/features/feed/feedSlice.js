@@ -91,6 +91,52 @@ export const feedSlice = createSlice({
       });
     },
 
+    // Cập nhật trạng thái mute của một tác giả trên toàn bộ feed
+    updateAuthorMuteStatus: (state, action) => {
+      const { userId, username, isMuted } = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        state[key].posts.forEach((post) => {
+          const matchId = userId && post.author?.id && String(post.author.id) === String(userId);
+          const matchUsername = username && post.author?.username === username;
+          if (matchId || matchUsername) {
+            if (post.author) {
+              post.author.isMuted = isMuted;
+            }
+          }
+        });
+      });
+    },
+
+    // Ẩn tất cả bài viết của tác giả khi bị mute
+    hidePostsByAuthor: (state, action) => {
+      const { userId, username } = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        state[key].posts = state[key].posts.filter((post) => {
+          const matchId = userId && post.author?.id && String(post.author.id) === String(userId);
+          const matchUsername = username && post.author?.username === username;
+          return !(matchId || matchUsername);
+        });
+      });
+    },
+
+    // Khôi phục danh sách bài viết vào feed khi hoàn tác mute
+    restorePostsByAuthor: (state, action) => {
+      const { posts = [] } = action.payload || {};
+      if (!Array.isArray(posts) || posts.length === 0) return;
+      ['forYou', 'following'].forEach((key) => {
+        posts.forEach(({ post, index }) => {
+          if (!post) return;
+          if (!state[key].posts.some((p) => String(p.id) === String(post.id))) {
+            if (typeof index === 'number' && index >= 0 && index <= state[key].posts.length) {
+              state[key].posts.splice(index, 0, post);
+            } else {
+              state[key].posts.push(post);
+            }
+          }
+        });
+      });
+    },
+
     // Ẩn / Xoá bài viết khỏi feed
     removeFeedPost: (state, action) => {
       const postId = action.payload;
@@ -135,6 +181,9 @@ export const {
   prependFeedPost,
   updatePostInteraction,
   updateAuthorFollowStatus,
+  updateAuthorMuteStatus,
+  hidePostsByAuthor,
+  restorePostsByAuthor,
   removeFeedPost,
   restoreFeedPost,
   clearFeed,

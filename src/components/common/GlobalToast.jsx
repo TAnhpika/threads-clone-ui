@@ -48,7 +48,7 @@ export default function GlobalToast() {
       role="status"
       aria-live="polite"
       id="app-global-toast"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-4.5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150 flex items-center gap-3 border border-zinc-800/80 dark:border-zinc-200/80 select-none max-w-[92vw]"
+      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-sm font-semibold shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 flex items-center justify-center gap-3 select-none min-w-28 text-center"
     >
       <span className="truncate">{toast.message}</span>
       {toast.onUndo && (
@@ -60,7 +60,7 @@ export default function GlobalToast() {
             if (timerRef.current) clearTimeout(timerRef.current);
             undoFn();
           }}
-          className="underline hover:opacity-80 font-bold cursor-pointer text-blue-400 dark:text-blue-600 shrink-0"
+          className="underline hover:opacity-80 font-bold cursor-pointer text-blue-500 shrink-0"
         >
           {toast.undoText}
         </button>

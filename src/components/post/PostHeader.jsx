@@ -3,11 +3,19 @@ import { useSelector, useDispatch } from 'react-redux';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import {
   updateAuthorFollowStatus,
+  updateAuthorMuteStatus,
+  hidePostsByAuthor,
+  restorePostsByAuthor,
   updatePostInteraction,
   removeFeedPost,
   restoreFeedPost,
 } from '@/features/feed/feedSlice';
-import { followUserApi, unfollowUserApi } from '@/services/userService';
+import {
+  followUserApi,
+  unfollowUserApi,
+  muteUserApi,
+  unmuteUserApi,
+} from '@/services/userService';
 import {
   savePostApi,
   unsavePostApi,
@@ -38,14 +46,44 @@ export default function PostHeader({
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const currentFeedPosts = useSelector((state) => {
+    const activeFeedType = state.feed?.activeFeedType || 'for_you';
+    const key = activeFeedType === 'following' ? 'following' : 'forYou';
+    return state.feed?.[key]?.posts || [];
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isFollowed, setIsFollowed] = useState(Boolean(author?.isFollowed));
   const [isSaved, setIsSaved] = useState(Boolean(post?.isSaved));
+  const [isMuted, setIsMuted] = useState(Boolean(author?.isMuted));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  // Tự động đồng bộ khi prop author.isMuted thay đổi
+  useEffect(() => {
+    if (author?.isMuted !== undefined) {
+      setIsMuted(Boolean(author.isMuted));
+    }
+  }, [author?.isMuted]);
+
+  // Lắng nghe sự kiện author-mute-changed trên toàn ứng dụng
+  useEffect(() => {
+    const handleMuteChange = (e) => {
+      const detail = e?.detail;
+      if (!detail) return;
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username;
+      const matchId = detail.userId && targetUserId && String(detail.userId) === String(targetUserId);
+      const matchUser = detail.username && targetUsername && detail.username === targetUsername;
+      if (matchId || matchUser) {
+        setIsMuted(Boolean(detail.isMuted));
+      }
+    };
+    window.addEventListener('author-mute-changed', handleMuteChange);
+    return () => window.removeEventListener('author-mute-changed', handleMuteChange);
+  }, [author?.id, post?.author?.id, post?.raw?.user?.id, username]);
 
   // Tự động đồng bộ khi Redux feedSlice cập nhật trạng thái follow của tác giả này
   useEffect(() => {
@@ -163,8 +201,6 @@ export default function PostHeader({
       setTimeout(() => setToastMessage(null), 3000);
     }
   };
-
-  const currentFeedPosts = useSelector((state) => state.feed?.forYou?.posts);
 
   const handleAction = async (action) => {
     const currentPostId = postId || post?.id;
@@ -292,6 +328,86 @@ export default function PostHeader({
           })
         );
       }
+    } else if (action === 'mute') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'mute' } }));
+        return;
+      }
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username || 'user';
+
+      setIsMuted(true);
+      if (targetUserId || targetUsername) {
+        dispatch(updateAuthorMuteStatus({ userId: targetUserId, username: targetUsername, isMuted: true }));
+        window.dispatchEvent(
+          new CustomEvent('author-mute-changed', {
+            detail: { userId: targetUserId, username: targetUsername, isMuted: true },
+          })
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Muted', duration: 3000 },
+        })
+      );
+
+      try {
+        if (targetUserId) {
+          await muteUserApi(targetUserId);
+        }
+      } catch (err) {
+        console.error('Mute user failed:', err);
+        setIsMuted(false);
+        if (targetUserId || targetUsername) {
+          dispatch(updateAuthorMuteStatus({ userId: targetUserId, username: targetUsername, isMuted: false }));
+          window.dispatchEvent(
+            new CustomEvent('author-mute-changed', {
+              detail: { userId: targetUserId, username: targetUsername, isMuted: false },
+            })
+          );
+        }
+      }
+    } else if (action === 'unmute') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'mute' } }));
+        return;
+      }
+      const targetUserId = author?.id || post?.author?.id || post?.raw?.user?.id;
+      const targetUsername = username || 'user';
+
+      setIsMuted(false);
+      if (targetUserId || targetUsername) {
+        dispatch(updateAuthorMuteStatus({ userId: targetUserId, username: targetUsername, isMuted: false }));
+        window.dispatchEvent(
+          new CustomEvent('author-mute-changed', {
+            detail: { userId: targetUserId, username: targetUsername, isMuted: false },
+          })
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Unmuted', duration: 2500 },
+        })
+      );
+
+      try {
+        if (targetUserId) {
+          await unmuteUserApi(targetUserId);
+        }
+      } catch (err) {
+        console.error('Unmute user failed:', err);
+        setIsMuted(true);
+        if (targetUserId || targetUsername) {
+          dispatch(updateAuthorMuteStatus({ userId: targetUserId, username: targetUsername, isMuted: true }));
+          window.dispatchEvent(
+            new CustomEvent('author-mute-changed', {
+              detail: { userId: targetUserId, username: targetUsername, isMuted: true },
+            })
+          );
+        }
+      }
     } else if (action === 'report') {
       setIsReportModalOpen(true);
     }
@@ -388,6 +504,7 @@ export default function PostHeader({
           onAction={handleAction}
           postUrl={shareUrl}
           isSaved={isSaved}
+          isMuted={isMuted}
         />
       </div>
 
