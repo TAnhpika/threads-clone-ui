@@ -204,7 +204,7 @@ export default function DefaultLayout() {
         <Sidebar />
 
         {/* Khu vực nội dung chính bên phải */}
-        <main className="flex-1 min-w-0 max-w-5xl">
+        <main className="flex-1 min-w-0 max-w-5xl relative z-0">
           <Outlet />
         </main>
       </div>

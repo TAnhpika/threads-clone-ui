@@ -321,7 +321,7 @@ export default function CollapsibleSidebar({ className = '' }) {
             {/* Khi đã đăng nhập: Hiển thị nút tròn [=] cạnh logo (kèm tooltip More như ảnh mẫu) */}
             {isAuthenticated && (
               <div
-                className={`relative animate-in fade-in duration-150 transition-opacity ${
+                className={`relative z-50 animate-in fade-in duration-150 transition-opacity ${
                   isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
                 ref={menuRef}
@@ -348,7 +348,7 @@ export default function CollapsibleSidebar({ className = '' }) {
                   isOpen={showMenu}
                   onClose={() => setShowMenu(false)}
                   anchorRef={menuRef}
-                  className="absolute left-0 top-full mt-2 w-64 select-none"
+                  className="absolute left-0 top-full mt-2 w-64 select-none shadow-2xl z-50"
                   onToast={showToast}
                 />
               </div>

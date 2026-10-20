@@ -288,7 +288,7 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
         {/* Khi đã đăng nhập: Hiển thị nút tròn [=] cạnh logo (kèm tooltip More như ảnh mẫu) */}
         {isAuthenticated && (
           <div
-            className={`relative animate-in fade-in duration-150 transition-opacity ${
+            className={`relative z-50 animate-in fade-in duration-150 transition-opacity ${
               isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
             ref={menuRef}
@@ -538,8 +538,8 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
 
   // GIAO DIỆN CỐ ĐỊNH BÌNH THƯỜNG CHO CÁC TRANG CÒN LẠI (Home, Activity, Profile, PostDetail,...)
   return (
-    <aside className="w-60 shrink-0 hidden md:block select-none overflow-visible">
-      <div className="sticky top-4 h-[calc(100vh-2rem)] py-1 flex flex-col justify-between overflow-visible">
+    <aside className="w-60 shrink-0 hidden md:block select-none overflow-visible relative z-40">
+      <div className="sticky top-4 h-[calc(100vh-2rem)] py-1 flex flex-col justify-between overflow-visible z-40">
         {renderSidebarBody()}
       </div>
     </aside>
