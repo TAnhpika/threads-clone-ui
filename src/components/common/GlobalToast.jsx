@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Check } from 'lucide-react';
 
 /**
  * GlobalToast component hiển thị thông báo toast / pop-up hoàn tác trên toàn ứng dụng.
@@ -7,6 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 export default function GlobalToast() {
   const [toast, setToast] = useState(null);
   const timerRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleToast = (e) => {
@@ -16,7 +19,15 @@ export default function GlobalToast() {
       const message = typeof detail === 'string' ? detail : detail.message;
       const undoText = detail.undoText || 'Hoàn tác';
       const onUndo = typeof detail.onUndo === 'function' ? detail.onUndo : null;
-      const duration = detail.duration || (onUndo ? 5000 : 3000);
+      const type = detail.type || 'default';
+      const status = detail.status || 'default';
+      const postId = detail.postId;
+      const authorUsername = detail.authorUsername;
+      const actionLabel = detail.actionLabel || 'View';
+      const onAction = typeof detail.onAction === 'function' ? detail.onAction : null;
+      const duration =
+        detail.duration ||
+        (status === 'loading' ? 15000 : onUndo ? 5000 : 3500);
 
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -24,14 +35,22 @@ export default function GlobalToast() {
 
       setToast({
         id: Date.now(),
+        type,
+        status,
         message,
+        postId,
+        authorUsername,
+        actionLabel,
+        onAction,
         undoText,
         onUndo,
       });
 
-      timerRef.current = setTimeout(() => {
-        setToast(null);
-      }, duration);
+      if (duration > 0) {
+        timerRef.current = setTimeout(() => {
+          setToast(null);
+        }, duration);
+      }
     };
 
     window.addEventListener('app-toast', handleToast);
@@ -43,6 +62,64 @@ export default function GlobalToast() {
 
   if (!toast) return null;
 
+  const handleViewPost = () => {
+    if (toast.onAction) {
+      toast.onAction();
+    } else if (toast.postId) {
+      const el = document.getElementById(`post-card-${toast.postId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-white/40', 'transition-all');
+        setTimeout(() => {
+          el.classList.remove('ring-2', 'ring-white/40');
+        }, 1500);
+      } else if (toast.authorUsername) {
+        navigate(`/@${toast.authorUsername}/post/${toast.postId}`);
+      } else {
+        navigate(`/post/${toast.postId}`);
+      }
+    }
+    setToast(null);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  // Toast dạng Edit (Chuẩn Threads theo ảnh mẫu)
+  if (toast.type === 'edit') {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        id="app-global-toast"
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] w-[280px] sm:w-[320px] px-5 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-[15px] shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 select-none"
+      >
+        {toast.status === 'loading' ? (
+          /* Trạng thái 1: Editing... (Ảnh mẫu 1) */
+          <div className="text-left font-medium text-black">
+            {toast.message || 'Editing...'}
+          </div>
+        ) : (
+          /* Trạng thái 2: ✓ Edited  View (Ảnh mẫu 2) */
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 stroke-[2.8] text-black" />
+              <span className="font-medium text-black">
+                {toast.message || 'Edited'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleViewPost}
+              className="font-semibold text-black hover:opacity-70 transition-opacity cursor-pointer text-[15px]"
+            >
+              {toast.actionLabel || 'View'}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Toast tiêu chuẩn chung
   return (
     <div
       role="status"
@@ -68,3 +145,4 @@ export default function GlobalToast() {
     </div>
   );
 }
+

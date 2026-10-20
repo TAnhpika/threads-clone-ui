@@ -75,6 +75,17 @@ export const feedSlice = createSlice({
       });
     },
 
+    // Cập nhật nội dung và dữ liệu bài viết sau khi Edit
+    updatePostData: (state, action) => {
+      const { postId, updates } = action.payload;
+      ['forYou', 'following'].forEach((key) => {
+        const post = state[key].posts.find((p) => String(p.id) === String(postId));
+        if (post) {
+          Object.assign(post, updates);
+        }
+      });
+    },
+
     // Cập nhật trạng thái follow của một tác giả trên toàn bộ feed
     updateAuthorFollowStatus: (state, action) => {
       const { userId, username, isFollowed } = action.payload;
@@ -223,6 +234,7 @@ export const {
   saveFeedScroll,
   prependFeedPost,
   updatePostInteraction,
+  updatePostData,
   updateAuthorFollowStatus,
   updateAuthorMuteStatus,
   updateAuthorRestrictStatus,

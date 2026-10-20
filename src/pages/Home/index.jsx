@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { Plus, Loader2 } from 'lucide-react';
@@ -48,6 +48,39 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const currentUser = useSelector(selectCurrentUser);
+
+  // Lấy toàn bộ bài viết từ các feed trong Redux
+  const allFeedPosts = useSelector((state) => [
+    ...(state.feed?.forYou?.posts || []),
+    ...(state.feed?.following?.posts || []),
+    ...(state.feed?.userPosts || []),
+  ]);
+
+  // Kiểm tra xem người dùng hiện tại đã từng đăng ít nhất 1 bài viết hay chưa
+  const hasPosted = useMemo(() => {
+    if (!currentUser) return false;
+    if (Number(currentUser?.posts_count) > 0 || Number(currentUser?.threads_count) > 0) {
+      return true;
+    }
+
+    const isOwn = (p) => {
+      if (!p) return false;
+      const author = p?.author || p?.user || {};
+      const authorId = author?.id || p?.raw?.user?.id;
+      const authorUsername = author?.username || p?.raw?.user?.username;
+
+      const myId = currentUser?.id;
+      const myUsername = currentUser?.username;
+
+      if (myId && authorId && String(authorId) === String(myId)) return true;
+      if (myUsername && authorUsername && authorUsername.toLowerCase() === myUsername.toLowerCase()) return true;
+      if (authorUsername && (authorUsername === 'tuananhpika' || authorUsername === 'anhpika')) return true;
+
+      return false;
+    };
+
+    return allFeedPosts.some(isOwn);
+  }, [allFeedPosts, currentUser]);
 
   // Xác định active feedType ('for_you' | 'following')
   const feedType = location.pathname === '/following' ? 'following' : (defaultFeedType || 'for_you');
@@ -438,13 +471,15 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
             }}
           />
 
-          {/* Dải phân cách '☆ First thread' */}
-          <div className="flex items-center gap-1.5 px-6 py-2.5 text-xs font-semibold text-zinc-500 border-b border-zinc-100 dark:border-zinc-800/80">
-            <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-            <span>First thread</span>
-          </div>
+          {/* Dải phân cách '☆ First thread' - chỉ hiển thị nếu người dùng chưa từng đăng bài nào */}
+          {!hasPosted && (
+            <div className="flex items-center gap-1.5 px-6 py-2.5 text-xs font-semibold text-zinc-500 border-b border-zinc-100 dark:border-zinc-800/80">
+              <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              <span>First thread</span>
+            </div>
+          )}
 
           {/* Danh sách các bài viết */}
           {renderPostList()}

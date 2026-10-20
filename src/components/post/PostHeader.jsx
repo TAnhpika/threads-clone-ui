@@ -37,6 +37,7 @@ import AuthorProfileModal from './AuthorProfileModal';
 import UnfollowConfirmModal from './UnfollowConfirmModal';
 import BlockConfirmModal from './BlockConfirmModal';
 import DeletePostConfirmModal from './DeletePostConfirmModal';
+import EditPostModal from './EditPostModal';
 import EmbedModal from './EmbedModal';
 import ReportModal from './ReportModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
@@ -73,6 +74,7 @@ export default function PostHeader({
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(Boolean(post?.isPinned));
   const [isArchived, setIsArchived] = useState(Boolean(post?.isArchived));
@@ -648,11 +650,7 @@ export default function PostHeader({
     } else if (action === 'delete') {
       setIsDeleteModalOpen(true);
     } else if (action === 'edit') {
-      window.dispatchEvent(
-        new CustomEvent('app-toast', {
-          detail: { message: 'Chức năng chỉnh sửa bài viết' },
-        })
-      );
+      setIsEditModalOpen(true);
     } else if (action === 'insights') {
       window.dispatchEvent(
         new CustomEvent('app-toast', {
@@ -807,7 +805,8 @@ export default function PostHeader({
           onAction={handleAction}
           postUrl={shareUrl}
           isOwnPost={isOwnPost}
-          createdAt={post?.createdAt || post?.raw?.created_at}
+          createdAt={post?.createdAt || post?.raw?.created_at || post?.created_at}
+          timestamp={timestamp || post?.timestamp}
           isSaved={isSaved}
           isMuted={isMuted}
           isRestricted={isRestricted}
@@ -847,6 +846,14 @@ export default function PostHeader({
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirmDelete={handleConfirmDelete}
+      />
+
+      {/* Modal Chỉnh sửa bài viết (Edit Post Modal) */}
+      <EditPostModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        post={post || { id: postId, author, content: post?.content, tag }}
+        currentUser={currentUser}
       />
 
       {/* Modal Get Embed Code */}

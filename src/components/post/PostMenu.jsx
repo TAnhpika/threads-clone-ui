@@ -101,6 +101,7 @@ export default function PostMenu({
   onAction,
   isOwnPost = false,
   createdAt = null,
+  timestamp = null,
   isSaved = false,
   isMuted = false,
   isRestricted = false,
@@ -110,27 +111,58 @@ export default function PostMenu({
   isHideLikes = false,
 }) {
   const [view, setView] = useState('main'); // 'main' | 'add_to_feed' | 'post_options'
+  const [canEdit, setCanEdit] = useState(false);
   const [remainingText, setRemainingText] = useState(null);
   const menuRef = useRef(null);
   const { t } = useTranslation();
 
-  // Đếm ngược 15 phút chỉnh sửa bài viết của chính mình
+  // Đếm ngược 15 phút chỉnh sửa bài viết của chính mình (quá 15:00 ẩn nút edit)
   useEffect(() => {
     if (!isOpen || !isOwnPost) return;
 
-    function updateCountdown() {
-      if (!createdAt) {
-        setRemainingText('14:59');
-        return;
+    function getInitialDiffMs() {
+      // 1. Kiểm tra nếu có createdAt hợp lệ
+      if (createdAt) {
+        const createdTime = new Date(createdAt).getTime();
+        if (!isNaN(createdTime)) {
+          return 15 * 60 * 1000 - (Date.now() - createdTime);
+        }
       }
-      const createdTime = new Date(createdAt).getTime();
-      const diffMs = 15 * 60 * 1000 - (Date.now() - createdTime);
+      // 2. Kiểm tra nếu có timestamp dạng chuỗi (ví dụ: '16m', '2h', '1d', 'vừa xong')
+      if (typeof timestamp === 'string') {
+        const trimmed = timestamp.trim().toLowerCase();
+        if (
+          trimmed.includes('h') ||
+          trimmed.includes('d') ||
+          trimmed.includes('thg') ||
+          trimmed.includes('w') ||
+          trimmed.includes('y')
+        ) {
+          return -1; // Đã quá 15 phút
+        }
+        const minMatch = trimmed.match(/^(\d+)\s*m$/);
+        if (minMatch) {
+          const mins = parseInt(minMatch[1], 10);
+          if (mins >= 15) return -1; // Đã quá 15 phút (ví dụ 16m)
+          return (15 - mins) * 60 * 1000;
+        }
+        if (trimmed === 'vừa xong' || trimmed.endsWith('s')) {
+          return 15 * 60 * 1000;
+        }
+      }
+      return -1;
+    }
+
+    function updateCountdown() {
+      const diffMs = getInitialDiffMs();
       if (diffMs > 0) {
+        setCanEdit(true);
         const totalSec = Math.floor(diffMs / 1000);
         const mins = Math.floor(totalSec / 60);
         const secs = totalSec % 60;
         setRemainingText(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
       } else {
+        setCanEdit(false);
         setRemainingText(null);
       }
     }
@@ -138,7 +170,7 @@ export default function PostMenu({
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [isOpen, isOwnPost, createdAt]);
+  }, [isOpen, isOwnPost, createdAt, timestamp]);
 
   // Reset view về 'main' khi đóng
   useEffect(() => {
@@ -246,20 +278,18 @@ export default function PostMenu({
               <InsightsIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
             </button>
 
-            <button
-              type="button"
-              onClick={(e) => handleItemClick(e, 'edit')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
-            >
-              <span>{t('common.edit', 'Edit')}</span>
-              {remainingText ? (
+            {canEdit && (
+              <button
+                type="button"
+                onClick={(e) => handleItemClick(e, 'edit')}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              >
+                <span>{t('common.edit', 'Edit')}</span>
                 <span className="text-zinc-400 font-normal text-xs tabular-nums">
-                  {remainingText}
+                  {remainingText || '15:00'}
                 </span>
-              ) : (
-                <Pencil className="w-4 h-4 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
-              )}
-            </button>
+              </button>
+            )}
           </div>
 
           <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
