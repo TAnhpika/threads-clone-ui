@@ -96,7 +96,9 @@ export default function GlobalToast() {
         }, 1500);
       }
     } else if (toast.postId) {
-      const el = document.getElementById(`post-card-${toast.postId}`);
+      const el =
+        document.getElementById(`reply-item-${toast.postId}`) ||
+        document.getElementById(`post-card-${toast.postId}`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         el.classList.add('ring-2', 'ring-white/40', 'transition-all');

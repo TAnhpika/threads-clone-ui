@@ -15,6 +15,7 @@ export default function EditPostModal({
   onClose,
   post,
   currentUser,
+  onUpdated,
 }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -120,6 +121,11 @@ export default function EditPostModal({
         },
       })
     );
+    onUpdated?.({
+      postId,
+      content: trimmedContent,
+      tag: chosenTopic || null,
+    });
 
     // 3. Hiển thị Toast "Editing..." ngay lập tức (theo Ảnh mẫu 1)
     window.dispatchEvent(
@@ -161,6 +167,12 @@ export default function EditPostModal({
             },
           })
         );
+        onUpdated?.({
+          postId,
+          ...(adapted || {}),
+          content: trimmedContent,
+          tag: chosenTopic || null,
+        });
 
         // Chuyển trạng thái Toast sang "✓ Edited  View" (theo Ảnh mẫu 2)
         window.dispatchEvent(
@@ -187,6 +199,11 @@ export default function EditPostModal({
             },
           })
         );
+        onUpdated?.({
+          postId,
+          content: prevContent,
+          tag: prevTag,
+        });
 
         const errData = err?.response?.data;
         let errMsg = 'Failed to update post. Please try again.';

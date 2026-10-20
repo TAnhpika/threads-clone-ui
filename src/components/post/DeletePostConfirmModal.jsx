@@ -11,9 +11,30 @@ export default function DeletePostConfirmModal({
   isOpen,
   onClose,
   onConfirmDelete,
+  isReply = false,
+  title,
+  description,
 }) {
   const modalRef = useRef(null);
   const { t } = useTranslation();
+
+  const displayTitle =
+    title ||
+    (isReply
+      ? t('postMenu.deleteReplyTitle', 'Delete reply?')
+      : t('postMenu.deletePostTitle', 'Delete post?'));
+
+  const displayDesc =
+    description ||
+    (isReply
+      ? t(
+          'postMenu.deleteReplyDesc',
+          "If you delete this reply, you won't be able to restore it."
+        )
+      : t(
+          'postMenu.deletePostDesc',
+          "If you delete this post, you won't be able to restore it."
+        ));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -51,13 +72,10 @@ export default function DeletePostConfirmModal({
         {/* Phần nội dung phía trên: Tiêu đề & Thông điệp giải thích */}
         <div className="pt-6 pb-6 px-6 sm:px-7 flex flex-col items-center text-center">
           <h3 className="font-bold text-[17px] sm:text-lg text-white tracking-tight leading-snug">
-            {t('postMenu.deletePostTitle', 'Delete post?')}
+            {displayTitle}
           </h3>
           <p className="mt-2.5 text-[14px] sm:text-[15px] leading-relaxed text-[#777777] dark:text-zinc-400 font-normal">
-            {t(
-              'postMenu.deletePostDesc',
-              "If you delete this post, you won't be able to restore it."
-            )}
+            {displayDesc}
           </p>
         </div>
 

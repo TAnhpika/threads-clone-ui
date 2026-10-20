@@ -17,6 +17,7 @@ import {
   Check,
   ArrowUp,
 } from 'lucide-react';
+import copy from 'copy-to-clipboard';
 import { RadialSpinner } from '@/components/common/GlobalToast';
 import {
   getPostByIdApi,
@@ -26,6 +27,7 @@ import {
   unsavePostApi,
   hidePostApi,
   reportPostApi,
+  deletePostApi,
 } from '@/services/postService';
 import ReportModal from '@/components/post/ReportModal';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
@@ -34,13 +36,26 @@ import { getAuthorAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
 import PostMenu from '@/components/post/PostMenu';
 import CreatePostModal from '@/components/post/CreatePostModal';
+import EditPostModal from '@/components/post/EditPostModal';
+import DeletePostConfirmModal from '@/components/post/DeletePostConfirmModal';
+import EmbedModal from '@/components/post/EmbedModal';
+import BlockConfirmModal from '@/components/post/BlockConfirmModal';
 import PostCard from '@/components/post/PostCard';
 import PostContent from '@/components/post/PostContent';
 import RepostModal from '@/components/post/RepostModal';
 import AuthorProfileModal from '@/components/post/AuthorProfileModal';
 import UnfollowConfirmModal from '@/components/post/UnfollowConfirmModal';
 import { usePostInteraction } from '@/hooks/usePostInteraction';
-import { followUserApi, unfollowUserApi } from '@/services/userService';
+import {
+  followUserApi,
+  unfollowUserApi,
+  muteUserApi,
+  unmuteUserApi,
+  restrictUserApi,
+  unrestrictUserApi,
+  blockUserApi,
+  unblockUserApi,
+} from '@/services/userService';
 
 export default function PostDetailPage() {
   const { username, postId } = useParams();
@@ -476,6 +491,24 @@ export default function PostDetailPage() {
                       setCreateModalPlacement('center');
                       setIsCreateModalOpen(true);
                     }}
+                    onUpdateReply={(updated) => {
+                      setReplies((prev) =>
+                        prev.map((r) =>
+                          r.id === updated.postId ? { ...r, ...updated } : r
+                        )
+                      );
+                    }}
+                    onDeleteReply={(replyId) => {
+                      setReplies((prev) => prev.filter((r) => r.id !== replyId));
+                      setPost((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              comments: Math.max(0, (prev.comments || 1) - 1),
+                            }
+                          : prev
+                      );
+                    }}
                   />
                 ))
               )}
@@ -585,13 +618,33 @@ function PostNotFound({ onGoHome }) {
 }
 
 // Component từng dòng Reply trong chuỗi phản hồi
-function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply }) {
+function ReplyItem({
+  reply,
+  currentUser,
+  onToast,
+  isAuthenticated,
+  onQuoteReply,
+  onUpdateReply,
+  onDeleteReply,
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isFollowed, setIsFollowed] = useState(Boolean(reply.author?.isFollowed));
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(Boolean(reply.isSaved));
+  const [isPinned, setIsPinned] = useState(Boolean(reply.isPinned));
+  const [isArchived, setIsArchived] = useState(Boolean(reply.isArchived));
+  const [isHideLikes, setIsHideLikes] = useState(Boolean(reply.isHideLikes));
+  const [isMuted, setIsMuted] = useState(Boolean(reply.author?.isMuted));
+  const [isRestricted, setIsRestricted] = useState(Boolean(reply.author?.isRestricted));
+  const [isBlocked, setIsBlocked] = useState(Boolean(reply.author?.isBlocked));
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
 
   const isSelf = Boolean(
     currentUser &&
@@ -673,6 +726,153 @@ function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply 
     onToast,
     syncRedux: false,
   });
+
+  if (isHidden) return null;
+
+  const replyShareUrl = getShareUrl({ author: reply.author }, reply.id);
+
+  const handleMenuAction = async (action) => {
+    if (action === 'copy_link') {
+      copy(replyShareUrl);
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(replyShareUrl).catch(() => {});
+      }
+      onToast?.('Đã sao chép liên kết');
+    } else if (action === 'embed') {
+      setIsEmbedModalOpen(true);
+    } else if (action === 'edit') {
+      setIsEditModalOpen(true);
+    } else if (action === 'delete') {
+      setIsDeleteModalOpen(true);
+    } else if (action === 'save') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
+        return;
+      }
+      setIsSaved(true);
+      onToast?.('Đã lưu câu trả lời');
+      try {
+        await savePostApi(reply.id);
+      } catch (err) {
+        console.warn('Save reply failed:', err);
+      }
+    } else if (action === 'unsave') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'save' } }));
+        return;
+      }
+      setIsSaved(false);
+      onToast?.('Đã bỏ lưu câu trả lời');
+      try {
+        await unsavePostApi(reply.id);
+      } catch (err) {
+        console.warn('Unsave reply failed:', err);
+      }
+    } else if (action === 'pin') {
+      setIsPinned((prev) => {
+        const next = !prev;
+        onToast?.(next ? 'Đã ghim câu trả lời' : 'Đã bỏ ghim câu trả lời');
+        return next;
+      });
+    } else if (action === 'archive') {
+      setIsArchived((prev) => {
+        const next = !prev;
+        onToast?.(next ? 'Đã lưu trữ câu trả lời' : 'Đã khôi phục từ lưu trữ');
+        return next;
+      });
+    } else if (action === 'toggle_hide_counts') {
+      setIsHideLikes((prev) => {
+        const next = !prev;
+        onToast?.(next ? 'Đã ẩn số lượt thích và chia sẻ' : 'Đã hiện số lượt thích và chia sẻ');
+        return next;
+      });
+    } else if (action === 'not_interested') {
+      setIsHidden(true);
+      onToast?.('Hidden');
+      try {
+        await hidePostApi(reply.id);
+      } catch (err) {
+        console.warn('Hide reply failed:', err);
+      }
+    } else if (action === 'mute' || action === 'unmute') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'mute' } }));
+        return;
+      }
+      const willMute = action === 'mute';
+      setIsMuted(willMute);
+      onToast?.(willMute ? `Đã tắt thông báo từ @${reply.author?.username || 'user'}` : `Đã bật thông báo từ @${reply.author?.username || 'user'}`);
+      try {
+        if (reply.author?.id) {
+          if (willMute) await muteUserApi(reply.author.id);
+          else await unmuteUserApi(reply.author.id);
+        }
+      } catch (err) {
+        console.warn('Mute/unmute failed:', err);
+      }
+    } else if (action === 'restrict' || action === 'unrestrict') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'restrict' } }));
+        return;
+      }
+      const willRestrict = action === 'restrict';
+      setIsRestricted(willRestrict);
+      onToast?.(willRestrict ? `Đã hạn chế @${reply.author?.username || 'user'}` : `Đã bỏ hạn chế @${reply.author?.username || 'user'}`);
+      try {
+        if (reply.author?.id) {
+          if (willRestrict) await restrictUserApi(reply.author.id);
+          else await unrestrictUserApi(reply.author.id);
+        }
+      } catch (err) {
+        console.warn('Restrict/unrestrict failed:', err);
+      }
+    } else if (action === 'block' || action === 'unblock') {
+      if (!isAuthenticated) {
+        window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'block' } }));
+        return;
+      }
+      if (action === 'block') {
+        setIsBlockModalOpen(true);
+      } else {
+        setIsBlocked(false);
+        onToast?.(`Đã bỏ chặn @${reply.author?.username || 'user'}`);
+        try {
+          if (reply.author?.id) await unblockUserApi(reply.author.id);
+        } catch (err) {
+          console.warn('Unblock failed:', err);
+        }
+      }
+    } else if (action === 'report') {
+      setIsReportModalOpen(true);
+    } else if (action === 'insights') {
+      onToast?.('Xem thông tin chi tiết');
+    } else if (action === 'post_options') {
+      onToast?.('Tuỳ chọn câu trả lời');
+    }
+  };
+
+  const handleConfirmDeleteReply = async () => {
+    setIsDeleteModalOpen(false);
+    onDeleteReply?.(reply.id);
+    onToast?.('Đã xoá câu trả lời');
+    try {
+      await deletePostApi(reply.id);
+    } catch (err) {
+      console.warn('Delete reply failed:', err);
+    }
+  };
+
+  const handleConfirmBlock = async () => {
+    setIsBlockModalOpen(false);
+    setIsBlocked(true);
+    setIsHidden(true);
+    onToast?.(`Đã chặn @${reply.author?.username || 'user'}`);
+    try {
+      if (reply.author?.id) await blockUserApi(reply.author.id);
+    } catch (err) {
+      console.warn('Block failed:', err);
+    }
+  };
 
   return (
     <article
@@ -758,14 +958,49 @@ function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply 
               <PostMenu
                 isOpen={isMenuOpen}
                 onClose={() => setIsMenuOpen(false)}
+                postUrl={replyShareUrl}
                 isOwnPost={isSelf}
+                isReply={true}
                 createdAt={reply.createdAt}
-                onAction={(action) => {
-                  if (action === 'copy_link') onToast('Đã sao chép liên kết');
-                  if (action === 'save') onToast('Đã lưu câu trả lời');
-                  if (action === 'report') setIsReportModalOpen(true);
-                  if (action === 'delete') onToast('Đã xoá câu trả lời');
+                timestamp={reply.timestamp}
+                isSaved={isSaved}
+                isPinned={isPinned}
+                isArchived={isArchived}
+                isHideLikes={isHideLikes}
+                isMuted={isMuted}
+                isRestricted={isRestricted}
+                isBlocked={isBlocked}
+                onAction={handleMenuAction}
+              />
+              <EditPostModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                post={reply}
+                currentUser={currentUser}
+                onUpdated={(updated) => {
+                  onUpdateReply?.({
+                    postId: reply.id,
+                    ...updated,
+                  });
                 }}
+              />
+              <DeletePostConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirmDelete={handleConfirmDeleteReply}
+                isReply={true}
+              />
+              <EmbedModal
+                isOpen={isEmbedModalOpen}
+                onClose={() => setIsEmbedModalOpen(false)}
+                post={reply}
+                postUrl={replyShareUrl}
+              />
+              <BlockConfirmModal
+                isOpen={isBlockModalOpen}
+                onClose={() => setIsBlockModalOpen(false)}
+                onConfirm={handleConfirmBlock}
+                username={reply.author?.username || 'user'}
               />
               <ReportModal
                 isOpen={isReportModalOpen}

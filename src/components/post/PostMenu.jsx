@@ -109,6 +109,7 @@ export default function PostMenu({
   isPinned = false,
   isArchived = false,
   isHideLikes = false,
+  isReply = false,
 }) {
   const [view, setView] = useState('main'); // 'main' | 'add_to_feed' | 'post_options'
   const [canEdit, setCanEdit] = useState(false);
@@ -339,7 +340,15 @@ export default function PostMenu({
               onClick={(e) => handleItemClick(e, 'pin')}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
-              <span>{isPinned ? t('postMenu.unpinFromProfile', 'Unpin from profile') : t('postMenu.pinToProfile', 'Pin to profile')}</span>
+              <span>
+                {isReply
+                  ? isPinned
+                    ? t('postMenu.unpinReply', 'Unpin reply')
+                    : t('postMenu.pinReply', 'Pin reply')
+                  : isPinned
+                    ? t('postMenu.unpinFromProfile', 'Unpin from profile')
+                    : t('postMenu.pinToProfile', 'Pin to profile')}
+              </span>
               <Pin className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2] -rotate-45" />
             </button>
 
