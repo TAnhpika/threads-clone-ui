@@ -9,7 +9,7 @@ import CreatePostBox from '@/components/post/CreatePostBox';
 import CreatePostModal from '@/components/post/CreatePostModal';
 import CreateFeedModal from '@/components/feed/CreateFeedModal';
 import SuggestedProfiles from '@/components/feed/SuggestedProfiles';
-import { getFeed } from '@/services/postService';
+import { getFeed, syncFeedRepliesCount } from '@/services/postService';
 import { useInfinityLoad } from '@/hooks/useInfinityLoad';
 import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/authSlice';
 import {
@@ -171,6 +171,8 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
       fetchFeed(1, feedType, true);
     } else {
       setIsLoadingInitial(false);
+      // Đồng bộ số lượng reply cho các bài viết đã cache khi quay lại trang chủ
+      syncFeedRepliesCount(feedState.posts);
     }
   }, [feedType, feedState.isLoaded, feedState.posts.length, fetchFeed]);
 

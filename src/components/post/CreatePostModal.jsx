@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { prependFeedPost } from '@/features/feed/feedSlice';
-import { createPostApi, quotePostApi, createReplyApi, adaptPost } from '@/services/postService';
+import { prependFeedPost, updatePostInteraction } from '@/features/feed/feedSlice';
+import {
+  createPostApi,
+  quotePostApi,
+  createReplyApi,
+  adaptPost,
+  savePostCommentsCount,
+  getCachedCommentsCount,
+} from '@/services/postService';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import { getAuthorAvatar } from '@/utils/avatar';
 import QuotedPostCard from './QuotedPostCard';
@@ -374,6 +381,20 @@ export default function CreatePostModal({
             }
             createdReplies.push(finalReply);
             previousPostId = finalReply.id || replyToPost.id;
+          }
+
+          // Đồng bộ số lượng reply cho bài viết gốc và cập nhật Redux feed
+          if (replyToPost?.id) {
+            const rootPostId = replyToPost.parentId || replyToPost.id;
+            const currentComments = getCachedCommentsCount(rootPostId) ?? replyToPost.comments ?? 0;
+            const updatedComments = currentComments + validThreads.length;
+            savePostCommentsCount(rootPostId, updatedComments);
+            dispatch(
+              updatePostInteraction({
+                postId: rootPostId,
+                updates: { comments: updatedComments },
+              })
+            );
           }
 
           onReplySuccess?.(createdReplies);

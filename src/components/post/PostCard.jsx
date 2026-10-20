@@ -8,7 +8,7 @@ import {
     updatePostHideStatus,
 } from "@/features/feed/feedSlice";
 import { unmuteUserApi, unblockUserApi } from "@/services/userService";
-import { unhidePostApi } from "@/services/postService";
+import { unhidePostApi, getCachedCommentsCount } from "@/services/postService";
 import PostHeader from "@/components/post/PostHeader";
 import PostContent from "@/components/post/PostContent";
 import QuotedPostCard from "@/components/post/QuotedPostCard";
@@ -368,7 +368,7 @@ export default function PostCard({
                         authorUsername={post.author?.username}
                         feedType={feedType}
                         initialLikes={post.likes}
-                        initialComments={post.comments}
+                        initialComments={Math.max(post.comments || 0, getCachedCommentsCount(post.id) || 0)}
                         initialReposts={post.reposts}
                         initialShares={post.shares}
                         initialIsLiked={post.isLiked}

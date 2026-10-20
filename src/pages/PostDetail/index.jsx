@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updatePostInteraction } from '@/features/feed/feedSlice';
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -30,6 +31,8 @@ import {
   hidePostApi,
   reportPostApi,
   deletePostApi,
+  savePostCommentsCount,
+  getCachedCommentsCount,
 } from '@/services/postService';
 import ReportModal from '@/components/post/ReportModal';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
@@ -64,6 +67,7 @@ export default function PostDetailPage() {
   const { username, postId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const replyInputRef = useRef(null);
@@ -87,6 +91,7 @@ export default function PostDetailPage() {
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+  const [replyModalTarget, setReplyModalTarget] = useState(null);
   const [createModalPlacement, setCreateModalPlacement] = useState('bottom-right');
   const showToast = (msg) => {
     window.dispatchEvent(
@@ -154,7 +159,21 @@ export default function PostDetailPage() {
       }
 
       if (loadedPost) {
+        // Cập nhật số lượng comment của bài viết chính: tính cả tất cả các replies (kể cả trong chain)
+        const totalComments = Math.max(loadedPost.comments || 0, loadedReplies.length);
+        savePostCommentsCount(postId, totalComments);
+        loadedPost = {
+          ...loadedPost,
+          comments: totalComments,
+        };
         setPost(loadedPost);
+
+        dispatch(
+          updatePostInteraction({
+            postId,
+            updates: { comments: totalComments },
+          })
+        );
       }
       setReplies(loadedReplies);
       setIsLoading(false);
@@ -340,7 +359,18 @@ export default function PostDetailPage() {
 
       // 2. Chèn câu trả lời mới vào ngay trên đầu danh sách (Ảnh mẫu 2)
       setReplies((prev) => [finalReply, ...prev.filter((r) => r.id !== tempId)]);
-      setPost((prev) => (prev ? { ...prev, comments: (prev.comments || 0) + 1 } : prev));
+      setPost((prev) => {
+        if (!prev) return prev;
+        const newComments = (prev.comments || 0) + 1;
+        savePostCommentsCount(prev.id, newComments);
+        dispatch(
+          updatePostInteraction({
+            postId: prev.id,
+            updates: { comments: newComments },
+          })
+        );
+        return { ...prev, comments: newComments };
+      });
 
       // 3. Kích hoạt Toast thành công: ✓ Posted  View (Ảnh mẫu 2)
       window.dispatchEvent(
@@ -368,7 +398,18 @@ export default function PostDetailPage() {
       console.warn('API create reply failed or offline, fallback to optimistic reply:', err);
       // Fallback lưu câu trả lời để người dùng luôn có trải nghiệm liền mạch
       setReplies((prev) => [optimisticReply, ...prev.filter((r) => r.id !== tempId)]);
-      setPost((prev) => (prev ? { ...prev, comments: (prev.comments || 0) + 1 } : prev));
+      setPost((prev) => {
+        if (!prev) return prev;
+        const newComments = (prev.comments || 0) + 1;
+        savePostCommentsCount(prev.id, newComments);
+        dispatch(
+          updatePostInteraction({
+            postId: prev.id,
+            updates: { comments: newComments },
+          })
+        );
+        return { ...prev, comments: newComments };
+      });
 
       window.dispatchEvent(
         new CustomEvent('app-toast', {
@@ -685,7 +726,7 @@ export default function PostDetailPage() {
             </div>
 
             {/* 4. DANH SÁCH BÌNH LUẬN (Replies List) */}
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+            <div>
               {replies.length === 0 ? (
                 <div className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
                   Chưa có câu trả lời nào. Hãy là người đầu tiên trả lời!
@@ -694,31 +735,34 @@ export default function PostDetailPage() {
                 replies.map((reply, idx) => {
                   const prevReply = replies[idx - 1];
                   const nextReply = replies[idx + 1];
+
+                  // Xác định xem reply này có nối tiếp bài trước trong khối không
                   const isChainedWithPrev = Boolean(
-                    prevReply &&
-                      ((prevReply.threadId && prevReply.threadId === reply.threadId) ||
-                        (prevReply.hasConnector &&
-                          prevReply.author?.username === reply.author?.username))
+                    reply.isChainedWithPrev ??
+                      (prevReply &&
+                        ((prevReply.threadId && prevReply.threadId === reply.threadId) ||
+                          prevReply.hasConnector))
                   );
+
+                  // Xác định xem reply này có nối tiếp xuống bài sau trong khối không
                   const hasConnector = Boolean(
                     reply.hasConnector ??
                       (nextReply &&
                         ((nextReply.threadId && nextReply.threadId === reply.threadId) ||
-                          (reply.threadBadge &&
-                            nextReply.threadBadge &&
-                            reply.author?.username === nextReply.author?.username)))
+                          nextReply.isChainedWithPrev))
                   );
 
                   return (
-                    <div
-                      key={reply.id}
-                      className={isChainedWithPrev ? '!border-t-0' : ''}
-                    >
+                    <div key={reply.id} className="relative">
                       <ReplyItem
-                        reply={{ ...reply, hasConnector }}
+                        reply={{ ...reply, hasConnector, isChainedWithPrev }}
                         currentUser={currentUser}
                         onToast={showToast}
                         isAuthenticated={isAuthenticated}
+                        onReplyToComment={(target) => {
+                          setReplyModalTarget(target);
+                          setIsReplyModalOpen(true);
+                        }}
                         onQuoteReply={(target) => {
                           setQuoteTargetPost(target);
                           setCreateModalPlacement('center');
@@ -733,16 +777,25 @@ export default function PostDetailPage() {
                         }}
                         onDeleteReply={(replyId) => {
                           setReplies((prev) => prev.filter((r) => r.id !== replyId));
-                          setPost((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  comments: Math.max(0, (prev.comments || 1) - 1),
-                                }
-                              : prev
-                          );
+                          setPost((prev) => {
+                            if (!prev) return prev;
+                            const newComments = Math.max(0, (prev.comments || 1) - 1);
+                            savePostCommentsCount(prev.id, newComments);
+                            dispatch(
+                              updatePostInteraction({
+                                postId: prev.id,
+                                updates: { comments: newComments },
+                              })
+                            );
+                            return { ...prev, comments: newComments };
+                          });
                         }}
                       />
+
+                      {/* Đường phân cách ngang chỉ xuất hiện khi kết thúc khối (không có connector) và không phải bài cuối */}
+                      {!hasConnector && idx < replies.length - 1 && (
+                        <div className="border-b border-zinc-100 dark:border-zinc-800/80" />
+                      )}
                     </div>
                   );
                 })
@@ -804,29 +857,70 @@ export default function PostDetailPage() {
       {/* Modal Trả lời bài viết (Reply Modal reusing CreatePostModal) */}
       <ReplyModal
         isOpen={isReplyModalOpen}
-        onClose={() => setIsReplyModalOpen(false)}
+        onClose={() => {
+          setIsReplyModalOpen(false);
+          setReplyModalTarget(null);
+        }}
         currentUser={currentUser}
-        replyToPost={post}
+        replyToPost={replyModalTarget || post}
         initialContent={replyInput}
         initialMediaFiles={replyMediaFiles}
         initialMediaPreviews={replyMediaPreviews}
         onReplySuccess={(newReplies) => {
           const replyList = Array.isArray(newReplies) ? newReplies : [newReplies];
-          setReplies((prev) => [...replyList, ...prev]);
           setReplyInput('');
           setReplyMediaFiles([]);
           setReplyMediaPreviews([]);
-          setPost((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  comments: (prev.comments || 0) + replyList.length,
-                  threadBadge: replyList[0]?.threadTotal
-                    ? `1/${replyList[0].threadTotal}`
-                    : prev.threadBadge,
-                }
-              : prev
-          );
+
+          if (replyModalTarget && replyModalTarget.id !== post?.id) {
+            // Trường hợp trả lời một bình luận (User B reply User A)
+            setReplies((prev) => {
+              const targetIdx = prev.findIndex((r) => r.id === replyModalTarget.id);
+              if (targetIdx === -1) return [...replyList, ...prev];
+
+              const targetGroupId = prev[targetIdx].threadId || `chain-${prev[targetIdx].id}`;
+              const updatedTarget = {
+                ...prev[targetIdx],
+                hasConnector: true,
+                threadId: targetGroupId,
+              };
+
+              const updatedNewReplies = replyList.map((item, idx) => ({
+                ...item,
+                threadId: targetGroupId,
+                isChainedWithPrev: true,
+                hasConnector: idx < replyList.length - 1,
+              }));
+
+              const next = [...prev];
+              next[targetIdx] = updatedTarget;
+              next.splice(targetIdx + 1, 0, ...updatedNewReplies);
+              return next;
+            });
+            setReplyModalTarget(null);
+          } else {
+            // Trường hợp trả lời bài viết chính
+            setReplies((prev) => [...replyList, ...prev]);
+          }
+
+          setPost((prev) => {
+            if (!prev) return prev;
+            const newComments = (prev.comments || 0) + replyList.length;
+            savePostCommentsCount(prev.id, newComments);
+            dispatch(
+              updatePostInteraction({
+                postId: prev.id,
+                updates: { comments: newComments },
+              })
+            );
+            return {
+              ...prev,
+              comments: newComments,
+              threadBadge: replyList[0]?.threadTotal
+                ? `1/${replyList[0].threadTotal}`
+                : prev.threadBadge,
+            };
+          });
         }}
       />
     </div>
@@ -890,6 +984,7 @@ function ReplyItem({
   onQuoteReply,
   onUpdateReply,
   onDeleteReply,
+  onReplyToComment,
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
@@ -1138,14 +1233,35 @@ function ReplyItem({
     }
   };
 
+  const isChainedWithPrev = Boolean(reply.isChainedWithPrev);
+  const hasConnector = Boolean(reply.hasConnector);
+
+  // Tối ưu padding theo vị trí trong chuỗi để avatar và đường nối sát khít thành 1 khối
+  let paddingClass = 'p-4 sm:p-5';
+  if (hasConnector && !isChainedWithPrev) {
+    // Bài đầu tiên của chuỗi
+    paddingClass = 'pt-4 sm:pt-5 px-4 sm:px-5 pb-2';
+  } else if (hasConnector && isChainedWithPrev) {
+    // Bài ở giữa chuỗi
+    paddingClass = 'pt-2 px-4 sm:px-5 pb-2';
+  } else if (!hasConnector && isChainedWithPrev) {
+    // Bài cuối cùng của chuỗi
+    paddingClass = 'pt-2 px-4 sm:px-5 pb-4 sm:pb-5';
+  }
+
   return (
     <article
       id={`reply-item-${reply.id}`}
-      className="p-4 sm:p-5 hover:bg-zinc-50/40 dark:hover:bg-zinc-900/20 transition-colors"
+      className={`${paddingClass} hover:bg-zinc-50/40 dark:hover:bg-zinc-900/20 transition-colors`}
     >
       <div className="flex gap-3">
         {/* Cột Avatar & Đường chỉ dọc (Thread connector line) */}
-        <div className="flex flex-col items-center shrink-0 self-stretch">
+        <div className="flex flex-col items-center shrink-0 self-stretch relative">
+          {/* Đường nối từ bài trước đi vào đỉnh avatar (nếu là bài con trong chuỗi) */}
+          {isChainedWithPrev && (
+            <div className="w-[1.5px] bg-zinc-300 dark:bg-zinc-700/80 h-2.5 -mt-2.5 shrink-0" />
+          )}
+
           <div className="relative">
             <img
               src={reply.author?.avatar || getAuthorAvatar(reply.author)}
@@ -1179,8 +1295,10 @@ function ReplyItem({
               )
             )}
           </div>
-          {reply.hasConnector && (
-            <div className="w-[1.5px] bg-zinc-300 dark:bg-zinc-800 flex-1 my-1.5" />
+
+          {/* Đường nối từ avatar kéo thẳng xuống chạm mép đáy bài để nối với bài sau */}
+          {hasConnector && (
+            <div className="w-[1.5px] bg-zinc-300 dark:bg-zinc-700/80 flex-1 my-1 -mb-2.5 shrink-0" />
           )}
         </div>
 
@@ -1323,10 +1441,10 @@ function ReplyItem({
                   );
                   return;
                 }
-                const input = document.getElementById('thread-reply-input');
-                input?.focus();
+                onReplyToComment?.(reply);
               }}
               className="flex items-center gap-1 hover:text-black dark:hover:text-white transition-colors cursor-pointer group"
+              title="Trả lời bình luận này"
             >
               <MessageCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
               {reply.comments > 0 && <span>{reply.comments}</span>}

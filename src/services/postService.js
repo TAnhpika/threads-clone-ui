@@ -2,6 +2,95 @@ import http from "@/utils/http";
 import { mockPosts } from "@/components/post/mockPosts";
 import { getAuthorAvatar } from "@/utils/avatar";
 import { store } from "@/store/store";
+import { updatePostInteraction } from "@/features/feed/feedSlice";
+
+const COMMENTS_COUNT_CACHE_KEY = "threads_post_comments_count_cache";
+
+/**
+ * Lấy số lượng bình luận đã được đồng bộ / cache từ localStorage
+ * @param {string|number} postId
+ * @returns {number|null}
+ */
+export function getCachedCommentsCount(postId) {
+    if (!postId && postId !== 0) return null;
+    try {
+        const raw = localStorage.getItem(COMMENTS_COUNT_CACHE_KEY);
+        if (!raw) return null;
+        const cache = JSON.parse(raw);
+        const val = cache[String(postId)];
+        return typeof val === "number" ? val : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Lưu số lượng bình luận thực tế vào cache localStorage
+ * @param {string|number} postId
+ * @param {number} count
+ */
+export function savePostCommentsCount(postId, count) {
+    if ((!postId && postId !== 0) || typeof count !== "number") return;
+    try {
+        const raw = localStorage.getItem(COMMENTS_COUNT_CACHE_KEY);
+        const cache = raw ? JSON.parse(raw) : {};
+        cache[String(postId)] = count;
+        localStorage.setItem(COMMENTS_COUNT_CACHE_KEY, JSON.stringify(cache));
+    } catch {
+        // ignore storage errors
+    }
+}
+
+const inflightSync = new Set();
+
+/**
+ * Đồng bộ số lượng reply thực tế cho các bài viết trên feed (trong background)
+ * Tránh trường hợp backend chỉ trả về replies_count = 1 cho direct children mà bỏ sót các reply trong chain
+ * @param {Array} posts
+ */
+export async function syncFeedRepliesCount(posts) {
+    if (!Array.isArray(posts) || posts.length === 0) return;
+
+    // Lọc ra các bài viết có comment > 0 cần kiểm tra
+    const candidates = posts.filter(
+        (p) => p && p.id && ((p.comments || 0) > 0 || (p.raw?.replies_count || 0) > 0)
+    );
+
+    for (const post of candidates) {
+        const postIdStr = String(post.id);
+        if (inflightSync.has(postIdStr)) continue;
+
+        inflightSync.add(postIdStr);
+
+        // Chạy bất đồng bộ trong background không làm nghẽn hiển thị UI
+        (async () => {
+            try {
+                const replies = await getRepliesApi(post.id, {
+                    postAuthor: post.author?.username,
+                });
+                const trueCount = replies.length;
+                const cached = getCachedCommentsCount(post.id) || 0;
+                const finalCount = Math.max(trueCount, cached, post.comments || 0);
+
+                savePostCommentsCount(post.id, finalCount);
+
+                if (finalCount !== post.comments) {
+                    post.comments = finalCount;
+                    store?.dispatch?.(
+                        updatePostInteraction({
+                            postId: post.id,
+                            updates: { comments: finalCount },
+                        })
+                    );
+                }
+            } catch (err) {
+                // Im lặng bỏ qua lỗi ngầm
+            } finally {
+                inflightSync.delete(postIdStr);
+            }
+        })();
+    }
+}
 
 /**
  * Format thời gian từ chuỗi ISO thành dạng hiển thị tương đối: vừa xong, 5m, 2h, 3d, 12 thg 10
@@ -52,8 +141,14 @@ export function formatTimeAgo(dateString) {
  */
 export function adaptPost(item) {
     if (!item) return null;
-    // Nếu item đã được adaptPost chuẩn hoá trước đó, trả về luôn để tránh mất media/author
+    // Nếu item đã được adaptPost chuẩn hoá trước đó, đồng bộ lại comment từ cache nếu có
     if (item.author && item.timestamp !== undefined && (item.media !== undefined || item.content !== undefined)) {
+        if (item.id) {
+            const cached = getCachedCommentsCount(item.id);
+            if (cached !== null && cached > (item.comments || 0)) {
+                return { ...item, comments: cached };
+            }
+        }
         return item;
     }
     const raw = item?.data && typeof item.data === 'object' && !Array.isArray(item.data) ? item.data : item;
@@ -73,6 +168,12 @@ export function adaptPost(item) {
         user.avatar ||
         (isMe && authUser.avatar ? authUser.avatar : null) ||
         getAuthorAvatar(user);
+
+    const cachedCount = getCachedCommentsCount(item.id);
+    const backendCount = item.replies_count || 0;
+    const resolvedComments = cachedCount !== null
+        ? Math.max(backendCount, cachedCount)
+        : backendCount;
 
     return {
         id: item.id,
@@ -103,7 +204,7 @@ export function adaptPost(item) {
                   }
                 : null,
         likes: item.likes_count || 0,
-        comments: item.replies_count || 0,
+        comments: resolvedComments,
         reposts: item.reposts_and_quotes_count || 0,
         shares: 0,
         isLiked: Boolean(item.is_liked_by_auth),
@@ -142,6 +243,9 @@ export async function getFeed({
           : [];
     const posts = rawPosts.map(adaptPost);
 
+    // Đồng bộ số lượng reply thực tế cho các bài viết trên feed (trong background)
+    syncFeedRepliesCount(posts);
+
     return {
         success: true,
         data: posts,
@@ -176,14 +280,13 @@ export async function getPostByIdApi(id) {
 }
 
 /**
- * Đệ quy lấy chuỗi reply con (nếu có) cùng tác giả hoặc phản hồi lồng nhau
+ * Đệ quy lấy chuỗi reply con (nếu có) cùng tác giả hoặc phản hồi lồng nhau giữa các user
  * @param {string|number} replyId
- * @param {string} targetAuthorUsername
  * @param {number} depth
  * @param {number} maxDepth
  * @returns {Promise<Array>}
  */
-async function fetchReplyChain(replyId, targetAuthorUsername, depth = 1, maxDepth = 10) {
+async function fetchReplyChain(replyId, depth = 1, maxDepth = 10) {
     if (depth > maxDepth) return [];
     try {
         const response = await http.get(`/posts/${replyId}/replies`);
@@ -195,11 +298,11 @@ async function fetchReplyChain(replyId, targetAuthorUsername, depth = 1, maxDept
         const result = [];
 
         for (const child of adaptedList) {
+            child.parentId = replyId;
             result.push(child);
             if (child.comments > 0) {
                 const subChildren = await fetchReplyChain(
                     child.id,
-                    targetAuthorUsername,
                     depth + 1,
                     maxDepth
                 );
@@ -232,54 +335,50 @@ export async function getRepliesApi(postId, { postAuthor = null } = {}) {
 
         for (const reply of directReplies) {
             if (reply.comments > 0) {
-                const chainChildren = await fetchReplyChain(
-                    reply.id,
-                    reply.author?.username
-                );
+                const chainChildren = await fetchReplyChain(reply.id);
 
                 if (chainChildren.length > 0) {
-                    const sameAuthorChain = [];
-                    const others = [];
+                    const branch = [reply, ...chainChildren];
+                    const threadGroupId = `chain-${reply.id}`;
 
-                    for (const c of chainChildren) {
-                        if (c.author?.username && c.author?.username === reply.author?.username) {
-                            sameAuthorChain.push(c);
-                        } else {
-                            others.push(c);
-                        }
-                    }
+                    // Kiểm tra xem tất cả các phần tử trong nhánh có cùng 1 author (Add to thread chain) hay không
+                    const isAllSameAuthor = branch.every(
+                        (item) => item.author?.username && item.author?.username === reply.author?.username
+                    );
 
-                    if (sameAuthorChain.length > 0) {
-                        const wholeChain = [reply, ...sameAuthorChain];
-                        const cleanPostAuthor = postAuthor?.replace(/^@/, "");
-                        const isChainFromPostAuthor = Boolean(
-                            cleanPostAuthor &&
-                            reply.author?.username &&
-                            reply.author?.username === cleanPostAuthor
-                        );
-                        const totalCount = (isChainFromPostAuthor ? 1 : 0) + wholeChain.length;
-                        const threadGroupId = `chain-${reply.id}`;
+                    const cleanPostAuthor = postAuthor?.replace(/^@/, "");
+                    const isChainFromPostAuthor = Boolean(
+                        isAllSameAuthor &&
+                        cleanPostAuthor &&
+                        reply.author?.username &&
+                        reply.author?.username === cleanPostAuthor
+                    );
 
-                        wholeChain.forEach((item, idx) => {
+                    const totalCount = (isChainFromPostAuthor ? 1 : 0) + branch.length;
+
+                    branch.forEach((item, idx) => {
+                        const isLast = idx === branch.length - 1;
+                        item.threadId = threadGroupId;
+                        item.hasConnector = !isLast;
+                        item.isChainedWithPrev = idx > 0;
+
+                        if (isAllSameAuthor && branch.length > 1) {
                             const indexNumber = (isChainFromPostAuthor ? 1 : 0) + idx + 1;
-                            const isLast = idx === wholeChain.length - 1 && others.length === 0;
                             item.threadBadge = `${indexNumber}/${totalCount}`;
                             item.threadTotal = totalCount;
                             item.threadIndex = indexNumber;
-                            item.threadId = threadGroupId;
-                            item.hasConnector = !isLast;
                             if (isChainFromPostAuthor) {
                                 item.hasParentPostChain = true;
                                 item.parentThreadTotal = totalCount;
                             }
-                        });
-
-                        fullReplies.push(...wholeChain);
-                        if (others.length > 0) {
-                            fullReplies.push(...others);
+                        } else {
+                            // Trường hợp các user khác nhau reply nhau: không hiện badge đếm số, chỉ nối avatar liền khối
+                            item.threadBadge = undefined;
                         }
-                        continue;
-                    }
+                    });
+
+                    fullReplies.push(...branch);
+                    continue;
                 }
             }
 
