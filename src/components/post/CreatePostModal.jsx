@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { prependFeedPost } from '@/features/feed/feedSlice';
-import { createPostApi, quotePostApi, adaptPost } from '@/services/postService';
+import { createPostApi, quotePostApi, createReplyApi, adaptPost } from '@/services/postService';
 import userAvatar from '@/assets/images/default-avatar.svg';
+import { getAuthorAvatar } from '@/utils/avatar';
 import QuotedPostCard from './QuotedPostCard';
 import {
   X,
@@ -24,25 +25,40 @@ export default function CreatePostModal({
   currentUser,
   onSubmitPost,
   quotedPost = null,
+  replyToPost = null,
+  isReplyModal = false,
+  initialContent = '',
+  onReplySuccess,
   placement = 'center', // 'center' | 'bottom-right'
   feedType = 'for_you',
 }) {
   const dispatch = useDispatch();
-  const [content, setContent] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [mediaFiles, setMediaFiles] = useState([]);
-  const [mediaPreviews, setMediaPreviews] = useState([]);
+  const createEmptyThread = () => ({
+    id: `thread-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    content: '',
+    mediaFiles: [],
+    mediaPreviews: [],
+    imageUrl: '',
+  });
+
+  const [threads, setThreads] = useState([
+    {
+      id: 'thread-1',
+      content: initialContent || '',
+      mediaFiles: [],
+      mediaPreviews: [],
+      imageUrl: '',
+    },
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showImageInput, setShowImageInput] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState('');
   const [showTopicPicker, setShowTopicPicker] = useState(false);
   const [showPostOptions, setShowPostOptions] = useState(false);
   const [replyPermission, setReplyPermission] = useState('everyone'); // 'everyone' | 'following' | 'followers' | 'mentions'
   const [requiresReplyApproval, setRequiresReplyApproval] = useState(false);
-  const [threadList, setThreadList] = useState([]); // Chained threads if user clicks "Add to thread"
 
-  const textareaRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const textareaRefs = useRef({});
+  const fileInputRefs = useRef({});
   const modalRef = useRef(null);
   const { t } = useTranslation();
 
@@ -51,9 +67,11 @@ export default function CreatePostModal({
   const avatarUrl = currentUser?.avatar || userAvatar;
   const username = currentUser?.username || currentUser?.name || 'tuananhpika';
 
-  const placeholderText = quotedPost
-    ? 'Share your thoughts...'
-    : t('createPost.whatsNew', "What's new?");
+  const placeholderText = replyToPost
+    ? 'Say more...'
+    : quotedPost
+      ? 'Share your thoughts...'
+      : t('createPost.whatsNew', "What's new?");
 
   const availableTopics = [
     'Smart Casual Men',
@@ -64,36 +82,60 @@ export default function CreatePostModal({
     'Tech & Gadgets',
   ];
 
+  const hasParent = Boolean(replyToPost);
+  const totalCount = (hasParent ? 1 : 0) + threads.length;
+  const showBadge = totalCount >= 2;
+
   useEffect(() => {
     if (isOpen) {
       if (!isCorner) {
         document.body.style.overflow = 'hidden';
       }
+      setThreads([
+        {
+          id: 'thread-1',
+          content: initialContent || '',
+          mediaFiles: [],
+          mediaPreviews: [],
+          imageUrl: '',
+        },
+      ]);
       setTimeout(() => {
-        textareaRef.current?.focus();
+        if (textareaRefs.current[0]) {
+          textareaRefs.current[0].focus();
+          if (initialContent) {
+            textareaRefs.current[0].selectionStart = textareaRefs.current[0].value.length;
+            textareaRefs.current[0].selectionEnd = textareaRefs.current[0].value.length;
+          }
+        }
       }, 100);
     } else {
       document.body.style.overflow = 'unset';
-      setContent('');
-      setImageUrl('');
-      setShowImageInput(false);
+      threads.forEach((t) => {
+        t.mediaPreviews?.forEach((item) => {
+          if (item?.url) URL.revokeObjectURL(item.url);
+        });
+      });
+      setThreads([
+        {
+          id: 'thread-1',
+          content: '',
+          mediaFiles: [],
+          mediaPreviews: [],
+          imageUrl: '',
+        },
+      ]);
       setSelectedTopic('');
       setShowTopicPicker(false);
       setShowPostOptions(false);
-      setThreadList([]);
       setReplyPermission('everyone');
       setRequiresReplyApproval(false);
-      mediaPreviews.forEach((item) => {
-        if (item?.url) URL.revokeObjectURL(item.url);
-      });
-      setMediaFiles([]);
-      setMediaPreviews([]);
       setIsSubmitting(false);
     }
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, isCorner]);
+  }, [isOpen, isCorner, initialContent]);
 
   // Đóng modal khi bấm Escape
   useEffect(() => {
@@ -124,7 +166,7 @@ export default function CreatePostModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
-  const handleFilesSelect = (e) => {
+  const handleFilesSelect = (index, e) => {
     const selected = Array.from(e.target.files || []);
     if (selected.length === 0) return;
 
@@ -134,68 +176,239 @@ export default function CreatePostModal({
       type: file.type.startsWith('video/') ? 'video' : 'image',
     }));
 
-    setMediaFiles((prev) => [...prev, ...selected]);
-    setMediaPreviews((prev) => [...prev, ...newPreviews]);
+    setThreads((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        mediaFiles: [...(next[index].mediaFiles || []), ...selected],
+        mediaPreviews: [...(next[index].mediaPreviews || []), ...newPreviews],
+      };
+      return next;
+    });
     e.target.value = '';
   };
 
-  const handleRemoveMedia = (indexToRemove) => {
-    setMediaPreviews((prev) => {
-      const item = prev[indexToRemove];
-      if (item?.url) URL.revokeObjectURL(item.url);
+  const handleRemoveMedia = (threadIndex, mediaIndex) => {
+    setThreads((prev) => {
+      const next = [...prev];
+      const target = next[threadIndex];
+      if (!target) return prev;
+      const previewItem = target.mediaPreviews?.[mediaIndex];
+      if (previewItem?.url) URL.revokeObjectURL(previewItem.url);
+
+      next[threadIndex] = {
+        ...target,
+        mediaPreviews: target.mediaPreviews.filter((_, i) => i !== mediaIndex),
+        mediaFiles: target.mediaFiles.filter((_, i) => i !== mediaIndex),
+      };
+      return next;
+    });
+  };
+
+  const handleAddThread = () => {
+    const newThread = createEmptyThread();
+    const newIndex = threads.length;
+    setThreads((prev) => [...prev, newThread]);
+    setTimeout(() => {
+      textareaRefs.current[newIndex]?.focus();
+    }, 50);
+  };
+
+  const handleRemoveThread = (indexToRemove) => {
+    if (threads.length <= 1) return;
+    setThreads((prev) => {
+      const target = prev[indexToRemove];
+      target.mediaPreviews?.forEach((p) => {
+        if (p?.url) URL.revokeObjectURL(p.url);
+      });
       return prev.filter((_, idx) => idx !== indexToRemove);
     });
-    setMediaFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleUpdateThreadContent = (index, value) => {
+    setThreads((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], content: value };
+      return next;
+    });
   };
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim() && mediaFiles.length === 0 && !imageUrl) return;
+    const validThreads = threads.filter(
+      (t) => t.content.trim() || (t.mediaFiles && t.mediaFiles.length > 0) || t.imageUrl
+    );
+    if (validThreads.length === 0) return;
     if (isSubmitting) return;
 
     setIsSubmitting(true);
 
     try {
+      if (replyToPost?.id) {
+        onClose();
+        window.dispatchEvent(
+          new CustomEvent('app-toast', {
+            detail: {
+              type: 'reply',
+              status: 'loading',
+              message: 'Posting...',
+            },
+          })
+        );
+
+        try {
+          let previousPostId = replyToPost.id;
+          let firstReply = null;
+          const createdReplies = [];
+          const threadGroupId = `thread-group-${Date.now()}`;
+          const hasMultipleThreads = totalCount >= 2;
+
+          for (let i = 0; i < validThreads.length; i++) {
+            const tItem = validThreads[i];
+            const formData = new FormData();
+            formData.append('content', tItem.content.trim());
+            (tItem.mediaFiles || []).forEach((file) => {
+              formData.append('media[]', file);
+            });
+            if (selectedTopic && i === 0) {
+              formData.append('topic_name', selectedTopic);
+            }
+
+            const response = await createReplyApi(previousPostId, formData);
+            const postData = response?.data || response;
+            const adapted = adaptPost(postData);
+
+            const threadIndexNumber = (hasParent ? 1 : 0) + i + 1;
+            const isLast = i === validThreads.length - 1;
+
+            const finalReply = {
+              id: adapted?.id || `reply-${Date.now()}-${i}`,
+              ...(adapted || {}),
+              author: {
+                ...(adapted?.author || {}),
+                id: (adapted?.author?.id && adapted?.author?.username !== 'user')
+                  ? adapted.author.id
+                  : (currentUser?.id || 'me'),
+                username: (adapted?.author?.username && adapted?.author?.username !== 'user')
+                  ? adapted.author.username
+                  : (currentUser?.username || 'user'),
+                avatar: (adapted?.author?.avatar && !adapted?.author?.avatar?.includes('default-avatar'))
+                  ? adapted.author.avatar
+                  : (currentUser?.avatar || userAvatar),
+              },
+              timestamp: adapted?.timestamp || '1m',
+              content: tItem.content.trim(),
+              media: tItem.mediaPreviews?.length > 0 ? {
+                url: tItem.mediaPreviews[0].url,
+                urls: tItem.mediaPreviews.map(m => m.url),
+              } : (adapted?.media || null),
+              likes: adapted?.likes || 0,
+              comments: adapted?.comments || 0,
+              reposts: adapted?.reposts || 0,
+              shares: adapted?.shares || 0,
+              threadBadge: hasMultipleThreads ? `${threadIndexNumber}/${totalCount}` : undefined,
+              threadTotal: hasMultipleThreads ? totalCount : undefined,
+              threadIndex: threadIndexNumber,
+              threadId: hasMultipleThreads ? threadGroupId : undefined,
+              hasConnector: hasMultipleThreads ? !isLast : false,
+            };
+
+            if (i === 0) {
+              firstReply = finalReply;
+            }
+            createdReplies.push(finalReply);
+            previousPostId = finalReply.id || replyToPost.id;
+          }
+
+          onReplySuccess?.(createdReplies);
+
+          window.dispatchEvent(
+            new CustomEvent('app-toast', {
+              detail: {
+                type: 'reply',
+                status: 'completed',
+                message: 'Posted',
+                replyId: firstReply?.id,
+                actionLabel: 'View',
+                onAction: () => {
+                  const el = document.getElementById(`reply-item-${firstReply?.id}`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.add('bg-zinc-100/80', 'dark:bg-zinc-800/50', 'transition-all');
+                    setTimeout(
+                      () => el.classList.remove('bg-zinc-100/80', 'dark:bg-zinc-800/50'),
+                      1500
+                    );
+                  }
+                },
+              },
+            })
+          );
+        } catch (err) {
+          console.warn('Reply submit error:', err);
+          window.dispatchEvent(
+            new CustomEvent('app-toast', {
+              detail: {
+                message: 'Không thể đăng trả lời. Vui lòng thử lại.',
+              },
+            })
+          );
+        } finally {
+          setIsSubmitting(false);
+        }
+        return;
+      }
+
       if (onSubmitPost) {
         await onSubmitPost({
-          content: content.trim(),
-          mediaFiles,
+          content: validThreads[0].content.trim(),
+          mediaFiles: validThreads[0].mediaFiles || [],
           topic: selectedTopic || null,
           quotedPost: quotedPost || null,
           replyPermission,
           requiresReplyApproval,
         });
       } else {
-        const formData = new FormData();
-        formData.append('content', content.trim());
+        let firstPostId = null;
 
-        mediaFiles.forEach((file) => {
-          formData.append('media[]', file);
-        });
+        for (let i = 0; i < validThreads.length; i++) {
+          const tItem = validThreads[i];
+          const formData = new FormData();
+          formData.append('content', tItem.content.trim());
 
-        formData.append('reply_permission', replyPermission || 'everyone');
-        if (requiresReplyApproval) {
-          formData.append('requires_reply_approval', '1');
-        }
+          (tItem.mediaFiles || []).forEach((file) => {
+            formData.append('media[]', file);
+          });
 
-        if (selectedTopic) {
-          formData.append('topic_name', selectedTopic);
-        }
+          formData.append('reply_permission', replyPermission || 'everyone');
+          if (requiresReplyApproval) {
+            formData.append('requires_reply_approval', '1');
+          }
 
-        let response;
-        if (quotedPost?.id) {
-          response = await quotePostApi(quotedPost.id, formData);
-        } else {
-          response = await createPostApi(formData);
-        }
+          if (selectedTopic && i === 0) {
+            formData.append('topic_name', selectedTopic);
+          }
 
-        const postData = response?.data || response;
-        const adapted = adaptPost(postData);
+          if (i === 0) {
+            let response;
+            if (quotedPost?.id) {
+              response = await quotePostApi(quotedPost.id, formData);
+            } else {
+              response = await createPostApi(formData);
+            }
 
-        if (adapted) {
-          dispatch(prependFeedPost({ feedType, post: adapted }));
+            const postData = response?.data || response;
+            const adapted = adaptPost(postData);
+
+            if (adapted) {
+              dispatch(prependFeedPost({ feedType, post: adapted }));
+              firstPostId = adapted.id;
+            }
+          } else if (firstPostId) {
+            await createReplyApi(firstPostId, formData);
+          }
         }
 
         window.dispatchEvent(
@@ -209,13 +422,12 @@ export default function CreatePostModal({
         );
       }
 
-      mediaPreviews.forEach((item) => {
-        if (item?.url) URL.revokeObjectURL(item.url);
+      threads.forEach((t) => {
+        t.mediaPreviews?.forEach((item) => {
+          if (item?.url) URL.revokeObjectURL(item.url);
+        });
       });
-      setMediaFiles([]);
-      setMediaPreviews([]);
-      setContent('');
-      setImageUrl('');
+      setThreads([createEmptyThread()]);
       setSelectedTopic('');
       onClose();
     } catch (err) {
@@ -244,13 +456,9 @@ export default function CreatePostModal({
     }
   };
 
-  const handleAddThread = () => {
-    if (content.trim()) {
-      setThreadList([...threadList, content.trim()]);
-      setContent('');
-      textareaRef.current?.focus();
-    }
-  };
+  const hasValidContent = threads.some(
+    (t) => t.content.trim() || (t.mediaFiles && t.mediaFiles.length > 0) || t.imageUrl
+  );
 
   // Container modal nội dung
   const modalContent = (
@@ -286,28 +494,33 @@ export default function CreatePostModal({
           </button>
         )}
 
-        {/* Tiêu đề New thread ở giữa */}
+        {/* Tiêu đề New thread / Reply / Quote ở giữa */}
         <h2 className="text-base font-bold tracking-tight absolute left-1/2 -translate-x-1/2 text-white">
-          {t('createPost.newThread', 'New thread')}
+          {isReplyModal || replyToPost
+            ? t('createPost.reply', 'Reply')
+            : quotedPost
+              ? t('createPost.quote', 'Quote')
+              : t('createPost.newThread', 'New thread')}
         </h2>
 
         {/* Icon Bản nháp (Drafts) & Icon More (...) trong vòng tròn */}
         <div className="flex items-center gap-2.5">
-          {/* Icon file nháp có góc gập */}
-          <button
-            type="button"
-            className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            title="Bản nháp"
-            aria-label="Bản nháp"
-          >
-            <svg
-              className="w-5 h-5 fill-none stroke-current stroke-2"
-              viewBox="0 0 24 24"
+          {!isReplyModal && !replyToPost && (
+            <button
+              type="button"
+              className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              title="Bản nháp"
+              aria-label="Bản nháp"
             >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5 fill-none stroke-current stroke-2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </button>
+          )}
 
           {/* Icon More (...) trong vòng tròn */}
           <button
@@ -324,307 +537,323 @@ export default function CreatePostModal({
       </div>
 
       {/* 2. Body Soạn thảo Thread */}
-      <form onSubmit={handleSubmit} className="p-4 sm:p-5 flex flex-col space-y-3">
-        {/* Thread trước đó nếu đã bấm Add to thread */}
-        {threadList.map((threadText, idx) => (
-          <div key={idx} className="flex gap-3">
-            <div className="flex flex-col items-center">
+      <form
+        onSubmit={handleSubmit}
+        className="p-4 sm:p-5 flex flex-col space-y-3 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-zinc-700"
+      >
+        {/* Post được reply nếu có (Reply modal) */}
+        {replyToPost && (
+          <div className="flex gap-3 items-start select-none">
+            <div className="flex flex-col items-center shrink-0 self-stretch">
               <img
-                src={avatarUrl}
-                alt={username}
+                src={replyToPost.author?.avatar || getAuthorAvatar(replyToPost.author)}
+                alt={replyToPost.author?.username || 'user'}
                 className="w-9 h-9 rounded-full object-cover border border-zinc-800 shrink-0"
               />
-              <div className="w-0.5 bg-zinc-800 flex-1 my-1" />
+              <div className="w-[1.5px] bg-zinc-800/90 flex-1 my-1.5 min-h-6" />
             </div>
-            <div className="flex-1 text-xs text-zinc-300 bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-800">
-              {threadText}
+            <div className="flex-1 min-w-0 pb-1">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-sm text-white">
+                  {replyToPost.author?.username || 'user'}
+                </span>
+                <span className="text-xs text-zinc-500">
+                  {replyToPost.timestamp}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-zinc-300 whitespace-pre-line leading-relaxed">
+                {replyToPost.content}
+                {showBadge && (
+                  <span className="inline-flex items-center text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full select-none ml-2">
+                    1/{totalCount}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
-        ))}
+        )}
 
-        {/* Thread hiện tại đang viết */}
-        <div className="flex gap-3 items-start">
-          {/* Cột Avatar và đường kết nối xuống dưới */}
-          <div className="flex flex-col items-center shrink-0 self-stretch">
-            <img
-              src={avatarUrl}
-              alt={username}
-              className="w-9 h-9 rounded-full object-cover border border-zinc-800 shrink-0"
-            />
-            {/* Đường kết nối thread */}
-            <div className="w-[1.5px] bg-zinc-800/90 flex-1 my-1.5 min-h-10" />
-          </div>
+        {/* Danh sách các bài trong chuỗi Threads */}
+        {threads.map((threadItem, idx) => {
+          const threadIndexNumber = (hasParent ? 1 : 0) + idx + 1;
+          const isFirstItem = idx === 0;
 
-          {/* Cột Nội dung */}
-          <div className="flex-1 min-w-0">
-            {/* Username & Topic Selector */}
-            <div className="flex items-center gap-1.5 mb-1.5 relative">
-              <span className="text-sm font-bold text-white hover:underline cursor-pointer">
-                {username}
-              </span>
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-              <button
-                type="button"
-                onClick={() => setShowTopicPicker((prev) => !prev)}
-                className="text-[13px] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer truncate max-w-50"
-              >
-                {selectedTopic || 'Community or topic'}
-              </button>
+          return (
+            <div key={threadItem.id || idx} className="flex gap-3 items-start">
+              {/* Cột Avatar và đường kết nối xuống dưới */}
+              <div className="flex flex-col items-center shrink-0 self-stretch">
+                <img
+                  src={avatarUrl}
+                  alt={username}
+                  className="w-9 h-9 rounded-full object-cover border border-zinc-800 shrink-0"
+                />
+                {/* Đường kết nối thread kéo dài xuống bài tiếp theo hoặc nút Add to thread */}
+                <div className="w-[1.5px] bg-zinc-800/90 flex-1 my-1.5 min-h-10" />
+              </div>
 
-              {/* Popover chọn Topic */}
-              {showTopicPicker && (
-                <div className="absolute left-16 top-6 z-50 bg-[#1e1e1e] border border-zinc-700/80 rounded-2xl p-2 shadow-2xl w-52 space-y-1 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-400 uppercase">
-                    Select Topic
+              {/* Cột Nội dung */}
+              <div className="flex-1 min-w-0">
+                {/* Header: Username & Topic Selector (nếu là bài đầu) & Badge [i/N] & Nút Xóa (X) */}
+                <div className="flex items-center justify-between mb-1.5 relative">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                    <span className="text-sm font-bold text-white hover:underline cursor-pointer">
+                      {username}
+                    </span>
+
+                    {/* Chỉ bài đầu tiên mới có Topic Selector */}
+                    {isFirstItem && (
+                      <>
+                        <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <button
+                          type="button"
+                          onClick={() => setShowTopicPicker((prev) => !prev)}
+                          className="text-[13px] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer truncate max-w-44"
+                        >
+                          {selectedTopic || 'Community or topic'}
+                        </button>
+                      </>
+                    )}
+
+                    {/* Badge đếm thread [i/N] */}
+                    {showBadge && (
+                      <span className="text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full select-none ml-1">
+                        {threadIndexNumber}/{totalCount}
+                      </span>
+                    )}
                   </div>
-                  {availableTopics.map((top) => (
-                    <button
-                      key={top}
-                      type="button"
-                      onClick={() => {
-                        setSelectedTopic(top);
-                        setShowTopicPicker(false);
-                      }}
-                      className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium hover:bg-zinc-800 text-zinc-200 hover:text-white transition-colors cursor-pointer"
-                    >
-                      {top}
-                    </button>
-                  ))}
-                  {selectedTopic && (
+
+                  {/* Nút Xóa bài viết khỏi chuỗi thread (từ bài thứ 2 trở đi) */}
+                  {!isFirstItem && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedTopic('');
-                        setShowTopicPicker(false);
-                      }}
-                      className="w-full text-left px-2.5 py-1 text-xs text-red-400 hover:bg-zinc-800 rounded-xl"
+                      onClick={() => handleRemoveThread(idx)}
+                      className="p-1 -mr-1 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                      title="Xóa bài này khỏi chuỗi thread"
+                      aria-label="Xóa bài này khỏi chuỗi thread"
                     >
-                      Clear topic
+                      <X className="w-4 h-4 stroke-[2]" />
                     </button>
                   )}
+
+                  {/* Popover chọn Topic (cho bài đầu) */}
+                  {isFirstItem && showTopicPicker && (
+                    <div className="absolute left-16 top-6 z-50 bg-[#1e1e1e] border border-zinc-700/80 rounded-2xl p-2 shadow-2xl w-52 space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-400 uppercase">
+                        Select Topic
+                      </div>
+                      {availableTopics.map((top) => (
+                        <button
+                          key={top}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTopic(top);
+                            setShowTopicPicker(false);
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium hover:bg-zinc-800 text-zinc-200 hover:text-white transition-colors cursor-pointer"
+                        >
+                          {top}
+                        </button>
+                      ))}
+                      {selectedTopic && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTopic('');
+                            setShowTopicPicker(false);
+                          }}
+                          className="w-full text-left px-2.5 py-1 text-xs text-red-400 hover:bg-zinc-800 rounded-xl"
+                        >
+                          Clear topic
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Input Văn bản */}
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={placeholderText}
-              rows={3}
-              className="w-full bg-transparent resize-none text-[15px] placeholder-zinc-500 text-white focus:outline-none leading-relaxed"
-            />
-
-            {/* Hidden file input for uploading media files */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              multiple
-              accept="image/*,video/*"
-              className="hidden"
-              onChange={handleFilesSelect}
-            />
-
-            {/* Preview danh sách file đã chọn (mediaPreviews) */}
-            {mediaPreviews.length > 0 && (
-              <div className="flex gap-2.5 mt-2.5 overflow-x-auto pb-2 scrollbar-none">
-                {mediaPreviews.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="relative shrink-0 w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 group"
-                  >
-                    {item.type === 'video' ? (
-                      <video
-                        src={item.url}
-                        className="w-full h-full object-cover"
-                        controls={false}
-                      />
-                    ) : (
-                      <img
-                        src={item.url}
-                        alt="Upload preview"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMedia(idx)}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md"
-                      title="Xóa tệp"
-                    >
-                      <X className="w-3.5 h-3.5 stroke-[2.5]" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Preview Ảnh dán từ URL (nếu có) */}
-            {imageUrl && mediaPreviews.length === 0 && (
-              <div className="relative mt-2 rounded-2xl overflow-hidden border border-zinc-800 max-h-56 group">
-                <img
-                  src={imageUrl}
-                  alt="Attached media"
-                  className="w-full h-auto object-cover max-h-56"
+                {/* Input Văn bản */}
+                <textarea
+                  ref={(el) => (textareaRefs.current[idx] = el)}
+                  value={threadItem.content}
+                  onChange={(e) => handleUpdateThreadContent(idx, e.target.value)}
+                  placeholder={isFirstItem ? placeholderText : 'Say more...'}
+                  rows={2}
+                  className="w-full bg-transparent resize-none text-[15px] placeholder-zinc-500 text-white focus:outline-none leading-relaxed"
                 />
-                <button
-                  type="button"
-                  onClick={() => setImageUrl('')}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black transition-colors cursor-pointer"
-                  title="Xóa ảnh"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
 
-            {/* Input dán URL hình ảnh */}
-            {showImageInput && !imageUrl && mediaPreviews.length === 0 && (
-              <div className="mt-2 flex items-center gap-2 animate-in fade-in duration-150">
+                {/* Hidden file input for uploading media files */}
                 <input
-                  type="url"
-                  placeholder="Paste image URL..."
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="flex-1 px-3 py-1.5 text-xs bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none"
+                  type="file"
+                  ref={(el) => (fileInputRefs.current[idx] = el)}
+                  multiple
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={(e) => handleFilesSelect(idx, e)}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowImageInput(false)}
-                  className="text-xs text-zinc-400 hover:text-white cursor-pointer"
-                >
-                  Close
-                </button>
+
+                {/* Preview danh sách file đã chọn (mediaPreviews) */}
+                {threadItem.mediaPreviews?.length > 0 && (
+                  <div className="flex gap-2.5 mt-2.5 overflow-x-auto pb-2 scrollbar-none">
+                    {threadItem.mediaPreviews.map((item, mIdx) => (
+                      <div
+                        key={mIdx}
+                        className="relative shrink-0 w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 group"
+                      >
+                        {item.type === 'video' ? (
+                          <video
+                            src={item.url}
+                            className="w-full h-full object-cover"
+                            controls={false}
+                          />
+                        ) : (
+                          <img
+                            src={item.url}
+                            alt="Upload preview"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMedia(idx, mIdx)}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md"
+                          title="Xóa tệp"
+                        >
+                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Toolbar 9 icons chuẩn Threads */}
+                <div className="flex items-center gap-3.5 mt-2 text-zinc-500">
+                  {/* 1. Image / Video picker */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRefs.current[idx]?.click()}
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add Image or Video"
+                  >
+                    <Image className="w-5 h-5" />
+                  </button>
+
+                  {/* 2. GIF */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add GIF"
+                  >
+                    <span className="text-[10px] font-black tracking-tight border border-current rounded px-1 py-0.5 leading-none select-none inline-block">
+                      GIF
+                    </span>
+                  </button>
+
+                  {/* 3. Smile */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add Emoji"
+                  >
+                    <Smile className="w-5 h-5" />
+                  </button>
+
+                  {/* 4. Sticker / Sticky note */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add Sticker"
+                  >
+                    <svg
+                      className="w-5 h-5 fill-none stroke-current stroke-2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <path d="M14 2v6h6" />
+                      <circle cx="10" cy="13" r="1" fill="currentColor" />
+                      <path d="M9 16c.8.5 1.6.5 2.4 0" />
+                    </svg>
+                  </button>
+
+                  {/* 5. Poll / Bars */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Create Poll"
+                  >
+                    <svg
+                      className="w-5 h-5 fill-none stroke-current stroke-2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M4 6h16" />
+                      <path d="M4 12h10" />
+                      <path d="M4 18h14" />
+                    </svg>
+                  </button>
+
+                  {/* 6. Quote */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add Quote"
+                  >
+                    <Quote className="w-5 h-5" />
+                  </button>
+
+                  {/* 7. Checklist / List */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add Checklist"
+                  >
+                    <svg
+                      className="w-5 h-5 fill-none stroke-current stroke-2"
+                      viewBox="0 0 24 24"
+                    >
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <path d="M7 8h10" />
+                      <path d="M7 12h10" />
+                      <path d="M7 16h6" />
+                    </svg>
+                  </button>
+
+                  {/* 8. Map Pin */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add Location"
+                  >
+                    <MapPin className="w-5 h-5" />
+                  </button>
+
+                  {/* 9. Music note */}
+                  <button
+                    type="button"
+                    className="hover:text-zinc-300 transition-colors cursor-pointer"
+                    title="Add Audio"
+                  >
+                    <Music className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Quoted Post Card (nếu đang ở chế độ Quote và là bài đầu tiên) */}
+                {isFirstItem && quotedPost && (
+                  <div className="mt-3">
+                    <QuotedPostCard post={quotedPost} />
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* Toolbar 9 icons chuẩn Threads */}
-            <div className="flex items-center gap-3.5 mt-2.5 text-zinc-500">
-              {/* 1. Image / Video picker */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Image or Video"
-              >
-                <Image className="w-5 h-5" />
-              </button>
-
-              {/* 2. GIF */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add GIF"
-              >
-                <span className="text-[10px] font-black tracking-tight border border-current rounded px-1 py-0.5 leading-none select-none inline-block">
-                  GIF
-                </span>
-              </button>
-
-              {/* 3. Smile */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Emoji"
-              >
-                <Smile className="w-5 h-5" />
-              </button>
-
-              {/* 4. Sticker / Sticky note */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Sticker"
-              >
-                <svg
-                  className="w-5 h-5 fill-none stroke-current stroke-2"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <path d="M14 2v6h6" />
-                  <circle cx="10" cy="13" r="1" fill="currentColor" />
-                  <path d="M9 16c.8.5 1.6.5 2.4 0" />
-                </svg>
-              </button>
-
-              {/* 5. Poll / Bars */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Create Poll"
-              >
-                <svg
-                  className="w-5 h-5 fill-none stroke-current stroke-2"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M4 6h16" />
-                  <path d="M4 12h10" />
-                  <path d="M4 18h14" />
-                </svg>
-              </button>
-
-              {/* 6. Quote */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Quote"
-              >
-                <Quote className="w-5 h-5" />
-              </button>
-
-              {/* 7. Checklist / List */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Checklist"
-              >
-                <svg
-                  className="w-5 h-5 fill-none stroke-current stroke-2"
-                  viewBox="0 0 24 24"
-                >
-                  <rect x="3" y="4" width="18" height="16" rx="2" />
-                  <path d="M7 8h10" />
-                  <path d="M7 12h10" />
-                  <path d="M7 16h6" />
-                </svg>
-              </button>
-
-              {/* 8. Map Pin */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Location"
-              >
-                <MapPin className="w-5 h-5" />
-              </button>
-
-              {/* 9. Music note */}
-              <button
-                type="button"
-                className="hover:text-zinc-300 transition-colors cursor-pointer"
-                title="Add Audio"
-              >
-                <Music className="w-5 h-5" />
-              </button>
             </div>
-
-            {/* Quoted Post Card (nếu đang ở chế độ Quote) */}
-            {quotedPost && (
-              <div className="mt-3">
-                <QuotedPostCard post={quotedPost} />
-              </div>
-            )}
-          </div>
-        </div>
+          );
+        })}
 
         {/* Hàng: Avatar nhỏ + 'Add to thread' */}
         <div className="flex items-center gap-3 pt-1">
-          <img
-            src={avatarUrl}
-            alt={username}
-            className="w-5 h-5 rounded-full object-cover border border-zinc-800 opacity-60 ml-2"
-          />
+          <div className="flex flex-col items-center shrink-0 w-9">
+            <img
+              src={avatarUrl}
+              alt={username}
+              className="w-5 h-5 rounded-full object-cover border border-zinc-800 opacity-60"
+            />
+          </div>
           <button
             type="button"
             onClick={handleAddThread}
@@ -635,7 +864,7 @@ export default function CreatePostModal({
         </div>
 
         {/* 3. Footer Options: [††] Post options & Nút Post */}
-        <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between relative">
+        <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between relative shrink-0">
           {/* Post options */}
           <div className="relative">
             <button
@@ -702,9 +931,9 @@ export default function CreatePostModal({
           {/* Nút Post */}
           <button
             type="submit"
-            disabled={(!content.trim() && mediaFiles.length === 0 && !imageUrl) || isSubmitting}
+            disabled={!hasValidContent || isSubmitting}
             className={`px-5 py-1.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
-              (content.trim() || mediaFiles.length > 0 || imageUrl) && !isSubmitting
+              hasValidContent && !isSubmitting
                 ? 'bg-white text-black hover:opacity-90 active:scale-95 cursor-pointer shadow-sm'
                 : 'bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-60'
             }`}

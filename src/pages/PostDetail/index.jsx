@@ -36,6 +36,7 @@ import { getAuthorAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
 import PostMenu from '@/components/post/PostMenu';
 import CreatePostModal from '@/components/post/CreatePostModal';
+import ReplyModal from '@/components/post/ReplyModal';
 import EditPostModal from '@/components/post/EditPostModal';
 import DeletePostConfirmModal from '@/components/post/DeletePostConfirmModal';
 import EmbedModal from '@/components/post/EmbedModal';
@@ -80,6 +81,7 @@ export default function PostDetailPage() {
 
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('bottom-right');
   const showToast = (msg) => {
     window.dispatchEvent(
@@ -442,8 +444,13 @@ export default function PostDetailPage() {
                     type="button"
                     title="Mở rộng"
                     onClick={() => {
-                      setCreateModalPlacement('center');
-                      setIsCreateModalOpen(true);
+                      if (!isAuthenticated) {
+                        window.dispatchEvent(
+                          new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
+                        );
+                        return;
+                      }
+                      setIsReplyModalOpen(true);
                     }}
                     className="hover:text-black dark:hover:text-white transition-colors cursor-pointer"
                   >
@@ -479,38 +486,61 @@ export default function PostDetailPage() {
                   Chưa có câu trả lời nào. Hãy là người đầu tiên trả lời!
                 </div>
               ) : (
-                replies.map((reply) => (
-                  <ReplyItem
-                    key={reply.id}
-                    reply={reply}
-                    currentUser={currentUser}
-                    onToast={showToast}
-                    isAuthenticated={isAuthenticated}
-                    onQuoteReply={(target) => {
-                      setQuoteTargetPost(target);
-                      setCreateModalPlacement('center');
-                      setIsCreateModalOpen(true);
-                    }}
-                    onUpdateReply={(updated) => {
-                      setReplies((prev) =>
-                        prev.map((r) =>
-                          r.id === updated.postId ? { ...r, ...updated } : r
-                        )
-                      );
-                    }}
-                    onDeleteReply={(replyId) => {
-                      setReplies((prev) => prev.filter((r) => r.id !== replyId));
-                      setPost((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              comments: Math.max(0, (prev.comments || 1) - 1),
-                            }
-                          : prev
-                      );
-                    }}
-                  />
-                ))
+                replies.map((reply, idx) => {
+                  const prevReply = replies[idx - 1];
+                  const nextReply = replies[idx + 1];
+                  const isChainedWithPrev = Boolean(
+                    prevReply &&
+                      ((prevReply.threadId && prevReply.threadId === reply.threadId) ||
+                        (prevReply.hasConnector &&
+                          prevReply.author?.username === reply.author?.username))
+                  );
+                  const hasConnector = Boolean(
+                    reply.hasConnector ??
+                      (nextReply &&
+                        ((nextReply.threadId && nextReply.threadId === reply.threadId) ||
+                          (reply.threadBadge &&
+                            nextReply.threadBadge &&
+                            reply.author?.username === nextReply.author?.username)))
+                  );
+
+                  return (
+                    <div
+                      key={reply.id}
+                      className={isChainedWithPrev ? '!border-t-0' : ''}
+                    >
+                      <ReplyItem
+                        reply={{ ...reply, hasConnector }}
+                        currentUser={currentUser}
+                        onToast={showToast}
+                        isAuthenticated={isAuthenticated}
+                        onQuoteReply={(target) => {
+                          setQuoteTargetPost(target);
+                          setCreateModalPlacement('center');
+                          setIsCreateModalOpen(true);
+                        }}
+                        onUpdateReply={(updated) => {
+                          setReplies((prev) =>
+                            prev.map((r) =>
+                              r.id === updated.postId ? { ...r, ...updated } : r
+                            )
+                          );
+                        }}
+                        onDeleteReply={(replyId) => {
+                          setReplies((prev) => prev.filter((r) => r.id !== replyId));
+                          setPost((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  comments: Math.max(0, (prev.comments || 1) - 1),
+                                }
+                              : prev
+                          );
+                        }}
+                      />
+                    </div>
+                  );
+                })
               )}
             </div>
           </main>
@@ -564,6 +594,31 @@ export default function PostDetailPage() {
         currentUser={currentUser}
         quotedPost={quoteTargetPost}
         placement={createModalPlacement}
+      />
+
+      {/* Modal Trả lời bài viết (Reply Modal reusing CreatePostModal) */}
+      <ReplyModal
+        isOpen={isReplyModalOpen}
+        onClose={() => setIsReplyModalOpen(false)}
+        currentUser={currentUser}
+        replyToPost={post}
+        initialContent={replyInput}
+        onReplySuccess={(newReplies) => {
+          const replyList = Array.isArray(newReplies) ? newReplies : [newReplies];
+          setReplies((prev) => [...replyList, ...prev]);
+          setReplyInput('');
+          setPost((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  comments: (prev.comments || 0) + replyList.length,
+                  threadBadge: replyList[0]?.threadTotal
+                    ? `1/${replyList[0].threadTotal}`
+                    : prev.threadBadge,
+                }
+              : prev
+          );
+        }}
       />
     </div>
   );
@@ -881,7 +936,7 @@ function ReplyItem({
     >
       <div className="flex gap-3">
         {/* Cột Avatar & Đường chỉ dọc (Thread connector line) */}
-        <div className="flex flex-col items-center shrink-0">
+        <div className="flex flex-col items-center shrink-0 self-stretch">
           <div className="relative">
             <img
               src={reply.author?.avatar || getAuthorAvatar(reply.author)}
@@ -916,7 +971,7 @@ function ReplyItem({
             )}
           </div>
           {reply.hasConnector && (
-            <div className="w-0.5 bg-zinc-200 dark:bg-zinc-800 flex-1 my-1.5 rounded-full" />
+            <div className="w-[1.5px] bg-zinc-300 dark:bg-zinc-800 flex-1 my-1.5" />
           )}
         </div>
 
@@ -1012,7 +1067,14 @@ function ReplyItem({
 
           {/* Nội dung phản hồi */}
           <div className="mt-1.5 text-sm sm:text-[15px] leading-relaxed text-zinc-900 dark:text-zinc-100">
-            <p className="whitespace-pre-line inline">{reply.content}</p>
+            <p className="whitespace-pre-line inline">
+              {reply.content}
+              {reply.threadBadge && (
+                <span className="inline-flex items-center text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full select-none ml-2 align-middle">
+                  {reply.threadBadge}
+                </span>
+              )}
+            </p>
             {reply.media && (
               <div className="mt-2">
                 <PostContent media={reply.media} />

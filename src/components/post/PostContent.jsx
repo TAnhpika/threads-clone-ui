@@ -1,4 +1,4 @@
-export default function PostContent({ text, media }) {
+export default function PostContent({ text, media, threadBadge }) {
   const urls = media?.urls || (media?.url ? [media.url] : []);
 
   return (
@@ -7,6 +7,11 @@ export default function PostContent({ text, media }) {
       {text && (
         <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-line leading-relaxed break-words">
           {text}
+          {threadBadge && (
+            <span className="inline-flex items-center text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full select-none ml-2 align-middle">
+              {threadBadge}
+            </span>
+          )}
         </p>
       )}
 

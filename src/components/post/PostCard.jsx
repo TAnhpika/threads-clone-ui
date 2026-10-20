@@ -347,7 +347,11 @@ export default function PostCard({
 
             {/* 2. Nội dung bài viết (Text + Media) */}
             <div className={isDetail ? "mt-3" : "pl-13"}>
-                <PostContent text={post.content} media={post.media} />
+                <PostContent
+                    text={post.content}
+                    media={post.media}
+                    threadBadge={post.threadBadge}
+                />
 
                 {/* 2.1. Card bài viết trích dẫn (nếu có) */}
                 {post.quotedPost && (
