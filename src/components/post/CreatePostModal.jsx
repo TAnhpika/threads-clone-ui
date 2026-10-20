@@ -17,6 +17,7 @@ import {
   ChevronRight,
   MoreHorizontal,
   Plus,
+  AlertCircle,
 } from 'lucide-react';
 
 export default function CreatePostModal({
@@ -155,25 +156,77 @@ export default function CreatePostModal({
   }, [isOpen, onClose]);
 
   const handleFilesSelect = (index, e) => {
-    const selected = Array.from(e.target.files || []);
-    if (selected.length === 0) return;
+    const rawSelected = Array.from(e.target.files || []);
+    if (rawSelected.length === 0) return;
 
-    const newPreviews = selected.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-      type: file.type.startsWith('video/') ? 'video' : 'image',
-    }));
+    const validFiles = [];
+    const newPreviews = [];
 
+    for (const file of rawSelected) {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
+        window.dispatchEvent(
+          new CustomEvent('app-toast', {
+            detail: { message: `Tệp "${file.name}" không đúng định dạng ảnh hoặc video.` },
+          })
+        );
+        continue;
+      }
+
+      // Giới hạn dung lượng: 25MB cho ảnh, 50MB cho video
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 25 * 1024 * 1024;
+      if (file.size > maxSize) {
+        window.dispatchEvent(
+          new CustomEvent('app-toast', {
+            detail: {
+              message: `Tệp "${file.name}" vượt quá dung lượng tối đa (${isVideo ? '50MB' : '25MB'}).`,
+            },
+          })
+        );
+        continue;
+      }
+
+      validFiles.push(file);
+      newPreviews.push({
+        file,
+        url: URL.createObjectURL(file),
+        type: isVideo ? 'video' : 'image',
+        hasError: false,
+      });
+    }
+
+    if (validFiles.length > 0) {
+      setThreads((prev) => {
+        const next = [...prev];
+        next[index] = {
+          ...next[index],
+          mediaFiles: [...(next[index].mediaFiles || []), ...validFiles],
+          mediaPreviews: [...(next[index].mediaPreviews || []), ...newPreviews],
+        };
+        return next;
+      });
+    }
+    e.target.value = '';
+  };
+
+  const handleMediaLoadError = (threadIndex, mediaIndex) => {
     setThreads((prev) => {
       const next = [...prev];
-      next[index] = {
-        ...next[index],
-        mediaFiles: [...(next[index].mediaFiles || []), ...selected],
-        mediaPreviews: [...(next[index].mediaPreviews || []), ...newPreviews],
+      const target = next[threadIndex];
+      if (!target || !target.mediaPreviews?.[mediaIndex]) return prev;
+      const updatedPreviews = [...target.mediaPreviews];
+      updatedPreviews[mediaIndex] = {
+        ...updatedPreviews[mediaIndex],
+        hasError: true,
+      };
+      next[threadIndex] = {
+        ...target,
+        mediaPreviews: updatedPreviews,
       };
       return next;
     });
-    e.target.value = '';
   };
 
   const handleRemoveMedia = (threadIndex, mediaIndex) => {
@@ -225,6 +278,14 @@ export default function CreatePostModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (hasAnyMediaError) {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: { message: 'Vui lòng xóa các tệp bị lỗi trước khi đăng.' },
+        })
+      );
+      return;
+    }
     const validThreads = threads.filter(
       (t) => t.content.trim() || (t.mediaFiles && t.mediaFiles.length > 0) || t.imageUrl
     );
@@ -459,9 +520,15 @@ export default function CreatePostModal({
     }
   };
 
-  const hasValidContent = threads.some(
-    (t) => t.content.trim() || (t.mediaFiles && t.mediaFiles.length > 0) || t.imageUrl
+  const hasAnyMediaError = threads.some((t) =>
+    t.mediaPreviews?.some((p) => p.hasError)
   );
+
+  const hasValidContent =
+    !hasAnyMediaError &&
+    threads.some(
+      (t) => t.content.trim() || (t.mediaFiles && t.mediaFiles.length > 0) || t.imageUrl
+    );
 
   // Container modal nội dung
   const modalContent = (
@@ -699,25 +766,42 @@ export default function CreatePostModal({
                     {threadItem.mediaPreviews.map((item, mIdx) => (
                       <div
                         key={mIdx}
-                        className="relative shrink-0 w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 group"
+                        className={`relative shrink-0 w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border ${
+                          item.hasError
+                            ? 'border-red-500 bg-red-950/40 ring-1 ring-red-500/60'
+                            : 'border-zinc-800 bg-zinc-900'
+                        } group`}
                       >
                         {item.type === 'video' ? (
                           <video
                             src={item.url}
-                            className="w-full h-full object-cover"
+                            className={`w-full h-full object-cover ${item.hasError ? 'opacity-25' : ''}`}
                             controls={false}
+                            onError={() => handleMediaLoadError(idx, mIdx)}
                           />
                         ) : (
                           <img
                             src={item.url}
                             alt="Upload preview"
-                            className="w-full h-full object-cover"
+                            className={`w-full h-full object-cover ${item.hasError ? 'opacity-25' : ''}`}
+                            onError={() => handleMediaLoadError(idx, mIdx)}
                           />
+                        )}
+                        {item.hasError && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center pointer-events-none bg-black/40">
+                            <AlertCircle className="w-7 h-7 text-red-500 mb-1 animate-pulse" />
+                            <span className="text-xs font-bold text-red-300">
+                              Tệp bị lỗi
+                            </span>
+                            <span className="text-[10px] text-red-400 mt-0.5">
+                              Xóa để tiếp tục
+                            </span>
+                          </div>
                         )}
                         <button
                           type="button"
                           onClick={() => handleRemoveMedia(idx, mIdx)}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md"
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md z-10"
                           title="Xóa tệp"
                         >
                           <X className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -934,7 +1018,7 @@ export default function CreatePostModal({
           {/* Nút Post */}
           <button
             type="submit"
-            disabled={!hasValidContent || isSubmitting}
+            disabled={!hasValidContent || hasAnyMediaError || isSubmitting}
             className={`px-5 py-1.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
               hasValidContent && !isSubmitting
                 ? 'bg-white text-black hover:opacity-90 active:scale-95 cursor-pointer shadow-sm'

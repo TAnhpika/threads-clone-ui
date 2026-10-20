@@ -17,6 +17,7 @@ import {
   Check,
   ArrowUp,
   X,
+  AlertCircle,
 } from 'lucide-react';
 import copy from 'copy-to-clipboard';
 import { RadialSpinner } from '@/components/common/GlobalToast';
@@ -169,18 +170,51 @@ export default function PostDetailPage() {
       );
       return;
     }
-    const selected = Array.from(e.target.files || []);
-    if (selected.length === 0) return;
+    const rawSelected = Array.from(e.target.files || []);
+    if (rawSelected.length === 0) return;
 
-    const newPreviews = selected.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-      type: file.type.startsWith('video/') ? 'video' : 'image',
-    }));
+    const validFiles = [];
+    const newPreviews = [];
 
-    setReplyMediaFiles((prev) => [...prev, ...selected]);
-    setReplyMediaPreviews((prev) => [...prev, ...newPreviews]);
+    for (const file of rawSelected) {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
+        showToast(`Tệp "${file.name}" không đúng định dạng ảnh hoặc video.`);
+        continue;
+      }
+
+      // Giới hạn dung lượng: 25MB cho ảnh, 50MB cho video
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 25 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast(`Tệp "${file.name}" vượt quá dung lượng tối đa (${isVideo ? '50MB' : '25MB'}).`);
+        continue;
+      }
+
+      validFiles.push(file);
+      newPreviews.push({
+        file,
+        url: URL.createObjectURL(file),
+        type: isVideo ? 'video' : 'image',
+        hasError: false,
+      });
+    }
+
+    if (validFiles.length > 0) {
+      setReplyMediaFiles((prev) => [...prev, ...validFiles]);
+      setReplyMediaPreviews((prev) => [...prev, ...newPreviews]);
+    }
     e.target.value = '';
+  };
+
+  const handleReplyMediaLoadError = (index) => {
+    setReplyMediaPreviews((prev) => {
+      if (!prev[index]) return prev;
+      const next = [...prev];
+      next[index] = { ...next[index], hasError: true };
+      return next;
+    });
   };
 
   const handleRemoveReplyMedia = (indexToRemove) => {
@@ -191,6 +225,8 @@ export default function PostDetailPage() {
     });
     setReplyMediaFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
+
+  const hasReplyMediaError = replyMediaPreviews.some((item) => item.hasError);
 
   // Dọn dẹp URL preview khi unmount hoặc đổi ảnh
   useEffect(() => {
@@ -210,6 +246,10 @@ export default function PostDetailPage() {
   };
 
   const submitReply = async () => {
+    if (hasReplyMediaError) {
+      showToast('Vui lòng xóa các tệp bị lỗi trước khi đăng.');
+      return;
+    }
     const hasContent = replyInput.trim().length > 0;
     const hasMedia = replyMediaFiles.length > 0;
     if ((!hasContent && !hasMedia) || isSubmittingReply) return;
@@ -539,13 +579,23 @@ export default function PostDetailPage() {
                       <button
                         type="button"
                         onClick={submitReply}
-                        disabled={isSubmittingReply || (!replyInput.trim() && replyMediaFiles.length === 0)}
+                        disabled={
+                          isSubmittingReply ||
+                          (!replyInput.trim() && replyMediaFiles.length === 0) ||
+                          hasReplyMediaError
+                        }
                         className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                          isSubmittingReply
+                          isSubmittingReply || hasReplyMediaError
                             ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
                             : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-85 active:scale-95 cursor-pointer shadow-xs'
                         }`}
-                        title={isSubmittingReply ? 'Đang gửi...' : 'Đăng câu trả lời'}
+                        title={
+                          hasReplyMediaError
+                            ? 'Vui lòng xóa tệp bị lỗi'
+                            : isSubmittingReply
+                            ? 'Đang gửi...'
+                            : 'Đăng câu trả lời'
+                        }
                       >
                         {isSubmittingReply ? (
                           <RadialSpinner className="w-4 h-4 text-zinc-400" />
@@ -563,25 +613,39 @@ export default function PostDetailPage() {
                     {replyMediaPreviews.map((item, mIdx) => (
                       <div
                         key={mIdx}
-                        className="relative shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-200 dark:bg-zinc-900 group"
+                        className={`relative shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border ${
+                          item.hasError
+                            ? 'border-red-500 bg-red-950/40 ring-1 ring-red-500/60'
+                            : 'border-zinc-200 dark:border-zinc-800 bg-zinc-200 dark:bg-zinc-900'
+                        } group`}
                       >
                         {item.type === 'video' ? (
                           <video
                             src={item.url}
-                            className="w-full h-full object-cover"
+                            className={`w-full h-full object-cover ${item.hasError ? 'opacity-25' : ''}`}
                             controls={false}
+                            onError={() => handleReplyMediaLoadError(mIdx)}
                           />
                         ) : (
                           <img
                             src={item.url}
                             alt="Upload preview"
-                            className="w-full h-full object-cover"
+                            className={`w-full h-full object-cover ${item.hasError ? 'opacity-25' : ''}`}
+                            onError={() => handleReplyMediaLoadError(mIdx)}
                           />
+                        )}
+                        {item.hasError && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none bg-black/40">
+                            <AlertCircle className="w-5 h-5 text-red-500 mb-0.5 animate-pulse" />
+                            <span className="text-[10px] font-bold text-red-300 leading-tight">
+                              Lỗi tệp
+                            </span>
+                          </div>
                         )}
                         <button
                           type="button"
                           onClick={() => handleRemoveReplyMedia(mIdx)}
-                          className="absolute top-1 right-1 p-1 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md"
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md z-10"
                           title="Xóa tệp"
                         >
                           <X className="w-3 h-3 stroke-[2.5]" />
