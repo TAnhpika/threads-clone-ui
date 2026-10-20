@@ -122,31 +122,48 @@ export default function PostDetailPage() {
     setIsLoading(true);
     setIsError(false);
 
+    const postAuthor = username?.replace(/^@/, '');
+
     Promise.allSettled([
       getPostByIdApi(postId),
-      getRepliesApi(postId),
+      getRepliesApi(postId, { postAuthor }),
     ]).then(([postRes, repliesRes]) => {
       if (!isMounted) return;
 
+      let loadedPost = null;
       if (postRes.status === 'fulfilled' && postRes.value) {
-        setPost(postRes.value);
+        loadedPost = postRes.value;
       } else {
         setIsError(true);
       }
 
+      let loadedReplies = [];
       if (repliesRes.status === 'fulfilled' && Array.isArray(repliesRes.value)) {
-        setReplies(repliesRes.value);
-      } else {
-        setReplies([]);
+        loadedReplies = repliesRes.value;
       }
 
+      // Nếu có chuỗi reply xuất phát từ bài viết chính (cùng tác giả), cập nhật threadBadge cho bài viết chính
+      const firstParentChainReply = loadedReplies.find(
+        (r) => r.hasParentPostChain && r.parentThreadTotal
+      );
+      if (loadedPost && firstParentChainReply) {
+        loadedPost = {
+          ...loadedPost,
+          threadBadge: `1/${firstParentChainReply.parentThreadTotal}`,
+        };
+      }
+
+      if (loadedPost) {
+        setPost(loadedPost);
+      }
+      setReplies(loadedReplies);
       setIsLoading(false);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [postId]);
+  }, [postId, username]);
 
   // Tự động focus vào ô nhập bình luận khi click từ nút comment (có hash #reply hoặc state.focusReply)
   useEffect(() => {

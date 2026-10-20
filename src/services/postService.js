@@ -176,16 +176,117 @@ export async function getPostByIdApi(id) {
 }
 
 /**
- * API lấy danh sách bình luận (replies) của một bài viết
- * @param {string|number} postId
+ * Đệ quy lấy chuỗi reply con (nếu có) cùng tác giả hoặc phản hồi lồng nhau
+ * @param {string|number} replyId
+ * @param {string} targetAuthorUsername
+ * @param {number} depth
+ * @param {number} maxDepth
  * @returns {Promise<Array>}
  */
-export async function getRepliesApi(postId) {
+async function fetchReplyChain(replyId, targetAuthorUsername, depth = 1, maxDepth = 10) {
+    if (depth > maxDepth) return [];
+    try {
+        const response = await http.get(`/posts/${replyId}/replies`);
+        const rawList = response?.data || response;
+        const list = Array.isArray(rawList) ? rawList : [];
+        if (list.length === 0) return [];
+
+        const adaptedList = list.map(adaptPost);
+        const result = [];
+
+        for (const child of adaptedList) {
+            result.push(child);
+            if (child.comments > 0) {
+                const subChildren = await fetchReplyChain(
+                    child.id,
+                    targetAuthorUsername,
+                    depth + 1,
+                    maxDepth
+                );
+                result.push(...subChildren);
+            }
+        }
+
+        return result;
+    } catch (error) {
+        console.warn(`Could not fetch child replies for reply ${replyId}:`, error);
+        return [];
+    }
+}
+
+/**
+ * API lấy danh sách bình luận (replies) của một bài viết, tự động đệ quy khôi phục chuỗi thread
+ * @param {string|number} postId
+ * @param {Object} [options]
+ * @param {string} [options.postAuthor] - Username tác giả của bài viết chính
+ * @returns {Promise<Array>}
+ */
+export async function getRepliesApi(postId, { postAuthor = null } = {}) {
     try {
         const response = await http.get(`/posts/${postId}/replies`);
         const rawList = response?.data || response;
         const list = Array.isArray(rawList) ? rawList : [];
-        return list.map(adaptPost);
+        const directReplies = list.map(adaptPost);
+
+        const fullReplies = [];
+
+        for (const reply of directReplies) {
+            if (reply.comments > 0) {
+                const chainChildren = await fetchReplyChain(
+                    reply.id,
+                    reply.author?.username
+                );
+
+                if (chainChildren.length > 0) {
+                    const sameAuthorChain = [];
+                    const others = [];
+
+                    for (const c of chainChildren) {
+                        if (c.author?.username && c.author?.username === reply.author?.username) {
+                            sameAuthorChain.push(c);
+                        } else {
+                            others.push(c);
+                        }
+                    }
+
+                    if (sameAuthorChain.length > 0) {
+                        const wholeChain = [reply, ...sameAuthorChain];
+                        const cleanPostAuthor = postAuthor?.replace(/^@/, "");
+                        const isChainFromPostAuthor = Boolean(
+                            cleanPostAuthor &&
+                            reply.author?.username &&
+                            reply.author?.username === cleanPostAuthor
+                        );
+                        const totalCount = (isChainFromPostAuthor ? 1 : 0) + wholeChain.length;
+                        const threadGroupId = `chain-${reply.id}`;
+
+                        wholeChain.forEach((item, idx) => {
+                            const indexNumber = (isChainFromPostAuthor ? 1 : 0) + idx + 1;
+                            const isLast = idx === wholeChain.length - 1 && others.length === 0;
+                            item.threadBadge = `${indexNumber}/${totalCount}`;
+                            item.threadTotal = totalCount;
+                            item.threadIndex = indexNumber;
+                            item.threadId = threadGroupId;
+                            item.hasConnector = !isLast;
+                            if (isChainFromPostAuthor) {
+                                item.hasParentPostChain = true;
+                                item.parentThreadTotal = totalCount;
+                            }
+                        });
+
+                        fullReplies.push(...wholeChain);
+                        if (others.length > 0) {
+                            fullReplies.push(...others);
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            fullReplies.push(reply);
+        }
+
+        return fullReplies;
     } catch (error) {
         console.warn(`Could not fetch replies for post ${postId}:`, error);
         return [];
