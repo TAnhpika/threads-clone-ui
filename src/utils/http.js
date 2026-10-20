@@ -35,6 +35,13 @@ httpClient.interceptors.request.use(
         if (accessToken) {
             setAuthHeader(config.headers, accessToken);
         }
+        if (config.data instanceof FormData) {
+            if (config.headers?.delete) {
+                config.headers.delete("Content-Type");
+            } else if (config.headers) {
+                delete config.headers["Content-Type"];
+            }
+        }
         return config;
     },
     (error) => Promise.reject(error),

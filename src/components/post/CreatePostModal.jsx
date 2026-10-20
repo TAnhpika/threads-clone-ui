@@ -28,6 +28,8 @@ export default function CreatePostModal({
   replyToPost = null,
   isReplyModal = false,
   initialContent = '',
+  initialMediaFiles = [],
+  initialMediaPreviews = [],
   onReplySuccess,
   placement = 'center', // 'center' | 'bottom-right'
   feedType = 'for_you',
@@ -95,8 +97,8 @@ export default function CreatePostModal({
         {
           id: 'thread-1',
           content: initialContent || '',
-          mediaFiles: [],
-          mediaPreviews: [],
+          mediaFiles: initialMediaFiles || [],
+          mediaPreviews: initialMediaPreviews || [],
           imageUrl: '',
         },
       ]);
@@ -111,20 +113,6 @@ export default function CreatePostModal({
       }, 100);
     } else {
       document.body.style.overflow = 'unset';
-      threads.forEach((t) => {
-        t.mediaPreviews?.forEach((item) => {
-          if (item?.url) URL.revokeObjectURL(item.url);
-        });
-      });
-      setThreads([
-        {
-          id: 'thread-1',
-          content: '',
-          mediaFiles: [],
-          mediaPreviews: [],
-          imageUrl: '',
-        },
-      ]);
       setSelectedTopic('');
       setShowTopicPicker(false);
       setShowPostOptions(false);
@@ -247,7 +235,10 @@ export default function CreatePostModal({
 
     try {
       if (replyToPost?.id) {
+        // 1. Đóng modal ngay lập tức khi click Post
         onClose();
+
+        // 2. Kích hoạt Toast trạng thái đang gửi: [Spinner] Posting...
         window.dispatchEvent(
           new CustomEvent('app-toast', {
             detail: {
@@ -268,7 +259,8 @@ export default function CreatePostModal({
           for (let i = 0; i < validThreads.length; i++) {
             const tItem = validThreads[i];
             const formData = new FormData();
-            formData.append('content', tItem.content.trim());
+            const textContent = tItem.content.trim();
+            formData.append('content', textContent || '.');
             (tItem.mediaFiles || []).forEach((file) => {
               formData.append('media[]', file);
             });
@@ -277,37 +269,38 @@ export default function CreatePostModal({
             }
 
             const response = await createReplyApi(previousPostId, formData);
-            const postData = response?.data || response;
-            const adapted = adaptPost(postData);
+            const serverReply = (response && response.media !== undefined)
+              ? response
+              : adaptPost(response?.data || response);
 
             const threadIndexNumber = (hasParent ? 1 : 0) + i + 1;
             const isLast = i === validThreads.length - 1;
 
             const finalReply = {
-              id: adapted?.id || `reply-${Date.now()}-${i}`,
-              ...(adapted || {}),
+              id: serverReply?.id || `reply-${Date.now()}-${i}`,
+              ...(serverReply || {}),
               author: {
-                ...(adapted?.author || {}),
-                id: (adapted?.author?.id && adapted?.author?.username !== 'user')
-                  ? adapted.author.id
+                ...(serverReply?.author || {}),
+                id: (serverReply?.author?.id && serverReply?.author?.username !== 'user')
+                  ? serverReply.author.id
                   : (currentUser?.id || 'me'),
-                username: (adapted?.author?.username && adapted?.author?.username !== 'user')
-                  ? adapted.author.username
+                username: (serverReply?.author?.username && serverReply?.author?.username !== 'user')
+                  ? serverReply.author.username
                   : (currentUser?.username || 'user'),
-                avatar: (adapted?.author?.avatar && !adapted?.author?.avatar?.includes('default-avatar'))
-                  ? adapted.author.avatar
+                avatar: (serverReply?.author?.avatar && !serverReply?.author?.avatar?.includes('default-avatar'))
+                  ? serverReply.author.avatar
                   : (currentUser?.avatar || userAvatar),
               },
-              timestamp: adapted?.timestamp || '1m',
-              content: tItem.content.trim(),
-              media: tItem.mediaPreviews?.length > 0 ? {
+              timestamp: serverReply?.timestamp || '1m',
+              content: textContent,
+              media: serverReply?.media || (tItem.mediaPreviews?.length > 0 ? {
                 url: tItem.mediaPreviews[0].url,
-                urls: tItem.mediaPreviews.map(m => m.url),
-              } : (adapted?.media || null),
-              likes: adapted?.likes || 0,
-              comments: adapted?.comments || 0,
-              reposts: adapted?.reposts || 0,
-              shares: adapted?.shares || 0,
+                urls: tItem.mediaPreviews.map((m) => m.url),
+              } : null),
+              likes: serverReply?.likes || 0,
+              comments: serverReply?.comments || 0,
+              reposts: serverReply?.reposts || 0,
+              shares: serverReply?.shares || 0,
               threadBadge: hasMultipleThreads ? `${threadIndexNumber}/${totalCount}` : undefined,
               threadTotal: hasMultipleThreads ? totalCount : undefined,
               threadIndex: threadIndexNumber,
@@ -348,10 +341,19 @@ export default function CreatePostModal({
           );
         } catch (err) {
           console.warn('Reply submit error:', err);
+          const errData = err?.response?.data;
+          let errMsg = 'Không thể đăng trả lời. Vui lòng thử lại.';
+          if (errData?.errors && typeof errData.errors === 'object') {
+            const firstKey = Object.keys(errData.errors)[0];
+            const firstVal = errData.errors[firstKey];
+            errMsg = Array.isArray(firstVal) ? firstVal[0] : String(firstVal);
+          } else if (errData?.message) {
+            errMsg = errData.message;
+          }
           window.dispatchEvent(
             new CustomEvent('app-toast', {
               detail: {
-                message: 'Không thể đăng trả lời. Vui lòng thử lại.',
+                message: errMsg,
               },
             })
           );
@@ -376,7 +378,8 @@ export default function CreatePostModal({
         for (let i = 0; i < validThreads.length; i++) {
           const tItem = validThreads[i];
           const formData = new FormData();
-          formData.append('content', tItem.content.trim());
+          const textContent = tItem.content.trim();
+          formData.append('content', textContent || '.');
 
           (tItem.mediaFiles || []).forEach((file) => {
             formData.append('media[]', file);

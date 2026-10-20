@@ -16,6 +16,7 @@ import {
   Plus,
   Check,
   ArrowUp,
+  X,
 } from 'lucide-react';
 import copy from 'copy-to-clipboard';
 import { RadialSpinner } from '@/components/common/GlobalToast';
@@ -78,6 +79,9 @@ export default function PostDetailPage() {
   const [quoteTargetPost, setQuoteTargetPost] = useState(null);
   const [replyInput, setReplyInput] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [replyMediaFiles, setReplyMediaFiles] = useState([]);
+  const [replyMediaPreviews, setReplyMediaPreviews] = useState([]);
+  const replyFileInputRef = useRef(null);
 
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -157,6 +161,46 @@ export default function PostDetailPage() {
     }
   }, [isLoading, post, location.hash, location.state]);
 
+  // Xử lý chọn ảnh / video cho reply inline
+  const handleReplyFilesSelect = (e) => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(
+        new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
+      );
+      return;
+    }
+    const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
+
+    const newPreviews = selected.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+      type: file.type.startsWith('video/') ? 'video' : 'image',
+    }));
+
+    setReplyMediaFiles((prev) => [...prev, ...selected]);
+    setReplyMediaPreviews((prev) => [...prev, ...newPreviews]);
+    e.target.value = '';
+  };
+
+  const handleRemoveReplyMedia = (indexToRemove) => {
+    setReplyMediaPreviews((prev) => {
+      const target = prev[indexToRemove];
+      if (target?.url) URL.revokeObjectURL(target.url);
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
+    setReplyMediaFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  // Dọn dẹp URL preview khi unmount hoặc đổi ảnh
+  useEffect(() => {
+    return () => {
+      replyMediaPreviews.forEach((item) => {
+        if (item?.url) URL.revokeObjectURL(item.url);
+      });
+    };
+  }, [replyMediaPreviews]);
+
   // Thêm câu trả lời mới
   const handleAddReply = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -166,13 +210,18 @@ export default function PostDetailPage() {
   };
 
   const submitReply = async () => {
-    if (!replyInput.trim() || isSubmittingReply) return;
+    const hasContent = replyInput.trim().length > 0;
+    const hasMedia = replyMediaFiles.length > 0;
+    if ((!hasContent && !hasMedia) || isSubmittingReply) return;
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } }));
       return;
     }
 
     const content = replyInput.trim();
+    const mediaToUpload = [...replyMediaFiles];
+    const previewItems = [...replyMediaPreviews];
+
     setIsSubmittingReply(true);
 
     // 1. Kích hoạt Toast trạng thái đang gửi: [Spinner] Posting... (Ảnh mẫu 1 & 3)
@@ -200,6 +249,13 @@ export default function PostDetailPage() {
       timestamp: '1m',
       createdAt: new Date().toISOString(),
       content,
+      media:
+        previewItems.length > 0
+          ? {
+              url: previewItems[0].url,
+              urls: previewItems.map((p) => p.url),
+            }
+          : null,
       likes: 0,
       comments: 0,
       reposts: 0,
@@ -207,14 +263,27 @@ export default function PostDetailPage() {
       hasConnector: false,
     };
 
+    setReplyInput('');
+    setReplyMediaFiles([]);
+    setReplyMediaPreviews([]);
+
     try {
-      const created = await createReplyApi(post?.id || postId, { content });
+      let created;
+      if (mediaToUpload.length > 0) {
+        const formData = new FormData();
+        const contentToSend = content || '.';
+        formData.append('content', contentToSend);
+        mediaToUpload.forEach((file) => formData.append('media[]', file));
+        created = await createReplyApi(post?.id || postId, formData);
+      } else {
+        created = await createReplyApi(post?.id || postId, { content });
+      }
+
       const finalReply = created && created.id ? created : optimisticReply;
 
       // 2. Chèn câu trả lời mới vào ngay trên đầu danh sách (Ảnh mẫu 2)
       setReplies((prev) => [finalReply, ...prev.filter((r) => r.id !== tempId)]);
       setPost((prev) => (prev ? { ...prev, comments: (prev.comments || 0) + 1 } : prev));
-      setReplyInput('');
 
       // 3. Kích hoạt Toast thành công: ✓ Posted  View (Ảnh mẫu 2)
       window.dispatchEvent(
@@ -243,7 +312,6 @@ export default function PostDetailPage() {
       // Fallback lưu câu trả lời để người dùng luôn có trải nghiệm liền mạch
       setReplies((prev) => [optimisticReply, ...prev.filter((r) => r.id !== tempId)]);
       setPost((prev) => (prev ? { ...prev, comments: (prev.comments || 0) + 1 } : prev));
-      setReplyInput('');
 
       window.dispatchEvent(
         new CustomEvent('app-toast', {
@@ -394,42 +462,54 @@ export default function PostDetailPage() {
 
             {/* 3. KHUNG SOẠN THẢO TRẢ LỜI (Reply Input Pill) */}
             <div className="px-4 sm:px-5 pb-3">
-              <div className="flex items-center gap-3 bg-zinc-100/90 dark:bg-[#1c1c1c] border border-zinc-200/80 dark:border-zinc-800/90 rounded-full px-4 py-2 transition-colors focus-within:border-zinc-400 dark:focus-within:border-zinc-600">
-                <img
-                  src={currentUser?.avatar || userAvatar}
-                  alt="user"
-                  className="w-7 h-7 rounded-full object-cover shrink-0 border border-zinc-300 dark:border-zinc-700"
-                />
-                <input
-                  ref={replyInputRef}
-                  id="thread-reply-input"
-                  type="text"
-                  placeholder={`Reply to ${post.author?.username || username || 'user'}...`}
-                  value={replyInput}
-                  onChange={(e) => setReplyInput(e.target.value)}
-                  onKeyDown={handleAddReply}
-                  disabled={isSubmittingReply}
-                  onFocus={(e) => {
-                    if (!isAuthenticated) {
-                      e.target.blur();
-                      window.dispatchEvent(
-                        new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
-                      );
-                    }
-                  }}
-                  className="flex-1 bg-transparent text-sm text-black dark:text-white placeholder-zinc-500 outline-none"
-                />
-                <div className="flex items-center gap-2.5 text-zinc-400 shrink-0">
-                  {!replyInput.trim() && !isSubmittingReply && (
-                    <>
-                      <button
-                        type="button"
-                        title="Thêm ảnh"
-                        onClick={() => showToast('Chọn hình ảnh')}
-                        className="hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-                      >
-                        <ImageIcon className="w-4.5 h-4.5" />
-                      </button>
+              <div
+                className={`flex flex-col bg-zinc-100/90 dark:bg-[#1c1c1c] border border-zinc-200/80 dark:border-zinc-800/90 ${
+                  replyMediaPreviews.length > 0 ? 'rounded-2xl p-3' : 'rounded-full px-4 py-2'
+                } transition-all focus-within:border-zinc-400 dark:focus-within:border-zinc-600`}
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={currentUser?.avatar || userAvatar}
+                    alt="user"
+                    className="w-7 h-7 rounded-full object-cover shrink-0 border border-zinc-300 dark:border-zinc-700"
+                  />
+                  <input
+                    ref={replyInputRef}
+                    id="thread-reply-input"
+                    type="text"
+                    placeholder={`Reply to ${post.author?.username || username || 'user'}...`}
+                    value={replyInput}
+                    onChange={(e) => setReplyInput(e.target.value)}
+                    onKeyDown={handleAddReply}
+                    disabled={isSubmittingReply}
+                    onFocus={(e) => {
+                      if (!isAuthenticated) {
+                        e.target.blur();
+                        window.dispatchEvent(
+                          new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
+                        );
+                      }
+                    }}
+                    className="flex-1 bg-transparent text-sm text-black dark:text-white placeholder-zinc-500 outline-none"
+                  />
+                  <div className="flex items-center gap-2.5 text-zinc-400 shrink-0">
+                    <button
+                      type="button"
+                      title="Thêm ảnh"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          window.dispatchEvent(
+                            new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
+                          );
+                          return;
+                        }
+                        replyFileInputRef.current?.click();
+                      }}
+                      className="hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                    >
+                      <ImageIcon className="w-4.5 h-4.5" />
+                    </button>
+                    {!replyInput.trim() && replyMediaFiles.length === 0 && !isSubmittingReply && (
                       <button
                         type="button"
                         title="Thêm GIF"
@@ -438,44 +518,88 @@ export default function PostDetailPage() {
                       >
                         GIF
                       </button>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    title="Mở rộng"
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        window.dispatchEvent(
-                          new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
-                        );
-                        return;
-                      }
-                      setIsReplyModalOpen(true);
-                    }}
-                    className="hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-                  >
-                    <Maximize2 className="w-4 h-4" />
-                  </button>
-                  {(replyInput.trim() || isSubmittingReply) && (
+                    )}
                     <button
                       type="button"
-                      onClick={submitReply}
-                      disabled={isSubmittingReply}
-                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                        isSubmittingReply
-                          ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                          : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-85 active:scale-95 cursor-pointer shadow-xs'
-                      }`}
-                      title={isSubmittingReply ? 'Đang gửi...' : 'Đăng câu trả lời'}
+                      title="Mở rộng"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          window.dispatchEvent(
+                            new CustomEvent('open-auth-prompt', { detail: { type: 'comment' } })
+                          );
+                          return;
+                        }
+                        setIsReplyModalOpen(true);
+                      }}
+                      className="hover:text-black dark:hover:text-white transition-colors cursor-pointer"
                     >
-                      {isSubmittingReply ? (
-                        <RadialSpinner className="w-4 h-4 text-zinc-400" />
-                      ) : (
-                        <ArrowUp className="w-4 h-4 stroke-[2.5]" />
-                      )}
+                      <Maximize2 className="w-4 h-4" />
                     </button>
-                  )}
+                    {(replyInput.trim() || replyMediaFiles.length > 0 || isSubmittingReply) && (
+                      <button
+                        type="button"
+                        onClick={submitReply}
+                        disabled={isSubmittingReply || (!replyInput.trim() && replyMediaFiles.length === 0)}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                          isSubmittingReply
+                            ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
+                            : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-85 active:scale-95 cursor-pointer shadow-xs'
+                        }`}
+                        title={isSubmittingReply ? 'Đang gửi...' : 'Đăng câu trả lời'}
+                      >
+                        {isSubmittingReply ? (
+                          <RadialSpinner className="w-4 h-4 text-zinc-400" />
+                        ) : (
+                          <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Media previews list */}
+                {replyMediaPreviews.length > 0 && (
+                  <div className="flex gap-2.5 mt-2.5 overflow-x-auto pb-1 scrollbar-none pl-10">
+                    {replyMediaPreviews.map((item, mIdx) => (
+                      <div
+                        key={mIdx}
+                        className="relative shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-200 dark:bg-zinc-900 group"
+                      >
+                        {item.type === 'video' ? (
+                          <video
+                            src={item.url}
+                            className="w-full h-full object-cover"
+                            controls={false}
+                          />
+                        ) : (
+                          <img
+                            src={item.url}
+                            alt="Upload preview"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveReplyMedia(mIdx)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md"
+                          title="Xóa tệp"
+                        >
+                          <X className="w-3 h-3 stroke-[2.5]" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Hidden file input */}
+                <input
+                  ref={replyFileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={handleReplyFilesSelect}
+                />
               </div>
             </div>
 
@@ -603,10 +727,14 @@ export default function PostDetailPage() {
         currentUser={currentUser}
         replyToPost={post}
         initialContent={replyInput}
+        initialMediaFiles={replyMediaFiles}
+        initialMediaPreviews={replyMediaPreviews}
         onReplySuccess={(newReplies) => {
           const replyList = Array.isArray(newReplies) ? newReplies : [newReplies];
           setReplies((prev) => [...replyList, ...prev]);
           setReplyInput('');
+          setReplyMediaFiles([]);
+          setReplyMediaPreviews([]);
           setPost((prev) =>
             prev
               ? {
@@ -1067,14 +1195,16 @@ function ReplyItem({
 
           {/* Nội dung phản hồi */}
           <div className="mt-1.5 text-sm sm:text-[15px] leading-relaxed text-zinc-900 dark:text-zinc-100">
-            <p className="whitespace-pre-line inline">
-              {reply.content}
-              {reply.threadBadge && (
-                <span className="inline-flex items-center text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full select-none ml-2 align-middle">
-                  {reply.threadBadge}
-                </span>
-              )}
-            </p>
+            {((reply.content && reply.content !== '.' && reply.content.trim() !== '.') || reply.threadBadge) && (
+              <p className="whitespace-pre-line inline">
+                {(reply.content === '.' || reply.content?.trim() === '.') ? '' : reply.content}
+                {reply.threadBadge && (
+                  <span className="inline-flex items-center text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full select-none ml-2 align-middle">
+                    {reply.threadBadge}
+                  </span>
+                )}
+              </p>
+            )}
             {reply.media && (
               <div className="mt-2">
                 <PostContent media={reply.media} />

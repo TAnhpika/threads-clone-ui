@@ -1,12 +1,13 @@
 export default function PostContent({ text, media, threadBadge }) {
   const urls = media?.urls || (media?.url ? [media.url] : []);
+  const cleanText = (text === '.' || text === '\u3164' || text?.trim() === '.' || text?.trim() === '\u3164') ? '' : text;
 
   return (
     <div className="mt-2 space-y-3">
       {/* Nội dung văn bản */}
-      {text && (
+      {(cleanText || threadBadge) && (
         <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-line leading-relaxed break-words">
-          {text}
+          {cleanText}
           {threadBadge && (
             <span className="inline-flex items-center text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full select-none ml-2 align-middle">
               {threadBadge}

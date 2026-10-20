@@ -52,10 +52,15 @@ export function formatTimeAgo(dateString) {
  */
 export function adaptPost(item) {
     if (!item) return null;
-    const user = item.user || {};
-    const mediaList = Array.isArray(item.media_urls)
-        ? item.media_urls.filter(Boolean)
-        : [];
+    // Nếu item đã được adaptPost chuẩn hoá trước đó, trả về luôn để tránh mất media/author
+    if (item.author && item.timestamp !== undefined && (item.media !== undefined || item.content !== undefined)) {
+        return item;
+    }
+    const raw = item?.data && typeof item.data === 'object' && !Array.isArray(item.data) ? item.data : item;
+    const user = raw.user || {};
+    const mediaList = Array.isArray(raw.media_urls)
+        ? raw.media_urls.filter(Boolean)
+        : (raw.media?.urls || (raw.media?.url ? [raw.media.url] : []));
 
     const authUser = store?.getState?.()?.auth?.currentUser;
     const isMe =
@@ -89,7 +94,7 @@ export function adaptPost(item) {
         timestamp: formatTimeAgo(item.created_at),
         createdAt: item.created_at,
         tag: item.topic?.name || null,
-        content: item.content || "",
+        content: (raw.content === '.' || raw.content === '\u3164' || raw.content?.trim() === '.' || raw.content?.trim() === '\u3164') ? "" : (raw.content || ""),
         media:
             mediaList.length > 0
                 ? {
