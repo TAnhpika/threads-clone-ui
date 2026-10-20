@@ -18,6 +18,8 @@ const ForgotPasswordPage = lazy(() => import("@/pages/Auth/ForgotPassword"));
 const ResetPasswordPage = lazy(() => import("@/pages/Auth/ResetPassword"));
 const VerifyEmailPage = lazy(() => import("@/pages/Auth/VerifyEmail"));
 const ShareRedirectPage = lazy(() => import("@/pages/ShareRedirect"));
+const EmbedPage = lazy(() => import("@/pages/Embed"));
+const EmbedLayout = lazy(() => import("@/layouts/EmbedLayout"));
 const NotFoundPage = lazy(() => import("@/pages/NotFound"));
 
 function PageLoader() {
@@ -60,6 +62,12 @@ export default function AppRoutes() {
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/verify-email" element={<VerifyEmailPage />} />
+                </Route>
+
+                {/* Embed Routes dành cho iframe (không Sidebar, không LoginPanel) */}
+                <Route element={<EmbedLayout />}>
+                    <Route path="/:username/post/:postId/embed" element={<EmbedPage />} />
+                    <Route path="/@:username/post/:postId/embed" element={<EmbedPage />} />
                 </Route>
 
                 {/* 404 Not Found Route */}
