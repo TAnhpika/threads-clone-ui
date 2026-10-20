@@ -87,9 +87,20 @@ export default function LoginPage() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const location = useLocation();
-  const [routeSuccessMessage, setRouteSuccessMessage] = useState(
-    location.state?.message || null
-  );
+  const [routeSuccessMessage, setRouteSuccessMessage] = useState(() => {
+    if (location.state?.verified) {
+      return "Đã xác minh tài khoản thành công. Vui lòng đăng nhập.";
+    }
+    return location.state?.message || null;
+  });
+
+  useEffect(() => {
+    if (location.state?.verified) {
+      setRouteSuccessMessage("Đã xác minh tài khoản thành công. Vui lòng đăng nhập.");
+    } else if (location.state?.message) {
+      setRouteSuccessMessage(location.state.message);
+    }
+  }, [location.state]);
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
