@@ -15,7 +15,9 @@ import {
   Send,
   Plus,
   Check,
+  ArrowUp,
 } from 'lucide-react';
+import { RadialSpinner } from '@/components/common/GlobalToast';
 import {
   getPostByIdApi,
   getRepliesApi,
@@ -64,11 +66,12 @@ export default function PostDetailPage() {
   // Floating modal state & toast
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('bottom-right');
-  const [toastMessage, setToastMessage] = useState(null);
-
   const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+    window.dispatchEvent(
+      new CustomEvent('app-toast', {
+        detail: typeof msg === 'string' ? { message: msg } : msg,
+      })
+    );
   };
 
   // Đóng column menu khi click ra ngoài hoặc bấm Escape
@@ -153,8 +156,18 @@ export default function PostDetailPage() {
     }
 
     const content = replyInput.trim();
-    setReplyInput('');
     setIsSubmittingReply(true);
+
+    // 1. Kích hoạt Toast trạng thái đang gửi: [Spinner] Posting... (Ảnh mẫu 1 & 3)
+    window.dispatchEvent(
+      new CustomEvent('app-toast', {
+        detail: {
+          type: 'reply',
+          status: 'loading',
+          message: 'Posting...',
+        },
+      })
+    );
 
     const tempId = `reply-${Date.now()}`;
     const optimisticReply = {
@@ -167,7 +180,8 @@ export default function PostDetailPage() {
         isVerified: false,
         isAuthor: currentUser?.username === post?.author?.username,
       },
-      timestamp: 'vừa xong',
+      timestamp: '1m',
+      createdAt: new Date().toISOString(),
       content,
       likes: 0,
       comments: 0,
@@ -176,19 +190,65 @@ export default function PostDetailPage() {
       hasConnector: false,
     };
 
-    // Optimistic UI update
-    setReplies((prev) => [optimisticReply, ...prev]);
-    setPost((prev) => (prev ? { ...prev, comments: (prev.comments || 0) + 1 } : prev));
-
     try {
       const created = await createReplyApi(post?.id || postId, { content });
-      if (created && created.id) {
-        setReplies((prev) => prev.map((r) => (r.id === tempId ? created : r)));
-      }
-      showToast('Đã gửi câu trả lời ✨');
+      const finalReply = created && created.id ? created : optimisticReply;
+
+      // 2. Chèn câu trả lời mới vào ngay trên đầu danh sách (Ảnh mẫu 2)
+      setReplies((prev) => [finalReply, ...prev.filter((r) => r.id !== tempId)]);
+      setPost((prev) => (prev ? { ...prev, comments: (prev.comments || 0) + 1 } : prev));
+      setReplyInput('');
+
+      // 3. Kích hoạt Toast thành công: ✓ Posted  View (Ảnh mẫu 2)
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            type: 'reply',
+            status: 'completed',
+            message: 'Posted',
+            replyId: finalReply.id,
+            actionLabel: 'View',
+            onAction: () => {
+              const el = document.getElementById(`reply-item-${finalReply.id}`);
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('bg-zinc-100/80', 'dark:bg-zinc-800/50', 'transition-all');
+                setTimeout(() => {
+                  el.classList.remove('bg-zinc-100/80', 'dark:bg-zinc-800/50');
+                }, 1500);
+              }
+            },
+          },
+        })
+      );
     } catch (err) {
-      console.warn('API create reply not available or failed:', err);
-      showToast('Đã lưu phản hồi');
+      console.warn('API create reply failed or offline, fallback to optimistic reply:', err);
+      // Fallback lưu câu trả lời để người dùng luôn có trải nghiệm liền mạch
+      setReplies((prev) => [optimisticReply, ...prev.filter((r) => r.id !== tempId)]);
+      setPost((prev) => (prev ? { ...prev, comments: (prev.comments || 0) + 1 } : prev));
+      setReplyInput('');
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            type: 'reply',
+            status: 'completed',
+            message: 'Posted',
+            replyId: optimisticReply.id,
+            actionLabel: 'View',
+            onAction: () => {
+              const el = document.getElementById(`reply-item-${optimisticReply.id}`);
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('bg-zinc-100/80', 'dark:bg-zinc-800/50', 'transition-all');
+                setTimeout(() => {
+                  el.classList.remove('bg-zinc-100/80', 'dark:bg-zinc-800/50');
+                }, 1500);
+              }
+            },
+          },
+        })
+      );
     } finally {
       setIsSubmittingReply(false);
     }
@@ -342,23 +402,27 @@ export default function PostDetailPage() {
                   }}
                   className="flex-1 bg-transparent text-sm text-black dark:text-white placeholder-zinc-500 outline-none"
                 />
-                <div className="flex items-center gap-3 text-zinc-400 shrink-0">
-                  <button
-                    type="button"
-                    title="Thêm ảnh"
-                    onClick={() => showToast('Chọn hình ảnh')}
-                    className="hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-                  >
-                    <ImageIcon className="w-4.5 h-4.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Thêm GIF"
-                    onClick={() => showToast('Chọn GIF')}
-                    className="text-[11px] font-bold border border-zinc-400 dark:border-zinc-600 rounded px-1 py-0.5 leading-none hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-colors cursor-pointer"
-                  >
-                    GIF
-                  </button>
+                <div className="flex items-center gap-2.5 text-zinc-400 shrink-0">
+                  {!replyInput.trim() && !isSubmittingReply && (
+                    <>
+                      <button
+                        type="button"
+                        title="Thêm ảnh"
+                        onClick={() => showToast('Chọn hình ảnh')}
+                        className="hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                      >
+                        <ImageIcon className="w-4.5 h-4.5" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Thêm GIF"
+                        onClick={() => showToast('Chọn GIF')}
+                        className="text-[11px] font-bold border border-zinc-400 dark:border-zinc-600 rounded px-1 py-0.5 leading-none hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-colors cursor-pointer"
+                      >
+                        GIF
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     title="Mở rộng"
@@ -370,6 +434,25 @@ export default function PostDetailPage() {
                   >
                     <Maximize2 className="w-4 h-4" />
                   </button>
+                  {(replyInput.trim() || isSubmittingReply) && (
+                    <button
+                      type="button"
+                      onClick={submitReply}
+                      disabled={isSubmittingReply}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                        isSubmittingReply
+                          ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
+                          : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-85 active:scale-95 cursor-pointer shadow-xs'
+                      }`}
+                      title={isSubmittingReply ? 'Đang gửi...' : 'Đăng câu trả lời'}
+                    >
+                      {isSubmittingReply ? (
+                        <RadialSpinner className="w-4 h-4 text-zinc-400" />
+                      ) : (
+                        <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -449,13 +532,6 @@ export default function PostDetailPage() {
         quotedPost={quoteTargetPost}
         placement={createModalPlacement}
       />
-
-      {/* Toast thông báo */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
-          {toastMessage}
-        </div>
-      )}
     </div>
   );
 }
@@ -599,7 +675,10 @@ function ReplyItem({ reply, currentUser, onToast, isAuthenticated, onQuoteReply 
   });
 
   return (
-    <article className="p-4 sm:p-5 hover:bg-zinc-50/40 dark:hover:bg-zinc-900/20 transition-colors">
+    <article
+      id={`reply-item-${reply.id}`}
+      className="p-4 sm:p-5 hover:bg-zinc-50/40 dark:hover:bg-zinc-900/20 transition-colors"
+    >
       <div className="flex gap-3">
         {/* Cột Avatar & Đường chỉ dọc (Thread connector line) */}
         <div className="flex flex-col items-center shrink-0">

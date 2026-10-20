@@ -189,12 +189,31 @@ export async function getRepliesApi(postId) {
 
 /**
  * API tạo phản hồi / bình luận cho bài viết
+ * Endpoint: POST /posts/:id/reply (Body multipart/form-data: content)
  * @param {string|number} postId
- * @param {Object} data - { content: string }
+ * @param {string|Object|FormData} data
  * @returns {Promise<Object>}
  */
-export async function createReplyApi(postId, { content }) {
-    const response = await http.post(`/posts/${postId}/reply`, { content });
+export async function createReplyApi(postId, data) {
+    let payload = data;
+    if (!(data instanceof FormData)) {
+        const formData = new FormData();
+        if (typeof data === "string") {
+            formData.append("content", data);
+        } else if (data && typeof data === "object") {
+            if (data.content) formData.append("content", data.content);
+            if (data.reply_permission) formData.append("reply_permission", data.reply_permission);
+            if (Array.isArray(data.media)) {
+                data.media.forEach((file) => formData.append("media[]", file));
+            }
+        }
+        payload = formData;
+    }
+    const response = await http.post(`/posts/${postId}/reply`, payload, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
     const resData = response?.data || response;
     return adaptPost(resData);
 }
