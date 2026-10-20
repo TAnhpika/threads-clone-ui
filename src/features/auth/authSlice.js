@@ -47,6 +47,23 @@ export const authSlice = createSlice({
                     action.payload.refreshToken || action.payload.refresh_token
                 );
             }
+            const username = user?.username || user?.name;
+            if (username && typeof window !== "undefined") {
+                try {
+                    localStorage.setItem("threads_last_username", username);
+                    const existingRaw = localStorage.getItem("threads_last_login_account");
+                    const existing = existingRaw ? JSON.parse(existingRaw) : {};
+                    localStorage.setItem(
+                        "threads_last_login_account",
+                        JSON.stringify({
+                            ...existing,
+                            username,
+                            name: user?.name || username,
+                            avatar: user?.avatar_url || user?.avatar || null,
+                        })
+                    );
+                } catch (_) {}
+            }
         },
         logout: (state) => {
             state.currentUser = null;
@@ -83,6 +100,23 @@ export const authSlice = createSlice({
                 state.isAuthenticated = true;
                 state.fetching = false;
                 state.error = null;
+                const username = user?.username || user?.name;
+                if (username && typeof window !== "undefined") {
+                    try {
+                        localStorage.setItem("threads_last_username", username);
+                        const existingRaw = localStorage.getItem("threads_last_login_account");
+                        const existing = existingRaw ? JSON.parse(existingRaw) : {};
+                        localStorage.setItem(
+                            "threads_last_login_account",
+                            JSON.stringify({
+                                ...existing,
+                                username,
+                                name: user?.name || username,
+                                avatar: user?.avatar_url || user?.avatar || null,
+                            })
+                        );
+                    } catch (_) {}
+                }
             })
             .addCase(getCurrentUser.rejected, (state, action) => {
                 state.fetching = false;

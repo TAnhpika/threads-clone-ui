@@ -1,6 +1,24 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, X } from 'lucide-react';
+
+function getLastLoggedInUsername() {
+  if (typeof window === 'undefined') return 'tuananhpika';
+  try {
+    const rawAccount = localStorage.getItem('threads_last_login_account');
+    if (rawAccount) {
+      const parsed = JSON.parse(rawAccount);
+      if (parsed?.username) return parsed.username;
+      if (parsed?.identifier) return parsed.identifier;
+      if (parsed?.name) return parsed.name;
+    }
+    const lastUsername = localStorage.getItem('threads_last_username') || localStorage.getItem('last_username');
+    if (lastUsername) return lastUsername;
+  } catch (err) {
+    console.error('Failed to get last logged in username:', err);
+  }
+  return 'tuananhpika';
+}
 
 function InstagramGlyph({ className = 'w-6 h-6 text-white' }) {
   return (
@@ -174,6 +192,14 @@ export default function SignUpToPostModal({
   canClose = true,
 }) {
   const navigate = useNavigate();
+  const [lastUsername, setLastUsername] = useState(getLastLoggedInUsername);
+
+  // Cập nhật username của lần đăng nhập gần nhất khi mở modal
+  useEffect(() => {
+    if (isOpen) {
+      setLastUsername(getLastLoggedInUsername());
+    }
+  }, [isOpen]);
 
   // Khóa cuộn trang khi modal đang mở
   useEffect(() => {
@@ -256,13 +282,13 @@ export default function SignUpToPostModal({
               <InstagramGlyph className="w-6 h-6 text-white stroke-[2.2]" />
             </div>
 
-            {/* Thông tin tài khoản */}
+            {/* Thông tin tài khoản - hiển thị username của lần đăng nhập gần nhất */}
             <div className="text-left min-w-0">
               <p className="text-xs text-zinc-400 font-medium">
                 Continue with Instagram
               </p>
               <p className="text-sm font-bold text-white group-hover:underline truncate mt-0.5">
-                tuananhpika
+                {lastUsername}
               </p>
             </div>
           </div>
