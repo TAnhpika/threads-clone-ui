@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { ChevronRight, X } from "lucide-react";
 import { selectIsAuthenticated, loginSuccess } from "@/features/auth/authSlice";
+import * as authService from "@/services/authService";
 import { AuthInput, AuthButton } from "@/components/common";
 
 // Key lưu tài khoản và mật khẩu của lần đăng nhập gần nhất

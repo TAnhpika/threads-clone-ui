@@ -10,6 +10,7 @@ const initialTabState = {
 };
 
 const SAVED_POSTS_STORAGE_KEY = 'threads_saved_posts';
+const LIKED_POSTS_STORAGE_KEY = 'threads_liked_posts';
 
 const getInitialSavedPosts = () => {
   if (typeof window === 'undefined') return [];
@@ -31,6 +32,26 @@ const saveSavedPostsToStorage = (posts) => {
   }
 };
 
+const getInitialLikedPosts = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(LIKED_POSTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error('Failed to parse liked posts from storage:', err);
+    return [];
+  }
+};
+
+const saveLikedPostsToStorage = (posts) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LIKED_POSTS_STORAGE_KEY, JSON.stringify(posts));
+  } catch (err) {
+    console.error('Failed to save liked posts to storage:', err);
+  }
+};
+
 const initialState = {
   forYou: { ...initialTabState },
   following: { ...initialTabState },
@@ -40,13 +61,20 @@ const initialState = {
     isLoaded: true,
     hasMore: false,
   },
-  activeFeedType: 'for_you', // 'for_you' | 'following' | 'saved'
+  liked: {
+    ...initialTabState,
+    posts: getInitialLikedPosts(),
+    isLoaded: true,
+    hasMore: false,
+  },
+  activeFeedType: 'for_you', // 'for_you' | 'following' | 'saved' | 'liked'
 };
 
 // Helper để lấy đúng key state theo feedType
 const getFeedKey = (feedType) => {
   if (feedType === 'following') return 'following';
   if (feedType === 'saved') return 'saved';
+  if (feedType === 'liked') return 'liked';
   return 'forYou';
 };
 
@@ -77,6 +105,23 @@ export const feedSlice = createSlice({
         });
         if (hasChanges) {
           saveSavedPostsToStorage(state.saved.posts);
+        }
+      }
+
+      // Đồng bộ các bài có isLiked: true vào tab liked nếu chưa có
+      if (feedType !== 'liked' && Array.isArray(posts)) {
+        let hasLikedChanges = false;
+        posts.forEach((p) => {
+          if (p && p.isLiked) {
+            const exists = state.liked.posts.some((lp) => String(lp.id) === String(p.id));
+            if (!exists) {
+              state.liked.posts.push({ ...p });
+              hasLikedChanges = true;
+            }
+          }
+        });
+        if (hasLikedChanges) {
+          saveLikedPostsToStorage(state.liked.posts);
         }
       }
     },
@@ -117,7 +162,7 @@ export const feedSlice = createSlice({
       let targetPost = null;
 
       // 1. Cập nhật tương tác trên tất cả các tab
-      ['forYou', 'following', 'saved'].forEach((key) => {
+      ['forYou', 'following', 'saved', 'liked'].forEach((key) => {
         if (!state[key]) return;
         const post = state[key].posts.find((p) => String(p.id) === String(postId));
         if (post) {
@@ -134,7 +179,8 @@ export const feedSlice = createSlice({
             const postToAdd =
               targetPost ||
               state.forYou.posts.find((p) => String(p.id) === String(postId)) ||
-              state.following.posts.find((p) => String(p.id) === String(postId));
+              state.following.posts.find((p) => String(p.id) === String(postId)) ||
+              state.liked.posts.find((p) => String(p.id) === String(postId));
             if (postToAdd) {
               state.saved.posts.unshift({ ...postToAdd, isSaved: true });
               saveSavedPostsToStorage(state.saved.posts);
@@ -148,12 +194,36 @@ export const feedSlice = createSlice({
           }
         }
       }
+
+      // 3. Xử lý đồng bộ Liked posts khi có thay đổi isLiked
+      if (updates && updates.isLiked !== undefined) {
+        if (updates.isLiked === true) {
+          const exists = state.liked.posts.some((p) => String(p.id) === String(postId));
+          if (!exists) {
+            const postToAdd =
+              targetPost ||
+              state.forYou.posts.find((p) => String(p.id) === String(postId)) ||
+              state.following.posts.find((p) => String(p.id) === String(postId)) ||
+              state.saved.posts.find((p) => String(p.id) === String(postId));
+            if (postToAdd) {
+              state.liked.posts.unshift({ ...postToAdd, isLiked: true });
+              saveLikedPostsToStorage(state.liked.posts);
+            }
+          }
+        } else if (updates.isLiked === false) {
+          const beforeLen = state.liked.posts.length;
+          state.liked.posts = state.liked.posts.filter((p) => String(p.id) !== String(postId));
+          if (state.liked.posts.length !== beforeLen) {
+            saveLikedPostsToStorage(state.liked.posts);
+          }
+        }
+      }
     },
 
     // Cập nhật nội dung và dữ liệu bài viết sau khi Edit
     updatePostData: (state, action) => {
       const { postId, updates } = action.payload;
-      ['forYou', 'following', 'saved'].forEach((key) => {
+      ['forYou', 'following', 'saved', 'liked'].forEach((key) => {
         if (!state[key]) return;
         const post = state[key].posts.find((p) => String(p.id) === String(postId));
         if (post) {

@@ -223,12 +223,12 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
     },
     {
       label: 'Saved',
-      path: '/?feed=saved',
+      path: '/saved',
       icon: Bookmark,
     },
     {
       label: 'Liked',
-      path: '/?feed=liked',
+      path: '/liked',
       icon: Heart,
     },
     {
@@ -440,9 +440,11 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
                 const IconComponent = feed.icon;
                 const RightIconComponent = feed.rightIcon;
                 const isActive =
-                  feed.path === '/following'
-                    ? location.pathname === '/following'
-                    : location.search === feed.path.replace('/', '');
+                  feed.path.startsWith('/?')
+                    ? location.search === feed.path.replace('/', '')
+                    : location.pathname === feed.path ||
+                      (feed.path === '/saved' && location.search === '?feed=saved') ||
+                      (feed.path === '/liked' && location.search === '?feed=liked');
 
                 if (!isAuthenticated) {
                   return (
