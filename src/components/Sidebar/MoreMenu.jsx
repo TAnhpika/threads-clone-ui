@@ -183,14 +183,25 @@ export default function MoreMenu({
             </h3>
           </div>
 
-          {/* Thanh điều khiển segmented chuẩn mẫu (Sun, Moon, Auto) */}
-          <div className="bg-zinc-100 dark:bg-[#101010] p-1 rounded-2xl flex items-center justify-between gap-1 border border-zinc-200/80 dark:border-zinc-800/60">
+          {/* Thanh điều khiển segmented chuẩn mẫu với viên trượt mượt mà (Sun, Moon, Auto) */}
+          <div className="relative bg-zinc-100 dark:bg-[#101010] p-1 rounded-2xl flex items-center justify-between border border-zinc-200/80 dark:border-zinc-800/60 select-none">
+            {/* Sliding Pill Indicator */}
+            <div
+              className={`absolute top-1 bottom-1 left-1 w-[calc((100%-8px)/3)] rounded-xl bg-white dark:bg-[#262626] shadow-sm transition-transform duration-250 ease-out pointer-events-none ${
+                theme === 'light'
+                  ? 'translate-x-0'
+                  : theme === 'dark'
+                  ? 'translate-x-full'
+                  : 'translate-x-[200%]'
+              }`}
+            />
+
             <button
               type="button"
               onClick={() => setTheme('light')}
-              className={`flex-1 h-9.5 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              className={`relative z-10 flex-1 h-9.5 flex items-center justify-center rounded-xl transition-colors duration-200 cursor-pointer ${
                 theme === 'light'
-                  ? 'bg-white dark:bg-[#262626] text-black dark:text-white shadow-xs font-semibold'
+                  ? 'text-black dark:text-white font-semibold'
                   : 'text-zinc-500 hover:text-black dark:hover:text-zinc-300'
               }`}
               title="Sáng"
@@ -201,9 +212,9 @@ export default function MoreMenu({
             <button
               type="button"
               onClick={() => setTheme('dark')}
-              className={`flex-1 h-9.5 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              className={`relative z-10 flex-1 h-9.5 flex items-center justify-center rounded-xl transition-colors duration-200 cursor-pointer ${
                 theme === 'dark'
-                  ? 'bg-white dark:bg-[#262626] text-black dark:text-white shadow-xs font-semibold'
+                  ? 'text-black dark:text-white font-semibold'
                   : 'text-zinc-500 hover:text-black dark:hover:text-zinc-300'
               }`}
               title="Tối"
@@ -214,9 +225,9 @@ export default function MoreMenu({
             <button
               type="button"
               onClick={() => setTheme('system')}
-              className={`flex-1 h-9.5 flex items-center justify-center rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`relative z-10 flex-1 h-9.5 flex items-center justify-center rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
                 theme === 'system'
-                  ? 'bg-white dark:bg-[#262626] text-black dark:text-white shadow-xs'
+                  ? 'text-black dark:text-white font-semibold'
                   : 'text-zinc-500 hover:text-black dark:hover:text-zinc-300'
               }`}
               title="Tự động"
