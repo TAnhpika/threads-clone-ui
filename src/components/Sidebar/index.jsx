@@ -16,6 +16,11 @@ import { SolidHome, OutlineHome, InsightsIcon, GhostIcon } from '@/components/ic
 import CollapsibleSidebar from './CollapsibleSidebar';
 import MoreMenu from './MoreMenu';
 import { showToast } from '@/utils/toast';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
 
 export { CollapsibleSidebar, MoreMenu, GhostIcon };
 
@@ -316,22 +321,32 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
             }`}
             ref={menuRef}
           >
-            <button
-              type="button"
-              onClick={() => setShowMenu((prev) => !prev)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
-                showMenu
-                  ? 'bg-zinc-200 text-black dark:bg-zinc-800 dark:text-white'
-                  : 'text-zinc-400 hover:text-black dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-              }`}
-              title="More"
-              aria-label="More"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 stroke-current stroke-2" fill="none">
-                <line x1="5" y1="9" x2="19" y2="9" />
-                <line x1="5" y1="15" x2="19" y2="15" />
-              </svg>
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    onClick={() => setShowMenu((prev) => !prev)}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
+                      showMenu
+                        ? 'bg-zinc-200 text-black dark:bg-zinc-800 dark:text-white'
+                        : 'text-zinc-400 hover:text-black dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                    }`}
+                    aria-label="More"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 stroke-current stroke-2" fill="none">
+                      <line x1="5" y1="9" x2="19" y2="9" />
+                      <line x1="5" y1="15" x2="19" y2="15" />
+                    </svg>
+                  </button>
+                }
+              />
+              {!showMenu && (
+                <TooltipContent side="bottom" sideOffset={6}>
+                  More
+                </TooltipContent>
+              )}
+            </Tooltip>
 
             {/* Popover MoreMenu khi click nút tròn cạnh logo - mở ra bên phải không che nav */}
             <MoreMenu

@@ -13,6 +13,11 @@ import {
 import { SolidHome, OutlineHome, InsightsIcon } from '@/components/icons';
 import MoreMenu from './MoreMenu';
 import { showToast } from '@/utils/toast';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
 
 export default function CollapsibleSidebar({ className = '' }) {
   const location = useLocation();
@@ -173,42 +178,30 @@ export default function CollapsibleSidebar({ className = '' }) {
       </div>
     );
 
-    if (item.isButton) {
-      return (
-        <button
-          key={item.label}
-          type="button"
-          onClick={item.onClick}
-          title={item.label}
-          className={`${baseItemClass} cursor-pointer text-left`}
-        >
-          {iconElement}
-          {textElement}
-        </button>
-      );
-    }
-
-    // Khi CHƯA ĐĂNG NHẬP: Trừ Search và Home, click các nút khác ở slider sẽ hiện SayMore modal
-    if (!isAuthenticated && !isHome && !isSearch) {
-      return (
-        <button
-          key={item.label}
-          type="button"
-          onClick={handleOpenSayMore}
-          title={item.label}
-          className={`${baseItemClass} cursor-pointer text-left`}
-        >
-          {iconElement}
-          {textElement}
-        </button>
-      );
-    }
-
-    return (
+    const content = item.isButton ? (
+      <button
+        type="button"
+        onClick={item.onClick}
+        aria-label={item.label}
+        className={`${baseItemClass} cursor-pointer text-left`}
+      >
+        {iconElement}
+        {textElement}
+      </button>
+    ) : (!isAuthenticated && !isHome && !isSearch) ? (
+      <button
+        type="button"
+        onClick={handleOpenSayMore}
+        aria-label={item.label}
+        className={`${baseItemClass} cursor-pointer text-left`}
+      >
+        {iconElement}
+        {textElement}
+      </button>
+    ) : (
       <Link
-        key={item.label}
         to={item.path}
-        title={item.label}
+        aria-label={item.label}
         onClick={() => {
           if (item.isActive) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -219,6 +212,19 @@ export default function CollapsibleSidebar({ className = '' }) {
         {iconElement}
         {textElement}
       </Link>
+    );
+
+    if (isExpanded) {
+      return <div key={item.label}>{content}</div>;
+    }
+
+    return (
+      <Tooltip key={item.label}>
+        <TooltipTrigger render={content} />
+        <TooltipContent side="right" sideOffset={10}>
+          {item.label}
+        </TooltipContent>
+      </Tooltip>
     );
   };
 
@@ -237,41 +243,52 @@ export default function CollapsibleSidebar({ className = '' }) {
         <div className="space-y-3.5 w-full">
           {/* 1. Header: Logo @threads & Nút tròn More (khi đã đăng nhập) */}
           <div className="flex items-center justify-between h-10 w-full relative shrink-0">
-            <Link
-              to="/"
-              onClick={() => {
-                if (location.pathname === '/' && !location.search) {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Link
+                    to="/"
+                    onClick={() => {
+                      if (location.pathname === '/' && !location.search) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    }}
+                    className="flex items-center text-black dark:text-white hover:opacity-85 transition-opacity group"
+                    aria-label="Threads"
+                  >
+                    {/* Khung icon cố định w-10 h-10 */}
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0">
+                      <svg
+                        aria-label="Threads"
+                        role="img"
+                        viewBox="0 0 976.98 1082"
+                        className="w-7 h-7 fill-current shrink-0 transition-transform group-hover:scale-105"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
+                      </svg>
+                    </div>
+                    {/* Chữ threads xuất hiện khi mở rộng */}
+                    <div
+                      className={`overflow-hidden transition-all duration-200 ${
+                        isExpanded
+                          ? 'max-w-44 opacity-100 ml-1.5'
+                          : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+                      }`}
+                    >
+                      <span className="text-2xl font-bold italic tracking-tight leading-none whitespace-nowrap">
+                        threads
+                      </span>
+                    </div>
+                  </Link>
                 }
-              }}
-              className="flex items-center text-black dark:text-white hover:opacity-85 transition-opacity group"
-              title="Threads"
-            >
-              {/* Khung icon cố định w-10 h-10 */}
-              <div className="w-10 h-10 flex items-center justify-center shrink-0">
-                <svg
-                  aria-label="Threads"
-                  role="img"
-                  viewBox="0 0 976.98 1082"
-                  className="w-7 h-7 fill-current shrink-0 transition-transform group-hover:scale-105"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
-                </svg>
-              </div>
-              {/* Chữ threads xuất hiện khi mở rộng */}
-              <div
-                className={`overflow-hidden transition-all duration-200 ${
-                  isExpanded
-                    ? 'max-w-44 opacity-100 ml-1.5'
-                    : 'max-w-0 opacity-0 ml-0 pointer-events-none'
-                }`}
-              >
-                <span className="text-2xl font-bold italic tracking-tight leading-none whitespace-nowrap">
-                  threads
-                </span>
-              </div>
-            </Link>
+              />
+              {!isExpanded && (
+                <TooltipContent side="right" sideOffset={10}>
+                  Threads
+                </TooltipContent>
+              )}
+            </Tooltip>
 
             {/* Khi đã đăng nhập: Hiển thị nút tròn [=] cạnh logo (kèm tooltip More như ảnh mẫu) */}
             {isAuthenticated && (
@@ -281,22 +298,32 @@ export default function CollapsibleSidebar({ className = '' }) {
                 }`}
                 ref={menuRef}
               >
-                <button
-                  type="button"
-                  onClick={() => setShowMenu((prev) => !prev)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
-                    showMenu
-                      ? 'bg-zinc-800 text-white dark:bg-zinc-200 dark:text-black'
-                      : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200'
-                  }`}
-                  title="More"
-                  aria-label="More"
-                >
-                  <svg viewBox="0 0 24 24" className="w-4.5 h-4.5 stroke-current stroke-2" fill="none">
-                    <line x1="5" y1="9" x2="19" y2="9" />
-                    <line x1="5" y1="15" x2="19" y2="15" />
-                  </svg>
-                </button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        onClick={() => setShowMenu((prev) => !prev)}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
+                          showMenu
+                            ? 'bg-zinc-800 text-white dark:bg-zinc-200 dark:text-black'
+                            : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200'
+                        }`}
+                        aria-label="More"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-4.5 h-4.5 stroke-current stroke-2" fill="none">
+                          <line x1="5" y1="9" x2="19" y2="9" />
+                          <line x1="5" y1="15" x2="19" y2="15" />
+                        </svg>
+                      </button>
+                    }
+                  />
+                  {!showMenu && (
+                    <TooltipContent side="bottom" sideOffset={6}>
+                      More
+                    </TooltipContent>
+                  )}
+                </Tooltip>
 
                 {/* Popover MoreMenu khi click nút tròn cạnh logo */}
                 <MoreMenu
