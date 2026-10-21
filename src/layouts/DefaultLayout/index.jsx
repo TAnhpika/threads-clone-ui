@@ -199,12 +199,12 @@ export default function DefaultLayout() {
         </div>
       </header>
 
-      {/* Main Container: Sidebar cố định bên trái + Khu vực nội dung chính bên phải */}
-      <div className="mx-auto flex justify-center gap-6 px-4 py-4 sm:px-6 max-w-7xl">
+      {/* Main Container: Sidebar sát lề trái + Khoảng cách rộng rãi tới cột Feed chuẩn Threads.com */}
+      <div className="flex justify-start gap-[50px] pl-2.5 sm:pl-3.5 pr-4 py-4 min-h-screen">
         <Sidebar />
 
         {/* Khu vực nội dung chính bên phải */}
-        <main className="flex-1 min-w-0 max-w-5xl relative z-0">
+        <main className="min-w-0 relative z-0">
           <Outlet />
         </main>
       </div>

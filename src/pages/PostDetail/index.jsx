@@ -440,8 +440,8 @@ export default function PostDetailPage() {
   };
 
   return (
-    <div className="flex justify-center items-start w-full relative">
-      <div className="w-full max-w-155 min-w-0">
+    <div className="flex justify-start items-start w-full relative">
+      <div className="w-[630px] max-w-[630px] min-w-0 shrink-0">
         {/* Top Header: ← Back | Thread | More (...) */}
         <header className="relative flex items-center justify-between py-2 px-1 mb-2 select-none">
           {/* Nút quay lại */}
@@ -836,11 +836,11 @@ export default function PostDetailPage() {
             setCreateModalPlacement('bottom-right');
             setIsCreateModalOpen(true);
           }}
-          className="fixed bottom-6 right-6 sm:right-8 w-14 h-14 rounded-2xl bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+          className="fixed bottom-7 right-7 sm:right-9 w-16 h-16 rounded-[16px] bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
           title="Tạo Thread mới"
           aria-label="Tạo Thread mới"
         >
-          <Plus className="w-7 h-7 stroke-[2.2]" />
+          <Plus className="w-6 h-6 stroke-[2.4]" />
         </button>
       )}
 
@@ -1280,9 +1280,9 @@ function ReplyItem({
                   onClick={handleFollowingClick}
                   title="Following"
                   aria-label={`Following @${reply.author?.username || 'user'}`}
-                  className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white dark:bg-white text-black dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+                  className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full bg-white dark:bg-white text-black dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
                 >
-                  <Check className="w-3 h-3 stroke-[3]" />
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
                 </button>
               ) : (
                 <button
@@ -1290,9 +1290,9 @@ function ReplyItem({
                   onClick={handleFollow}
                   title="Follow"
                   aria-label={`Follow @${reply.author?.username || 'user'}`}
-                  className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black dark:bg-white text-white dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+                  className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full bg-black dark:bg-white text-white dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
                 >
-                  <Plus className="w-3 h-3 stroke-[3]" />
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
                 </button>
               )
             )}

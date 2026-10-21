@@ -223,8 +223,8 @@ export default function ProfilePage() {
   const username = currentUser?.username || 'tuananhpika';
 
   return (
-    <div className="flex justify-center items-start w-full select-none">
-      <div className="flex-1 max-w-155 min-w-0">
+    <div className="flex justify-start items-start w-full select-none">
+      <div className="w-[660px] max-w-[660px] min-w-0 shrink-0">
         {/* 1. TOP HEADER: Username ở giữa, Search & More ở góc phải */}
         <header className="flex items-center justify-between h-14 px-2 mb-1">
           <div className="w-16" /> {/* Placeholder cân đối lề trái */}

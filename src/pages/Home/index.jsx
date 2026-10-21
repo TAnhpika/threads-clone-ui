@@ -602,9 +602,9 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
 
   // Khi ĐÃ ĐĂNG NHẬP
   return (
-    <div className="flex justify-center items-start gap-8 w-full max-w-2xl mx-auto">
+    <div className="flex items-start gap-5 w-full">
       {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}
-      <div className="flex-1 max-w-155 min-w-0">
+      <div className="w-[660px] max-w-[660px] min-w-0 shrink-0">
         {/* Header của Feed: 'For you', 'Following', 'Saved', 'Liked', 'Ghost posts', 'Archive' chuẩn Threads.com */}
         <FeedHeader
           title={
@@ -671,25 +671,27 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         </section>
       </div>
 
-      {/* 1. Nút outline sổ ghi chép [+] ở mép phải giữa màn hình */}
-      <button
-        onClick={() => {
-          setCreateModalPlacement('bottom-right');
-          setIsCreateModalOpen(true);
-        }}
-        className="fixed right-6 sm:right-8 top-1/2 -translate-y-1/2 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors z-40 cursor-pointer hidden lg:block"
-        title="Tạo Thread mới"
-        aria-label="Tạo Thread mới"
-      >
-        <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-[1.8]">
-          <rect x="3" y="3" width="18" height="18" rx="4" />
-          <path d="M8 3v18" />
-          <path d="M15 9v6" />
-          <path d="M12 12h6" />
-        </svg>
-      </button>
+      {/* 1. Nút outline sổ ghi chép [+] ngay cạnh mép phải Feed Card chuẩn Threads.com */}
+      <div className="hidden lg:block shrink-0 sticky top-1/2 -translate-y-1/2 pt-16">
+        <button
+          onClick={() => {
+            setCreateModalPlacement('bottom-right');
+            setIsCreateModalOpen(true);
+          }}
+          className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors z-40 cursor-pointer"
+          title="Tạo Thread mới"
+          aria-label="Tạo Thread mới"
+        >
+          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-current stroke-2">
+            <rect x="3" y="3" width="18" height="18" rx="4" />
+            <path d="M8 3v18" />
+            <path d="M15 9v6" />
+            <path d="M12 12h6" />
+          </svg>
+        </button>
+      </div>
 
-      {/* 2. Nút nổi vuông bo góc dấu cộng [+] ở góc dưới bên phải */}
+      {/* 2. Nút nổi vuông bo góc dấu cộng [+] ở góc dưới bên phải chuẩn Threads.com */}
       <button
         id="floating-new-thread-btn"
         onClick={() => {
@@ -700,11 +702,11 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
             setIsCreateModalOpen(true);
           }
         }}
-        className="fixed bottom-6 right-6 sm:right-8 w-14 h-14 rounded-2xl bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+        className="fixed bottom-7 right-7 sm:right-9 w-20 h-16 rounded-[16px] bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
         title="Tạo Thread mới"
         aria-label="Tạo Thread mới"
       >
-        <Plus className="w-7 h-7 stroke-[2.2]" />
+        <Plus className="w-6 h-6 stroke-[2.4]" />
       </button>
 
       {/* Modal tạo bài viết (Hỗ trợ cả 'center' và 'bottom-right' góc phải) */}

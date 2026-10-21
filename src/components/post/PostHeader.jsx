@@ -750,9 +750,9 @@ export default function PostHeader({
                 onClick={handleFollowingBadgeClick}
                 title="Following"
                 aria-label={`Following @${username}`}
-                className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white dark:bg-white text-black dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+                className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full bg-white dark:bg-white text-black dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
               >
-                <Check className="w-3 h-3 stroke-[3]" />
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
               </button>
             ) : (
               // Badge [+] khi CHƯA THEO DÕI -> click thực hiện Follow
@@ -761,9 +761,9 @@ export default function PostHeader({
                 onClick={handleFollowClick}
                 title="Follow"
                 aria-label={`Follow @${username}`}
-                className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black dark:bg-white text-white dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
+                className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full bg-black dark:bg-white text-white dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
               >
-                <Plus className="w-3 h-3 stroke-[3]" />
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
               </button>
             )
           )}
