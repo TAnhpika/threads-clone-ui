@@ -231,7 +231,7 @@ export default function PostMenu({
       ref={menuRef}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
-      className="absolute right-0 top-9 w-64 p-1.5 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[60] animate-in fade-in zoom-in-95 duration-150 select-none text-black dark:text-white"
+      className="absolute right-0 top-9 w-64 p-1.5 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-60 animate-in fade-in zoom-in-95 duration-150 select-none text-black dark:text-white"
       role="menu"
       aria-label="Tùy chọn bài viết"
     >
@@ -248,7 +248,7 @@ export default function PostMenu({
               title="Quay lại"
               aria-label="Quay lại"
             >
-              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+              <ArrowLeft className="w-5 h-5 stroke-2.2" />
             </button>
             <span className="font-bold text-[15px] text-zinc-900 dark:text-zinc-100">
               {t('postMenu.addToFeed', 'Add to feed')}
@@ -276,7 +276,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.insights', 'Insights')}</span>
-              <InsightsIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <InsightsIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
 
             {canEdit && (
@@ -303,7 +303,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.copyLink', 'Copy link')}</span>
-              <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
 
             <button
@@ -312,7 +312,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.embed', 'Get embed code')}</span>
-              <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
           </div>
 
@@ -327,7 +327,7 @@ export default function PostMenu({
             >
               <span>{isSaved ? t('postMenu.unsave', 'Unsave') : t('postMenu.save', 'Save')}</span>
               <Bookmark
-                className={`w-5 h-5 stroke-[2.2] ${
+                className={`w-5 h-5 stroke-2.2 ${
                   isSaved
                     ? 'fill-black dark:fill-white text-black dark:text-white'
                     : 'text-zinc-700 dark:text-zinc-300'
@@ -349,7 +349,7 @@ export default function PostMenu({
                     ? t('postMenu.unpinFromProfile', 'Unpin from profile')
                     : t('postMenu.pinToProfile', 'Pin to profile')}
               </span>
-              <Pin className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2] -rotate-45" />
+              <Pin className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2 -rotate-45" />
             </button>
 
             <button
@@ -358,7 +358,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isArchived ? t('postMenu.unarchive', 'Unarchive') : t('postMenu.archive', 'Archive')}</span>
-              <RotateCcw className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <RotateCcw className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
 
             <button
@@ -369,7 +369,7 @@ export default function PostMenu({
               <span className="truncate pr-2">
                 {isHideLikes ? t('postMenu.unhideLikeCounts', 'Unhide like and share counts') : t('postMenu.hideLikeCounts', 'Hide like and share counts')}
               </span>
-              <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2] shrink-0" />
+              <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2 shrink-0" />
             </button>
 
             <button
@@ -378,7 +378,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.postOptions', 'Post options')}</span>
-              <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-[2.5]" />
+              <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-2.5" />
             </button>
           </div>
 
@@ -392,7 +392,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <span>{t('common.delete', 'Delete')}</span>
-              <Trash2 className="w-5 h-5 text-red-500 stroke-[2.2]" />
+              <Trash2 className="w-5 h-5 text-red-500 stroke-2.2" />
             </button>
           </div>
         </>
@@ -406,7 +406,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.copyLink', 'Copy link')}</span>
-              <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
 
             <button
@@ -414,7 +414,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.embed', 'Get embed code')}</span>
-              <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
           </div>
 
@@ -428,7 +428,7 @@ export default function PostMenu({
             >
               <span>{isSaved ? t('postMenu.unsave', 'Unsave') : t('postMenu.save', 'Save')}</span>
               <Bookmark
-                className={`w-5 h-5 stroke-[2.2] ${
+                className={`w-5 h-5 stroke-2.2 ${
                   isSaved
                     ? 'fill-black dark:fill-white text-black dark:text-white'
                     : 'text-zinc-700 dark:text-zinc-300'
@@ -441,7 +441,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.notInterested', 'Not interested')}</span>
-              <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
           </div>
 
@@ -457,7 +457,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.addToFeed', 'Add to feed')}</span>
-              <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-[2.5]" />
+              <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-2.5" />
             </button>
 
             <button
@@ -465,7 +465,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isMuted ? t('postMenu.unmute', 'Unmute') : t('postMenu.mute', 'Mute')}</span>
-              <UserX className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <UserX className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
 
             <button
@@ -473,7 +473,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isRestricted ? t('postMenu.unrestrict', 'Unrestrict') : t('postMenu.restrict', 'Restrict')}</span>
-              <RestrictIcon isRestricted={isRestricted} className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-[2.2]" />
+              <RestrictIcon isRestricted={isRestricted} className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
             </button>
 
             {/* Các mục cảnh báo màu đỏ */}
@@ -482,7 +482,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <span>{isBlocked ? t('postMenu.unblock', 'Unblock') : t('postMenu.block', 'Block')}</span>
-              <Ban className="w-5 h-5 text-red-500 stroke-[2.2]" />
+              <Ban className="w-5 h-5 text-red-500 stroke-2.2" />
             </button>
 
             <button
@@ -490,7 +490,7 @@ export default function PostMenu({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.report', 'Report')}</span>
-              <MessageCircleWarning className="w-5 h-5 text-red-500 stroke-[2.2]" />
+              <MessageCircleWarning className="w-5 h-5 text-red-500 stroke-2.2" />
             </button>
           </div>
         </>

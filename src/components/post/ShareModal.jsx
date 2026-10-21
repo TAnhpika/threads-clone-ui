@@ -284,7 +284,7 @@ export default function ShareModal({
               className="flex flex-col items-center gap-1.5 group cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center transition-transform group-hover:scale-105">
-                <Link2 className="w-5 h-5 text-zinc-800 dark:text-zinc-200 stroke-[2.2]" />
+                <Link2 className="w-5 h-5 text-zinc-800 dark:text-zinc-200 stroke-2.2" />
               </div>
               <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300 leading-tight">
                 {t('shareModal.copyLink', 'Copy link')}
@@ -297,7 +297,7 @@ export default function ShareModal({
               className="flex flex-col items-center gap-1.5 group cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center transition-transform group-hover:scale-105">
-                <Image className="w-5 h-5 text-zinc-800 dark:text-zinc-200 stroke-[2.2]" />
+                <Image className="w-5 h-5 text-zinc-800 dark:text-zinc-200 stroke-2.2" />
               </div>
               <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300 leading-tight">
                 {t('shareModal.copyAsImage', 'Copy as image')}
@@ -310,7 +310,7 @@ export default function ShareModal({
               className="flex flex-col items-center gap-1.5 group cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center transition-transform group-hover:scale-105">
-                <Globe className="w-5 h-5 text-zinc-800 dark:text-zinc-200 stroke-[2.2]" />
+                <Globe className="w-5 h-5 text-zinc-800 dark:text-zinc-200 stroke-2.2" />
               </div>
               <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300 leading-tight">
                 {t('shareModal.embedCode', 'Embed code')}

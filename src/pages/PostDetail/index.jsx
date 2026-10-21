@@ -441,7 +441,7 @@ export default function PostDetailPage() {
 
   return (
     <div className="flex justify-start items-start w-full relative">
-      <div className="w-[630px] max-w-[630px] min-w-0 shrink-0">
+      <div className="w-157.5 max-w-157.5 min-w-0 shrink-0">
         {/* Top Header: ← Back | Thread | More (...) */}
         <header className="relative flex items-center justify-between py-2 px-1 mb-2 select-none">
           {/* Nút quay lại */}
@@ -457,7 +457,7 @@ export default function PostDetailPage() {
             title="Quay lại"
             aria-label="Quay lại"
           >
-            <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+            <ArrowLeft className="w-5 h-5 stroke-2.2" />
           </button>
 
           {/* Tiêu đề căn giữa */}
@@ -660,7 +660,7 @@ export default function PostDetailPage() {
                         {isSubmittingReply ? (
                           <RadialSpinner className="w-4 h-4 text-zinc-400" />
                         ) : (
-                          <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                          <ArrowUp className="w-4 h-4 stroke-2.5" />
                         )}
                       </button>
                     )}
@@ -708,7 +708,7 @@ export default function PostDetailPage() {
                           className="absolute top-1 right-1 p-1 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md z-10"
                           title="Xóa tệp"
                         >
-                          <X className="w-3 h-3 stroke-[2.5]" />
+                          <X className="w-3 h-3 stroke-2.5" />
                         </button>
                       </div>
                     ))}
@@ -818,7 +818,7 @@ export default function PostDetailPage() {
           title="Tạo Thread mới"
           aria-label="Tạo Thread mới"
         >
-          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-[1.8]">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current stroke-1.8">
             <rect x="3" y="3" width="18" height="18" rx="4" />
             <path d="M8 3v18" />
             <path d="M15 9v6" />
@@ -836,11 +836,11 @@ export default function PostDetailPage() {
             setCreateModalPlacement('bottom-right');
             setIsCreateModalOpen(true);
           }}
-          className="fixed bottom-7 right-7 sm:right-9 w-16 h-16 rounded-[16px] bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+          className="fixed bottom-7 right-7 sm:right-9 w-16 h-16 rounded-4 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
           title="Tạo Thread mới"
           aria-label="Tạo Thread mới"
         >
-          <Plus className="w-6 h-6 stroke-[2.4]" />
+          <Plus className="w-6 h-6 stroke-2.4" />
         </button>
       )}
 
@@ -1282,7 +1282,7 @@ function ReplyItem({
                   aria-label={`Following @${reply.author?.username || 'user'}`}
                   className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full bg-white dark:bg-white text-black dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
                 >
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  <Check className="w-3.5 h-3.5 stroke-3" />
                 </button>
               ) : (
                 <button
@@ -1292,7 +1292,7 @@ function ReplyItem({
                   aria-label={`Follow @${reply.author?.username || 'user'}`}
                   className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full bg-black dark:bg-white text-white dark:text-black border-2 border-white dark:border-[#121212] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer shadow-xs z-10"
                 >
-                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <Plus className="w-3.5 h-3.5 stroke-3" />
                 </button>
               )
             )}

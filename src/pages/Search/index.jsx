@@ -607,7 +607,7 @@ export default function SearchPage() {
 
   return (
     <div className="flex justify-start items-start w-full relative">
-      <div className="w-[660px] max-w-[660px] min-w-0 shrink-0">
+      <div className="w-165 max-w-165 min-w-0 shrink-0">
         {/* 1. THANH TÌM KIẾM Ở TRÊN ĐẦU (SEARCH BAR) */}
         <div className="flex items-center gap-2 mb-3.5 select-none">
           {/* Hộp input tìm kiếm bo tròn */}
@@ -1107,11 +1107,11 @@ export default function SearchPage() {
             setCreateModalPlacement('bottom-right');
             setIsCreateModalOpen(true);
           }}
-          className="fixed bottom-7 right-7 sm:right-9 w-16 h-16 rounded-[16px] bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+          className="fixed bottom-7 right-7 sm:right-9 w-16 h-16 rounded-4 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
           title="Tạo Thread mới"
           aria-label="Tạo Thread mới"
         >
-          <Plus className="w-6 h-6 stroke-[2.4]" />
+          <Plus className="w-6 h-6 stroke-2.4" />
         </button>
       )}
 

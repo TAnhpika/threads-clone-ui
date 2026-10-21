@@ -34,9 +34,17 @@ Tuyệt đối không dùng ký hiệu ngoặc vuông `[...]` khi Tailwind v4 đ
    - `text-[20px]` -> `text-xl`
    - `text-[24px]` -> `text-2xl`
    - Trường hợp font size đặc thù khác: dùng canonical unit `text-3.75` (cho 15px) hoặc map về `text-sm`/`text-base`.
-5. **Padding, Margin, Gaps**:
+5. **Padding, Margin, Gaps & Z-Index**:
    - Dùng thang đo v4: `p-4` thay vì `p-[16px]`, `gap-4` thay vì `gap-[16px]`.
+   - Z-Index: `z-60` thay vì `z-[60]`, `z-100` thay vì `z-[100]`, `z-9999` thay vì `z-[9999]`.
+6. **Text Wrapping Utilities**:
+   - `break-words` -> `wrap-break-word` (The class `break-words` can be written as `wrap-break-word` - chuẩn hóa theo CSS spec `overflow-wrap: break-word`).
+7. **Gradient Utilities**:
+   - `bg-gradient-to-tr` -> `bg-linear-to-tr` (The class `bg-gradient-to-tr` can be written as `bg-linear-to-tr`).
+   - `bg-gradient-to-b` -> `bg-linear-to-b` (The class `bg-gradient-to-b` can be written as `bg-linear-to-b`).
+   - Quy tắc chung: Tất cả linear gradients dạng `bg-gradient-to-*` chuyển sang `bg-linear-to-*` (`bg-linear-to-t`, `bg-linear-to-tr`, `bg-linear-to-r`, `bg-linear-to-br`, `bg-linear-to-b`, `bg-linear-to-bl`, `bg-linear-to-l`, `bg-linear-to-tl`).
 
 ## 3. Tóm tắt nguyên tắc cốt lõi:
 - Mọi giá trị px cần chuyển sang đơn vị Tailwind bằng công thức: `px / 4`.
 - Luôn ưu tiên cú pháp chuẩn v4 gọn gàng và không dùng bracket notation `[...]` nếu có thể biểu diễn bằng số thực hoặc built-in utilities.
+- Tuân thủ nghiêm ngặt các canonical classes của Tailwind v4: `wrap-break-word`, `bg-linear-to-*`, `scrollbar-none`, `scale-99`, `stroke-2`, `z-60`.

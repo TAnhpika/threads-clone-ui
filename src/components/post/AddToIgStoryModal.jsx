@@ -94,7 +94,7 @@ export default function AddToIgStoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-200"
       onClick={(e) => {
         e.stopPropagation();
         if (e.target === e.currentTarget) onClose();
@@ -106,7 +106,7 @@ export default function AddToIgStoryModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-4xl h-[88vh] max-h-[720px] bg-[#111111] border border-zinc-800/90 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white animate-in zoom-in-95 duration-200"
+        className="w-full max-w-4xl h-[88vh] max-h-180 bg-[#111111] border border-zinc-800/90 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white animate-in zoom-in-95 duration-200"
       >
         {/* 1. Header Modal */}
         <header className="px-6 py-3.5 bg-[#141414] border-b border-zinc-850 flex items-center justify-center relative shrink-0">
@@ -131,11 +131,11 @@ export default function AddToIgStoryModal({
           </div>
 
           {/* Khung mô phỏng màn hình Story (Aspect ~ 9:16) */}
-          <div className="w-[280px] sm:w-[300px] h-full max-h-[420px] sm:max-h-[480px] bg-gradient-to-b from-[#1f1f22] via-[#141416] to-[#0c0c0e] rounded-[22px] sm:rounded-[26px] p-3 sm:p-3.5 flex flex-col justify-between relative shadow-2xl border border-zinc-800/80 overflow-hidden shrink-0">
+          <div className="w-70 sm:w-75 h-full max-h-105 sm:max-h-120 bg-linear-to-b from-[#1f1f22] via-[#141416] to-[#0c0c0e] rounded-5.5 sm:rounded-6.5 p-3 sm:p-3.5 flex flex-col justify-between relative shadow-2xl border border-zinc-800/80 overflow-hidden shrink-0">
             {/* Top Bar Story: Progress Line & User Header */}
             <div className="shrink-0">
               {/* Progress bar mỏng màu trắng */}
-              <div className="w-full h-[2.5px] bg-white/30 rounded-full overflow-hidden mb-2.5">
+              <div className="w-full h-0.625 bg-white/30 rounded-full overflow-hidden mb-2.5">
                 <div className="h-full w-full bg-white rounded-full" />
               </div>
 
@@ -149,7 +149,7 @@ export default function AddToIgStoryModal({
                   }}
                   className="w-6 h-6 rounded-full object-cover border border-zinc-700/80 shrink-0"
                 />
-                <span className="text-xs font-semibold text-white truncate max-w-[170px]">
+                <span className="text-xs font-semibold text-white truncate max-w-42.5">
                   {currentUsername}
                 </span>
                 <span className="text-[11px] text-zinc-400 shrink-0">1s</span>
@@ -157,7 +157,7 @@ export default function AddToIgStoryModal({
             </div>
 
             {/* Trung tâm Story: Thread Post Sticker Card */}
-            <div className="bg-[#18181a]/95 backdrop-blur-md border border-white/10 dark:border-zinc-800 rounded-2xl p-3.5 shadow-2xl w-full max-w-[285px] mx-auto my-auto transition-transform hover:scale-[1.01]">
+            <div className="bg-[#18181a]/95 backdrop-blur-md border border-white/10 dark:border-zinc-800 rounded-2xl p-3.5 shadow-2xl w-full max-w-71.25 mx-auto my-auto transition-transform hover:scale-101">
               {/* Header card: Tác giả bài viết & Logo Threads @ */}
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -240,7 +240,7 @@ export default function AddToIgStoryModal({
           >
             {isAdded ? (
               <>
-                <Check className="w-4 h-4 stroke-[3]" />
+                <Check className="w-4 h-4 stroke-3" />
                 Added
               </>
             ) : isSubmitting ? (

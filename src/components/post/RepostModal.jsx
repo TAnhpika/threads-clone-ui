@@ -85,7 +85,7 @@ export default function RepostModal({
               : t('repostModal.repost', 'Repost')}
           </span>
           <Repeat2
-            className={`w-5 h-5 stroke-[2.2] ${
+            className={`w-5 h-5 stroke-2.2 ${
               isReposted ? 'text-red-500' : 'text-zinc-700 dark:text-zinc-300'
             }`}
           />

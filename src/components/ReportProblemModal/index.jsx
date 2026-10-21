@@ -118,7 +118,7 @@ export default function ReportProblemModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-150 select-none"
+      className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-150 select-none"
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
@@ -127,7 +127,7 @@ export default function ReportProblemModal({
       <div
         ref={cardRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[490px] flex flex-col items-center animate-in zoom-in-95 duration-150"
+        className="w-full max-w-122.5 flex flex-col items-center animate-in zoom-in-95 duration-150"
       >
         {/* TIÊU ĐỀ: CĂN GIỮA PHÍA TRÊN CARD */}
         <h2
@@ -138,11 +138,11 @@ export default function ReportProblemModal({
         </h2>
 
         {/* KHUNG THẺ CHÍNH (CARD) */}
-        <div className="w-full bg-[#181818] border border-[#2e2e2e] rounded-[22px] p-4.5 sm:p-5 flex flex-col justify-between shadow-2xl transition-all">
+        <div className="w-full bg-[#181818] border border-[#2e2e2e] rounded-5.5 p-4.5 sm:p-5 flex flex-col justify-between shadow-2xl transition-all">
           {isSuccess ? (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center animate-in zoom-in duration-200">
-                <Check className="w-6 h-6 stroke-[2.5]" />
+                <Check className="w-6 h-6 stroke-2.5" />
               </div>
               <p className="text-white font-semibold text-base">Thank you for your feedback</p>
               <p className="text-zinc-400 text-xs max-w-xs">
@@ -158,7 +158,7 @@ export default function ReportProblemModal({
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="Please include as many details as possible..."
                 rows={5}
-                className="w-full bg-transparent border-0 outline-none resize-none text-[15px] text-white placeholder:text-[#6e6e6e] leading-relaxed min-h-[135px] selection:bg-zinc-700"
+                className="w-full bg-transparent border-0 outline-none resize-none text-[15px] text-white placeholder:text-[#6e6e6e] leading-relaxed min-h-33.75 selection:bg-zinc-700"
               />
 
               {/* DANH SÁCH FILE ĐÍNH KÈM (NẾU CÓ) */}
@@ -167,7 +167,7 @@ export default function ReportProblemModal({
                   {attachedFiles.map((item, idx) => (
                     <div
                       key={idx}
-                      className="relative group bg-[#222222] border border-[#333333] rounded-xl p-1.5 flex items-center gap-2 max-w-[180px] text-xs text-zinc-300"
+                      className="relative group bg-[#222222] border border-[#333333] rounded-xl p-1.5 flex items-center gap-2 max-w-45 text-xs text-zinc-300"
                     >
                       {item.preview ? (
                         <img
@@ -202,7 +202,7 @@ export default function ReportProblemModal({
                   title="Attach file or screenshot"
                   aria-label="Attach file"
                 >
-                  <Paperclip className="w-5 h-5 -rotate-45 stroke-[2.2]" />
+                  <Paperclip className="w-5 h-5 -rotate-45 stroke-2.2" />
                 </button>
                 <input
                   ref={fileInputRef}

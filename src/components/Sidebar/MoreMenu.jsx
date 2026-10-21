@@ -106,7 +106,7 @@ export default function MoreMenu({
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left group"
           >
             <span>Appearance</span>
-            <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white stroke-[2.2] transition-colors" />
+            <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white stroke-2.2 transition-colors" />
           </button>
 
           <button
@@ -115,7 +115,7 @@ export default function MoreMenu({
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left group"
           >
             <span>Sounds</span>
-            <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white stroke-[2.2] transition-colors" />
+            <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white stroke-2.2 transition-colors" />
           </button>
 
           {/* Settings: Khi đã đăng nhập hiển thị ngay dưới Sounds */}
@@ -176,7 +176,7 @@ export default function MoreMenu({
               title="Back"
               aria-label="Back"
             >
-              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+              <ArrowLeft className="w-5 h-5 stroke-2.2" />
             </button>
             <h3 className="text-sm font-bold text-black dark:text-white text-center flex-1 pr-6">
               Appearance
@@ -240,7 +240,7 @@ export default function MoreMenu({
               title="Back"
               aria-label="Back"
             >
-              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+              <ArrowLeft className="w-5 h-5 stroke-2.2" />
             </button>
             <h3 className="text-sm font-bold text-black dark:text-white text-center flex-1 pr-6">
               Sounds

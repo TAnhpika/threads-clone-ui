@@ -132,7 +132,7 @@ export default function SuggestedProfiles({ className = '' }) {
           return (
             <div
               key={profile.id}
-              className="w-[145px] sm:w-[155px] shrink-0 bg-zinc-50 dark:bg-[#181818] border border-zinc-200/90 dark:border-zinc-800/90 rounded-2xl p-3.5 flex flex-col items-center justify-between relative shadow-xs group transition-transform hover:-translate-y-0.5"
+              className="w-36.25 sm:w-38.75 shrink-0 bg-zinc-50 dark:bg-[#181818] border border-zinc-200/90 dark:border-zinc-800/90 rounded-2xl p-3.5 flex flex-col items-center justify-between relative shadow-xs group transition-transform hover:-translate-y-0.5"
             >
               {/* Nút đóng [X] ở góc trên bên phải */}
               <button
@@ -142,7 +142,7 @@ export default function SuggestedProfiles({ className = '' }) {
                 title="Dismiss"
                 aria-label="Dismiss suggestion"
               >
-                <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                <X className="w-3.5 h-3.5 stroke-2.5" />
               </button>
 
               {/* Avatar to tròn ở giữa */}
@@ -201,7 +201,7 @@ export default function SuggestedProfiles({ className = '' }) {
           title="Scroll left"
           aria-label="Scroll left"
         >
-          <ChevronLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+          <ChevronLeft className="w-3.5 h-3.5 stroke-2.5" />
         </button>
 
         {/* Thanh track & thumb hiển thị tiến trình cuộn */}
@@ -223,7 +223,7 @@ export default function SuggestedProfiles({ className = '' }) {
           title="Scroll right"
           aria-label="Scroll right"
         >
-          <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
+          <ChevronRight className="w-3.5 h-3.5 stroke-2.5" />
         </button>
       </div>
     </div>

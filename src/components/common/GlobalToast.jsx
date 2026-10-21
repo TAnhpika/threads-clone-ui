@@ -122,7 +122,7 @@ export default function GlobalToast() {
         role="status"
         aria-live="polite"
         id="app-global-toast"
-        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] w-[280px] sm:w-[320px] px-5 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-[15px] shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 select-none"
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-9999 w-70 sm:w-80 px-5 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-[15px] shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 select-none"
       >
         {toast.status === 'loading' ? (
           /* Trạng thái 1: [Spinner] Posting... (Ảnh mẫu 1 & 3) */
@@ -136,7 +136,7 @@ export default function GlobalToast() {
           /* Trạng thái 2: ✓ Posted  View (Ảnh mẫu 2) */
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 stroke-[2.8] text-black" />
+              <Check className="w-4 h-4 stroke-2.8 text-black" />
               <span className="font-medium text-black">
                 {toast.message || 'Posted'}
               </span>
@@ -161,7 +161,7 @@ export default function GlobalToast() {
         role="status"
         aria-live="polite"
         id="app-global-toast"
-        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] w-[280px] sm:w-[320px] px-5 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-[15px] shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 select-none"
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-9999 w-70 sm:w-80 px-5 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-[15px] shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 select-none"
       >
         {toast.status === 'loading' ? (
           /* Trạng thái 1: Editing... (Ảnh mẫu 1) */
@@ -172,7 +172,7 @@ export default function GlobalToast() {
           /* Trạng thái 2: ✓ Edited  View (Ảnh mẫu 2) */
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 stroke-[2.8] text-black" />
+              <Check className="w-4 h-4 stroke-2.8 text-black" />
               <span className="font-medium text-black">
                 {toast.message || 'Edited'}
               </span>
@@ -196,7 +196,7 @@ export default function GlobalToast() {
       role="status"
       aria-live="polite"
       id="app-global-toast"
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-sm font-semibold shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 flex items-center justify-center gap-3 select-none min-w-28 text-center"
+      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-9999 px-6 py-3.5 bg-white text-black dark:bg-white dark:text-black rounded-2xl text-sm font-semibold shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 flex items-center justify-center gap-3 select-none min-w-28 text-center"
     >
       <span className="truncate">{toast.message}</span>
       {toast.onUndo && (

@@ -450,7 +450,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
           return (
             <div className="py-20 px-6 flex flex-col items-center justify-center text-center select-none">
               <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800/80 flex items-center justify-center mb-4 text-zinc-500 dark:text-zinc-400">
-                <Bookmark className="w-8 h-8 stroke-[1.75]" />
+                <Bookmark className="w-8 h-8 stroke-1.75" />
               </div>
               <h3 className="text-base font-bold text-black dark:text-white mb-1.5">
                 Chưa có bài viết đã lưu
@@ -466,7 +466,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
           return (
             <div className="py-20 px-6 flex flex-col items-center justify-center text-center select-none">
               <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800/80 flex items-center justify-center mb-4 text-zinc-500 dark:text-zinc-400">
-                <Heart className="w-8 h-8 stroke-[1.75]" />
+                <Heart className="w-8 h-8 stroke-1.75" />
               </div>
               <h3 className="text-base font-bold text-black dark:text-white mb-1.5">
                 Chưa có bài viết đã thích
@@ -602,7 +602,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
   return (
     <div className="flex items-start gap-5 w-full">
       {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}
-      <div className="w-[660px] max-w-[660px] min-w-0 shrink-0">
+      <div className="w-165 max-w-165 min-w-0 shrink-0">
         {/* Header của Feed: 'For you', 'Following', 'Saved', 'Liked', 'Ghost posts', 'Archive' chuẩn Threads.com */}
         <FeedHeader
           title={
@@ -700,11 +700,11 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
             setIsCreateModalOpen(true);
           }
         }}
-        className="fixed bottom-7 right-7 sm:right-9 w-20 h-16 rounded-[16px] bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
+        className="fixed bottom-7 right-7 sm:right-9 w-20 h-16 rounded-4 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-700/60 shadow-2xl flex items-center justify-center text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer"
         title="Tạo Thread mới"
         aria-label="Tạo Thread mới"
       >
-        <Plus className="w-6 h-6 stroke-[2.4]" />
+        <Plus className="w-6 h-6 stroke-2.4" />
       </button>
 
       {/* Modal tạo bài viết (Hỗ trợ cả 'center' và 'bottom-right' góc phải) */}

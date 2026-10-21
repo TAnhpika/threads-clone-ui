@@ -266,7 +266,7 @@ export default function EditPostModal({
             aria-label="Tùy chọn khác"
           >
             <div className="w-6 h-6 rounded-full border border-zinc-400/90 flex items-center justify-center">
-              <MoreHorizontal className="w-3.5 h-3.5 stroke-[2.5]" />
+              <MoreHorizontal className="w-3.5 h-3.5 stroke-2.5" />
             </div>
           </button>
         </div>
@@ -357,7 +357,7 @@ export default function EditPostModal({
                 className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition-colors text-xs sm:text-[13px] font-medium cursor-pointer"
               >
                 <div className="w-5 h-5 rounded-md border border-zinc-700/80 flex items-center justify-center">
-                  <SlidersHorizontal className="w-3 h-3 stroke-[2.2]" />
+                  <SlidersHorizontal className="w-3 h-3 stroke-2.2" />
                 </div>
                 <span>Post options</span>
               </button>

@@ -150,7 +150,7 @@ export default function CollapsibleSidebar({ className = '' }) {
           <SolidHome className="w-6 h-6 fill-current text-black dark:text-white transition-transform" />
         ) : (
           <IconComponent
-            className={`w-6 h-6 stroke-[1.9] transition-transform ${
+            className={`w-6 h-6 stroke-1.9 transition-transform ${
               item.isActive ? 'text-black dark:text-white' : ''
             }`}
           />

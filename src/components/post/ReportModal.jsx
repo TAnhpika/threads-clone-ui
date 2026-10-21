@@ -65,11 +65,11 @@ export default function ReportModal({ isOpen, onClose, postId }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[480px] bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden text-black dark:text-white animate-in zoom-in-95 duration-150 select-none flex flex-col max-h-[88vh]"
+        className="w-full max-w-120 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden text-black dark:text-white animate-in zoom-in-95 duration-150 select-none flex flex-col max-h-[88vh]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -144,7 +144,7 @@ export default function ReportModal({ isOpen, onClose, postId }) {
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 text-zinc-400 animate-spin shrink-0" />
                     ) : (
-                      <ChevronRight className="w-4.5 h-4.5 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 shrink-0 stroke-[2]" />
+                      <ChevronRight className="w-4.5 h-4.5 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 shrink-0 stroke-2" />
                     )}
                   </button>
                 );
@@ -155,9 +155,9 @@ export default function ReportModal({ isOpen, onClose, postId }) {
           /* BƯỚC 2: Màn hình cảm ơn & xác nhận (Thanks for your feedback) */
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 text-center animate-in fade-in duration-200">
             {/* Icon vòng tròn gradient chuẩn Instagram/Threads */}
-            <div className="relative w-16 h-16 rounded-full p-[2.5px] bg-gradient-to-tr from-[#f58529] via-[#dd2a7b] to-[#8134af] flex items-center justify-center shadow-lg">
+            <div className="relative w-16 h-16 rounded-full p-0.625 bg-linear-to-tr from-[#f58529] via-[#dd2a7b] to-[#8134af] flex items-center justify-center shadow-lg">
               <div className="w-full h-full rounded-full bg-white dark:bg-[#181818] flex items-center justify-center">
-                <Check className="w-7 h-7 text-[#dd2a7b] stroke-[2.8]" />
+                <Check className="w-7 h-7 text-[#dd2a7b] stroke-2.8" />
               </div>
             </div>
 
@@ -174,7 +174,7 @@ export default function ReportModal({ isOpen, onClose, postId }) {
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3 px-6 rounded-2xl bg-black text-white dark:bg-white dark:text-black font-bold text-sm hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer shadow-md"
+              className="w-full py-3 px-6 rounded-2xl bg-black text-white dark:bg-white dark:text-black font-bold text-sm hover:opacity-90 active:scale-99 transition-all cursor-pointer shadow-md"
             >
               Done
             </button>

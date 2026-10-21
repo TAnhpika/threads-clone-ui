@@ -229,7 +229,7 @@ export default function EmbedPage() {
                 className="w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0"
                 title="Đã xác minh"
               >
-                <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                <Check className="w-2.5 h-2.5 stroke-3.5" />
               </span>
             )}
 
@@ -259,7 +259,7 @@ export default function EmbedPage() {
 
       {/* 2. Nội dung bài viết (Text + Media nếu có) */}
       {cleanContent && (
-        <p className="text-[14.5px] leading-relaxed my-3.5 whitespace-pre-line font-normal text-zinc-900 break-words">
+        <p className="text-[14.5px] leading-relaxed my-3.5 whitespace-pre-line font-normal text-zinc-900 wrap-break-word">
           {cleanContent}
         </p>
       )}
@@ -313,7 +313,7 @@ export default function EmbedPage() {
           className="flex items-center gap-1.5 hover:text-black transition-colors"
           title={`${likesCount} lượt thích`}
         >
-          <Heart className="w-3.5 h-3.5 stroke-[2]" />
+          <Heart className="w-3.5 h-3.5 stroke-2" />
           <span>{formatEmbedCount(likesCount)}</span>
         </span>
 
@@ -321,7 +321,7 @@ export default function EmbedPage() {
           className="flex items-center gap-1.5 hover:text-black transition-colors"
           title={`${commentsCount} bình luận`}
         >
-          <MessageCircle className="w-3.5 h-3.5 stroke-[2]" />
+          <MessageCircle className="w-3.5 h-3.5 stroke-2" />
           <span>{formatEmbedCount(commentsCount)}</span>
         </span>
 
@@ -329,7 +329,7 @@ export default function EmbedPage() {
           className="flex items-center gap-1.5 hover:text-black transition-colors"
           title={`${repostsCount} lượt đăng lại`}
         >
-          <Repeat2 className="w-3.5 h-3.5 stroke-[2]" />
+          <Repeat2 className="w-3.5 h-3.5 stroke-2" />
           <span>{formatEmbedCount(repostsCount)}</span>
         </span>
 
@@ -337,7 +337,7 @@ export default function EmbedPage() {
           className="flex items-center gap-1.5 hover:text-black transition-colors"
           title={`${sharesCount} lượt chia sẻ`}
         >
-          <Send className="w-3.5 h-3.5 stroke-[2]" />
+          <Send className="w-3.5 h-3.5 stroke-2" />
           <span>{formatEmbedCount(sharesCount)}</span>
         </span>
       </div>

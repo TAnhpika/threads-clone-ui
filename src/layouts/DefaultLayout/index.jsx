@@ -200,7 +200,7 @@ export default function DefaultLayout() {
       </header>
 
       {/* Main Container: Sidebar sát lề trái + Khoảng cách rộng rãi tới cột Feed chuẩn Threads.com */}
-      <div className="flex justify-start gap-[50px] pl-2.5 sm:pl-3.5 pr-4 py-4 min-h-screen">
+      <div className="flex justify-start gap-12.5 pl-2.5 sm:pl-3.5 pr-4 py-4 min-h-screen">
         <Sidebar />
 
         {/* Khu vực nội dung chính bên phải */}

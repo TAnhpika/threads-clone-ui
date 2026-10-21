@@ -45,7 +45,7 @@ export default function InstagramAuthCard({
             <InstagramGlyph
               className={
                 isModal
-                  ? "w-6 h-6 text-white stroke-[2.2]"
+                  ? "w-6 h-6 text-white stroke-2.2"
                   : "w-5.5 h-5.5 text-white"
               }
             />

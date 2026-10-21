@@ -205,7 +205,7 @@ export default function CreateFeedModal({ isOpen, onClose, onFeedCreated }) {
               className="bg-[#1a1a1a] rounded-2xl p-3.5 px-4 border border-zinc-800/80 flex items-center gap-3.5 cursor-pointer hover:bg-zinc-800/60 transition-colors select-none"
             >
               <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-white shrink-0">
-                <Plus className="w-5 h-5 stroke-[2.5]" />
+                <Plus className="w-5 h-5 stroke-2.5" />
               </div>
               <span className="font-bold text-[15px] text-white">Add topics or profiles</span>
             </div>

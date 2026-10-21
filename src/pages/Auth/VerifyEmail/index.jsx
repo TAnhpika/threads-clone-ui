@@ -85,7 +85,7 @@ export default function VerifyEmailPage() {
           {/* Nút 'Đi tới trang đăng nhập' */}
           <Link
             to="/login"
-            className="w-full h-12 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm flex items-center justify-center transition-all shadow-xs active:scale-[0.99]"
+            className="w-full h-12 rounded-2xl bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-sm flex items-center justify-center transition-all shadow-xs active:scale-99"
           >
             Đi tới trang đăng nhập
           </Link>

@@ -572,7 +572,7 @@ export default function CreatePostModal({
             title="Đóng"
             aria-label="Đóng"
           >
-            <X className="w-5 h-5 stroke-[2.2]" />
+            <X className="w-5 h-5 stroke-2.2" />
           </button>
         ) : (
           /* Nút Cancel khi ở giữa màn hình */
@@ -621,7 +621,7 @@ export default function CreatePostModal({
             aria-label="Tùy chọn khác"
           >
             <div className="w-6 h-6 rounded-full border border-zinc-400/90 flex items-center justify-center">
-              <MoreHorizontal className="w-3.5 h-3.5 stroke-[2.5]" />
+              <MoreHorizontal className="w-3.5 h-3.5 stroke-2.5" />
             </div>
           </button>
         </div>
@@ -722,7 +722,7 @@ export default function CreatePostModal({
                       title="Xóa bài này khỏi chuỗi thread"
                       aria-label="Xóa bài này khỏi chuỗi thread"
                     >
-                      <X className="w-4 h-4 stroke-[2]" />
+                      <X className="w-4 h-4 stroke-2" />
                     </button>
                   )}
 
@@ -825,7 +825,7 @@ export default function CreatePostModal({
                           className="absolute top-2 right-2 p-1.5 rounded-full bg-black/75 text-white hover:bg-black transition-colors cursor-pointer shadow-md z-10"
                           title="Xóa tệp"
                         >
-                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <X className="w-3.5 h-3.5 stroke-2.5" />
                         </button>
                       </div>
                     ))}
@@ -981,7 +981,7 @@ export default function CreatePostModal({
               className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition-colors text-xs sm:text-[13px] font-medium cursor-pointer"
             >
               <div className="w-5 h-5 rounded-md border border-zinc-700/80 flex items-center justify-center">
-                <SlidersHorizontal className="w-3 h-3 stroke-[2.2]" />
+                <SlidersHorizontal className="w-3 h-3 stroke-2.2" />
               </div>
               <span>Post options</span>
             </button>

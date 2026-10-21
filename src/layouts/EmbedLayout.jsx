@@ -8,7 +8,7 @@ import { Outlet } from 'react-router-dom';
 export default function EmbedLayout() {
   return (
     <div className="w-full min-h-full bg-white text-black flex flex-col justify-center items-center p-2 sm:p-3 selection:bg-zinc-200 selection:text-black">
-      <main className="w-full max-w-[540px] mx-auto">
+      <main className="w-full max-w-135 mx-auto">
         <Outlet />
       </main>
     </div>

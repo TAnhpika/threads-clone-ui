@@ -57,7 +57,7 @@ export default function EmbedModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in duration-150"
       onClick={(e) => {
         e.stopPropagation();
         if (e.target === e.currentTarget) onClose();
@@ -69,14 +69,14 @@ export default function EmbedModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[540px] bg-[#1c1c1e] border border-zinc-800 rounded-[28px] shadow-2xl p-4 sm:p-6 text-white animate-in zoom-in-95 duration-150 flex flex-col gap-4 relative"
+        className="w-full max-w-135 bg-[#1c1c1e] border border-zinc-800 rounded-7 shadow-2xl p-4 sm:p-6 text-white animate-in zoom-in-95 duration-150 flex flex-col gap-4 relative"
       >
         {/* 1. Preview bằng thẻ iframe trỏ tới trang Embed */}
         <div className="w-full bg-white rounded-2xl overflow-hidden shadow-lg border border-zinc-200 flex items-center justify-center">
           <iframe
             src={embedUrl}
             title="Threads post embed preview"
-            className="w-full h-[440px] sm:h-[460px] border-0 block bg-white"
+            className="w-full h-110 sm:h-115 border-0 block bg-white"
             scrolling="no"
             loading="lazy"
             allowTransparency="true"
@@ -96,7 +96,7 @@ export default function EmbedModal({
           >
             {isCopied ? (
               <>
-                <Check className="w-4 h-4 stroke-[3]" />
+                <Check className="w-4 h-4 stroke-3" />
                 Copied
               </>
             ) : (

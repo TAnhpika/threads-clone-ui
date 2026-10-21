@@ -18,7 +18,7 @@ export default function ConfirmDialog({
   confirmText = "Confirm",
   confirmVariant = "danger", // 'danger' | 'primary' | 'default'
   isLoading = false,
-  maxWidth = "w-full max-w-[340px] sm:max-w-[360px]",
+  maxWidth = "w-full max-w-85 sm:max-w-90",
 }) {
   const modalRef = useRef(null);
 
@@ -65,7 +65,7 @@ export default function ConfirmDialog({
       <div
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
-        className={`${maxWidth} bg-[#181818] rounded-[24px] overflow-hidden shadow-2xl border border-zinc-800/80 animate-in fade-in zoom-in-95 duration-150 text-white select-none`}
+        className={`${maxWidth} bg-[#181818] rounded-6 overflow-hidden shadow-2xl border border-zinc-800/80 animate-in fade-in zoom-in-95 duration-150 text-white select-none`}
       >
         {/* Phần nội dung phía trên: Avatar (nếu có) + Tiêu đề + Giải thích */}
         <div className="pt-6 pb-6 px-6 sm:px-7 flex flex-col items-center text-center">

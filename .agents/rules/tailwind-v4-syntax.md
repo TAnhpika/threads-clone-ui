@@ -17,6 +17,8 @@ Mọi component trong dự án bắt buộc phải tuân theo cú pháp Tailwind
    - `scrollbar-none` thay cho `[scrollbar-width:none]`
    - `scale-99` / `active:scale-99` thay cho `scale-[0.99]`
    - `stroke-1`, `stroke-2`, `stroke-3` thay cho `stroke-[1]`, `stroke-[2]`, `stroke-[3]`
+   - `wrap-break-word` thay cho `break-words`
+   - `bg-linear-to-tr`, `bg-linear-to-b`, ... thay cho `bg-gradient-to-*`
    - `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`
 3. **CSS-First Theme Config**:
    - Cấu hình theme trực tiếp bằng directives `@theme` trong CSS, không sử dụng file config JS kiểu cũ.

@@ -175,12 +175,12 @@ export default function CopyImageModal({
       {/* Khung Modal chính: bo tròn bo góc lớn chuẩn mẫu Threads */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[560px] bg-[#1c1c1e] border border-zinc-800 rounded-[28px] shadow-2xl p-4 sm:p-6 text-white animate-in zoom-in-95 duration-150 flex flex-col gap-4"
+        className="w-full max-w-140 bg-[#1c1c1e] border border-zinc-800 rounded-7 shadow-2xl p-4 sm:p-6 text-white animate-in zoom-in-95 duration-150 flex flex-col gap-4"
       >
         {/* 1. Preview Card DOM Node được chụp bởi html-to-image */}
         <div
           ref={cardRef}
-          className={`w-full rounded-[22px] p-5 sm:p-6 transition-colors shadow-lg ${
+          className={`w-full rounded-5.5 p-5 sm:p-6 transition-colors shadow-lg ${
             isDark
               ? 'bg-[#101010] text-white border border-white/10'
               : 'bg-white text-black border border-black/10'
@@ -241,19 +241,19 @@ export default function CopyImageModal({
               } ${showMetrics ? 'opacity-100' : 'opacity-0 select-none pointer-events-none'}`}
             >
               <span className="flex items-center gap-1.5 font-medium">
-                <Heart className="w-4 h-4 stroke-[2]" />
+                <Heart className="w-4 h-4 stroke-2" />
                 {likesCount}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <MessageCircle className="w-4 h-4 stroke-[2]" />
+                <MessageCircle className="w-4 h-4 stroke-2" />
                 {commentsCount}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <Repeat2 className="w-4 h-4 stroke-[2]" />
+                <Repeat2 className="w-4 h-4 stroke-2" />
                 {repostsCount}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <Send className="w-4 h-4 stroke-[2]" />
+                <Send className="w-4 h-4 stroke-2" />
                 {sharesCount}
               </span>
             </div>
@@ -307,7 +307,7 @@ export default function CopyImageModal({
                   : 'border border-zinc-600 bg-transparent'
               }`}
             >
-              {showMetrics && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+              {showMetrics && <Check className="w-3.5 h-3.5 stroke-3" />}
             </div>
             <span className="text-[13.5px] font-medium text-white">Show metrics</span>
           </label>
@@ -364,7 +364,7 @@ export default function CopyImageModal({
               className="w-10 h-10 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white transition-colors cursor-pointer active:scale-95 disabled:opacity-50"
             >
               {isDownloaded ? (
-                <Check className="w-4 h-4 stroke-[2.5] text-green-400" />
+                <Check className="w-4 h-4 stroke-2.5 text-green-400" />
               ) : isDownloading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
@@ -381,7 +381,7 @@ export default function CopyImageModal({
             >
               {isCopied ? (
                 <span className="flex items-center gap-1">
-                  <Check className="w-4 h-4 stroke-[3]" />
+                  <Check className="w-4 h-4 stroke-3" />
                   Copied
                 </span>
               ) : isCopying ? (

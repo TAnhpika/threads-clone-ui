@@ -64,7 +64,7 @@ export default function FeedHeader({
                         aria-label="Tùy chọn bảng tin"
                         aria-expanded={isMenuOpen}
                     >
-                        <MoreHorizontal className="w-4.5 h-4.5 stroke-[2]" />
+                        <MoreHorizontal className="w-4.5 h-4.5 stroke-2" />
                     </button>
 
                     {/* Popover: 'Create new feed (+)' */}

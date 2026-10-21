@@ -90,7 +90,7 @@ export default function AuthorProfileModal({
         <button
           type="button"
           onClick={onOpenUnfollow}
-          className="w-full mt-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 font-bold text-sm text-black dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-center outline-none active:scale-[0.99]"
+          className="w-full mt-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 font-bold text-sm text-black dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-center outline-none active:scale-99"
         >
           Following
         </button>

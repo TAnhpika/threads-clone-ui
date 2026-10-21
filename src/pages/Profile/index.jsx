@@ -248,7 +248,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex justify-start items-start w-full select-none">
-      <div className="w-[660px] max-w-[660px] min-w-0 shrink-0">
+      <div className="w-165 max-w-165 min-w-0 shrink-0">
         {/* 1. TOP HEADER: Username ở giữa, Search & More ở góc phải */}
         <header className="flex items-center justify-between h-14 px-2 mb-1">
           <div className="w-16" /> {/* Placeholder cân đối lề trái */}
@@ -278,7 +278,7 @@ export default function ProfilePage() {
 
               {/* Menu More Popup: chỉ có duy nhất 'Add as column' chuẩn Threads Web */}
               {isMoreMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-[#1e1e1e] border border-zinc-200 dark:border-zinc-800/90 rounded-[18px] p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-[#1e1e1e] border border-zinc-200 dark:border-zinc-800/90 rounded-4.5 p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
                   <button
                     type="button"
                     onClick={() => {
@@ -773,7 +773,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={handleSaveProfile}
-                className="w-full py-3.5 bg-white text-black font-bold text-[15px] rounded-2xl hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer shadow-xl flex items-center justify-center"
+                className="w-full py-3.5 bg-white text-black font-bold text-[15px] rounded-2xl hover:opacity-90 active:scale-99 transition-all cursor-pointer shadow-xl flex items-center justify-center"
               >
                 Done
               </button>

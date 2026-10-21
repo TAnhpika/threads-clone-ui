@@ -189,7 +189,7 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
       <div className="w-10 h-8 shrink-0 flex items-center justify-center">
         <IconComponent
           className={`w-5 h-5 shrink-0 transition-all ${
-            item.isActive ? 'stroke-[2.5]' : 'stroke-2'
+            item.isActive ? 'stroke-2.5' : 'stroke-2'
           }`}
         />
       </div>
@@ -288,7 +288,7 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
               aria-label="Threads"
               role="img"
               viewBox="0 0 976.98 1082"
-              className="w-[23px] h-[25px] fill-current shrink-0 transition-transform group-hover:scale-105"
+              className="w-5.75 h-6.25 fill-current shrink-0 transition-transform group-hover:scale-105"
               xmlns="http://www.w3.org/2000/svg"
             >
               <path d="M770.347,500.347c-1.355-156.85-86.386-251.367-230.025-251.367-95.872,0-176.499,43.362-218.846,112.472l92.823,64.705c24.053-37.942,57.252-69.448,118.231-69.448,68.77,0,104.341,38.281,114.504,109.423-33.2-5.081-66.399-7.791-100.615-7.791-185.646,0-273.049,84.015-273.049,195.131,0,113.149,87.403,179.548,216.136,179.548,141.267,0,225.621-95.194,260.176-213.086,35.91,16.261,60.64,54.203,60.64,111.116,0,152.447-175.822,235.446-324.881,235.446-219.862,0-363.501-144.316-363.501-379.084,0-287.616,190.05-471.907,445.483-471.907,171.418,0,256.11,75.207,313.701,176.16l94.856-66.399C913.308,94.501,773.396,1,563.358,1,228.653,1,.999,238.478.999,583.008c0,315.057,222.911,497.992,488.507,497.992,219.523,0,441.418-128.055,441.418-347.24,0-114.504-65.721-190.389-160.577-233.413ZM485.441,718.854c-48.444,0-91.129-23.036-91.129-65.383,0-66.738,81.983-87.064,162.271-87.064,30.489,0,60.301,2.032,86.725,7.792-18.971,86.725-75.207,144.655-157.867,144.655Z" />
@@ -490,7 +490,7 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
 
   // GIAO DIỆN CỐ ĐỊNH BÌNH THƯỜNG CHO CÁC TRANG CÒN LẠI (Home, Activity, Profile, PostDetail,...)
   return (
-    <aside className="w-[230px] shrink-0 hidden md:block select-none overflow-visible relative z-40">
+    <aside className="w-57.5 shrink-0 hidden md:block select-none overflow-visible relative z-40">
       <div className="sticky top-4 h-[calc(100vh-2rem)] py-1 flex flex-col justify-between overflow-visible z-40">
         {renderSidebarBody()}
       </div>
