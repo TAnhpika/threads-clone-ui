@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Search,
@@ -12,9 +12,14 @@ import {
   Repeat2,
   Send,
   Sparkles,
+  Hash,
 } from 'lucide-react';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
-import { CreatePostModal, mockPosts } from '@/components/post';
+import { CreatePostModal, PostCard, mockPosts } from '@/components/post';
+import { RadialSpinner } from '@/components/common';
+import { searchApi, getFollowSuggestionsApi } from '@/services/searchService';
+import { followUserApi, unfollowUserApi } from '@/services/userService';
+import { getFeed } from '@/services/postService';
 
 // Meta/Threads Authentic Verified Badge
 function VerifiedBadge({ className = 'w-3.5 h-3.5 text-[#0095f6] shrink-0' }) {
@@ -309,7 +314,17 @@ export default function SearchPage() {
   const currentUser = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialQ = searchParams.get('q') || '';
+
+  const [searchQuery, setSearchQuery] = useState(initialQ);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQ);
+  const [searchResults, setSearchResults] = useState({ topics: [], users: [] });
+  const [feedPosts, setFeedPosts] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [trendingList] = useState(initialTrendingList);
   const [followSuggestions, setFollowSuggestions] = useState(initialFollowSuggestions);
@@ -317,7 +332,7 @@ export default function SearchPage() {
 
   // Filter & Options menu dropdown
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'profiles' | 'trending' | 'posts'
+  const [activeTab, setActiveTab] = useState('top'); // 'top' | 'recent' | 'profiles'
   const optionsRef = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -341,22 +356,247 @@ export default function SearchPage() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  // Toggle theo dõi tài khoản gợi ý
-  const handleToggleFollow = (id) => {
-    setFollowSuggestions((prev) =>
-      prev.map((user) => {
-        if (user.id === id) {
-          const nextState = !user.isFollowing;
-          showToast(
-            nextState
-              ? `Đã theo dõi @${user.username}`
-              : `Đã bỏ theo dõi @${user.username}`
-          );
-          return { ...user, isFollowing: nextState };
+  // Đồng bộ URL search params ?q=...
+  useEffect(() => {
+    const urlQ = searchParams.get('q') || '';
+    if (urlQ !== searchQuery) {
+      setSearchQuery(urlQ);
+      setDebouncedQuery(urlQ);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (debouncedQuery) {
+      setSearchParams({ q: debouncedQuery }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  }, [debouncedQuery, setSearchParams]);
+
+  // Tải thêm bài viết feed để kết hợp tìm kiếm bài viết
+  useEffect(() => {
+    getFeed({ type: 'for_you', page: 1, per_page: 30 })
+      .then((res) => {
+        if (Array.isArray(res?.data) && res.data.length > 0) {
+          setFeedPosts(res.data);
         }
-        return user;
       })
+      .catch(() => {});
+  }, []);
+
+  // Tổng hợp tất cả bài viết từ feed và mockPosts
+  const allAvailablePosts = useMemo(() => {
+    const list = [...feedPosts, ...mockPosts];
+    const seen = new Set();
+    return list.filter((p) => {
+      if (!p || !p.id || seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+  }, [feedPosts]);
+
+  // Lọc bài viết theo query tìm kiếm
+  const trimmedQuery = searchQuery.trim();
+  const isSearching = trimmedQuery.length >= 2;
+  const isQueryTooShort = trimmedQuery.length === 1;
+
+  const matchingPosts = useMemo(() => {
+    if (!trimmedQuery) return [];
+    const q = trimmedQuery.toLowerCase();
+    return allAvailablePosts.filter((p) => {
+      const contentMatch = p.content && p.content.toLowerCase().includes(q);
+      const authorMatch =
+        (p.author?.username && p.author.username.toLowerCase().includes(q)) ||
+        (p.author?.name && p.author.name.toLowerCase().includes(q));
+      const tagMatch = p.tag && p.tag.toLowerCase().includes(q);
+      return contentMatch || authorMatch || tagMatch;
+    });
+  }, [trimmedQuery, allAvailablePosts]);
+
+  // Sắp xếp bài viết cho tab 'top' và 'recent'
+  const sortedPosts = useMemo(() => {
+    if (activeTab === 'recent') {
+      return [...matchingPosts].sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.timestamp || 0).getTime();
+        const timeB = new Date(b.createdAt || b.timestamp || 0).getTime();
+        return timeB - timeA;
+      });
+    }
+    // 'top' mặc định sắp xếp theo độ tương tác (likes, reposts, comments)
+    return [...matchingPosts].sort((a, b) => {
+      const scoreA = (a.likes || 0) + (a.reposts || 0) * 2 + (a.comments || 0) * 3;
+      const scoreB = (b.likes || 0) + (b.reposts || 0) * 2 + (b.comments || 0) * 3;
+      return scoreB - scoreA;
+    });
+  }, [matchingPosts, activeTab]);
+
+  // 1. Lấy danh sách gợi ý theo dõi (Follow suggestions) từ API khi mount
+  useEffect(() => {
+    let isMounted = true;
+    setIsSuggestionsLoading(true);
+
+    getFollowSuggestionsApi({ page: 1, per_page: 20 })
+      .then((res) => {
+        if (!isMounted) return;
+        const rawUsers = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.users)
+          ? res.users
+          : [];
+
+        if (rawUsers.length > 0) {
+          const mapped = rawUsers.map((u) => ({
+            id: u.id,
+            username: u.username,
+            displayName: u.name || u.display_name || u.username,
+            isVerified: !!u.verified,
+            avatar: u.avatar_url || u.avatar,
+            bio: u.bio || '',
+            followers: `${(u.followers_count ?? 0).toLocaleString()} followers`,
+            isFollowing: !!u.is_following,
+          }));
+          setFollowSuggestions(mapped);
+        }
+      })
+      .catch((err) => {
+        console.warn('Follow suggestions API fallback to default:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsSuggestionsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 2. Debounce query 350ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // 3. Gọi API search khi debouncedQuery thay đổi (Ràng buộc: tối thiểu 2 ký tự theo backend)
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      setSearchResults({ topics: [], users: [] });
+      setIsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoading(true);
+
+    searchApi({ q: debouncedQuery, page: 1, per_page_topics: 10, per_page_users: 20 })
+      .then((res) => {
+        if (!isMounted) return;
+
+        // Defensive unwrap: Hỗ trợ cả trường hợp res.data = { topics, users } hoặc res = { topics, users }
+        const data =
+          res?.data?.topics || res?.data?.users
+            ? res.data
+            : res?.topics || res?.users
+            ? res
+            : res?.data || {};
+
+        const rawTopics = Array.isArray(data.topics) ? data.topics : [];
+        const rawUsers = Array.isArray(data.users) ? data.users : [];
+
+        setSearchResults({
+          topics: rawTopics.map((t) => ({
+            id: t.id,
+            name: t.name,
+            slug: t.slug,
+            description: t.description || '',
+            postCount: t.posts_count != null ? `${t.posts_count.toLocaleString()} posts` : '',
+          })),
+          users: rawUsers.map((u) => ({
+            id: u.id,
+            username: u.username,
+            displayName: u.name || u.display_name || u.username,
+            isVerified: !!u.verified,
+            avatar: u.avatar_url || u.avatar,
+            bio: u.bio || '',
+            followers: `${(u.followers_count ?? 0).toLocaleString()} followers`,
+            isFollowing: !!u.is_following,
+          })),
+        });
+        setPagination(res?.pagination || null);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.error('Search API error:', err);
+        showToast('Không thể tải kết quả tìm kiếm');
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [debouncedQuery]);
+
+  // Toggle theo dõi tài khoản
+  const handleToggleFollow = async (userOrId) => {
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('open-auth-prompt'));
+      return;
+    }
+
+    const user =
+      typeof userOrId === 'object'
+        ? userOrId
+        : followSuggestions.find((u) => u.id === userOrId) ||
+          searchResults.users.find((u) => u.id === userOrId);
+
+    if (!user) return;
+
+    const userId = user.id;
+    const currentIsFollowing = user.isFollowing;
+    const nextState = !currentIsFollowing;
+
+    // Cập nhật lạc quan (Optimistic update)
+    setFollowSuggestions((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, isFollowing: nextState } : u))
     );
+    setSearchResults((prev) => ({
+      ...prev,
+      users: prev.users.map((u) =>
+        u.id === userId ? { ...u, isFollowing: nextState } : u
+      ),
+    }));
+
+    showToast(
+      nextState
+        ? `Đã theo dõi @${user.username}`
+        : `Đã bỏ theo dõi @${user.username}`
+    );
+
+    try {
+      if (currentIsFollowing) {
+        await unfollowUserApi(userId);
+      } else {
+        await followUserApi(userId);
+      }
+    } catch (err) {
+      console.error('Follow action error:', err);
+      // Rollback nếu thất bại
+      setFollowSuggestions((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isFollowing: currentIsFollowing } : u))
+      );
+      setSearchResults((prev) => ({
+        ...prev,
+        users: prev.users.map((u) =>
+          u.id === userId ? { ...u, isFollowing: currentIsFollowing } : u
+        ),
+      }));
+      showToast('Thao tác không thành công, vui lòng thử lại');
+    }
   };
 
   // Chọn category pill
@@ -369,41 +609,6 @@ export default function SearchPage() {
       setSearchQuery(cat);
     }
   };
-
-  // Lọc kết quả tìm kiếm theo query
-  const trimmedQuery = searchQuery.trim().toLowerCase();
-
-  const filteredUsers = useMemo(() => {
-    if (!trimmedQuery) return followSuggestions;
-    return followSuggestions.filter(
-      (u) =>
-        u.username.toLowerCase().includes(trimmedQuery) ||
-        u.displayName.toLowerCase().includes(trimmedQuery) ||
-        u.bio.toLowerCase().includes(trimmedQuery)
-    );
-  }, [trimmedQuery, followSuggestions]);
-
-  const filteredTrending = useMemo(() => {
-    if (!trimmedQuery) return trendingList;
-    return trendingList.filter(
-      (t) =>
-        t.title.toLowerCase().includes(trimmedQuery) ||
-        t.description.toLowerCase().includes(trimmedQuery) ||
-        t.category.toLowerCase().includes(trimmedQuery)
-    );
-  }, [trimmedQuery, trendingList]);
-
-  const filteredPosts = useMemo(() => {
-    if (!trimmedQuery) return [];
-    return mockPosts.filter(
-      (p) =>
-        p.content.toLowerCase().includes(trimmedQuery) ||
-        p.author?.username.toLowerCase().includes(trimmedQuery) ||
-        (p.tag && p.tag.toLowerCase().includes(trimmedQuery))
-    );
-  }, [trimmedQuery]);
-
-  const isSearching = trimmedQuery.length > 0;
 
   return (
     <div className="flex justify-center items-start w-full relative">
@@ -426,6 +631,11 @@ export default function SearchPage() {
               }}
               className="w-full bg-transparent text-sm sm:text-[15px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 outline-none"
             />
+
+            {/* Spinner indicator khi đang gọi API tìm kiếm */}
+            {isLoading && (
+              <RadialSpinner className="w-4 h-4 text-zinc-400 mr-2 shrink-0" />
+            )}
 
             {/* Nút xoá nhanh khi có nội dung */}
             {searchQuery && (
@@ -467,22 +677,32 @@ export default function SearchPage() {
                 <button
                   onClick={() => {
                     setIsOptionsOpen(false);
-                    showToast('Đang tìm kiếm tất cả');
-                    setActiveTab('all');
+                    showToast('Đang hiển thị bài viết hàng đầu');
+                    setActiveTab('top');
                   }}
                   className="w-full px-3.5 py-2.5 text-sm font-semibold text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl cursor-pointer"
                 >
-                  Tất cả kết quả
+                  Top (Hàng đầu)
                 </button>
                 <button
                   onClick={() => {
                     setIsOptionsOpen(false);
-                    showToast('Đang lọc người dùng');
+                    showToast('Đang hiển thị bài viết gần đây');
+                    setActiveTab('recent');
+                  }}
+                  className="w-full px-3.5 py-2.5 text-sm font-semibold text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl cursor-pointer"
+                >
+                  Recent (Gần đây)
+                </button>
+                <button
+                  onClick={() => {
+                    setIsOptionsOpen(false);
+                    showToast('Đang lọc hồ sơ người dùng');
                     setActiveTab('profiles');
                   }}
                   className="w-full px-3.5 py-2.5 text-sm font-semibold text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl cursor-pointer"
                 >
-                  Chỉ người dùng
+                  Profiles (Hồ sơ)
                 </button>
                 <button
                   onClick={() => {
@@ -502,222 +722,225 @@ export default function SearchPage() {
 
         {/* 2. KHUNG CARD CHÍNH (CONTAINER) */}
         <main className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden transition-colors">
-          {/* A. THANH CATEGORY PILLS Ở ĐẦU CARD */}
-          <div className="px-4 pt-4 pb-3 sm:px-5">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1">
-              {categoryTags.map((cat) => {
-                const isSelected = selectedCategory === cat || searchQuery === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => handleSelectCategory(cat)}
-                    className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap cursor-pointer transition-all duration-150 ${
-                      isSelected
-                        ? 'bg-black text-white dark:bg-white dark:text-black shadow-xs'
-                        : 'bg-zinc-100 dark:bg-[#1e1e1e] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
+          {/* A. THANH CATEGORY PILLS CHỈ HIỂN THỊ KHI CHƯA NHẬP TÌM KIẾM */}
+          {!isSearching && !isQueryTooShort && (
+            <div className="px-4 pt-4 pb-3 sm:px-5">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1">
+                {categoryTags.map((cat) => {
+                  const isSelected = selectedCategory === cat || searchQuery === cat;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => handleSelectCategory(cat)}
+                      className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap cursor-pointer transition-all duration-150 ${
+                        isSelected
+                          ? 'bg-black text-white dark:bg-white dark:text-black shadow-xs'
+                          : 'bg-zinc-100 dark:bg-[#1e1e1e] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* B. KHI NGƯỜI DÙNG ĐANG TÌM KIẾM: HIỂN THỊ KẾT QUẢ TÌM KIẾM */}
+          {/* B. KHI NGƯỜI DÙNG ĐANG TÌM KIẾM: GIAO DIỆN CHUẨN THREADS (Top | Recent | Profiles) */}
           {isSearching ? (
             <div className="pb-4">
-              {/* Tabs lọc kết quả */}
-              <div className="flex items-center gap-2 px-4 sm:px-5 pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
-                {[
-                  { key: 'all', label: 'Tất cả' },
-                  { key: 'profiles', label: `Hồ sơ (${filteredUsers.length})` },
-                  { key: 'trending', label: `Xu hướng (${filteredTrending.length})` },
-                  { key: 'posts', label: `Bài viết (${filteredPosts.length})` },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
-                      activeTab === tab.key
-                        ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white'
-                        : 'text-zinc-500 hover:text-black dark:hover:text-white'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+              {/* TABS HEADER: Top | Recent | Profiles */}
+              <div className="flex border-b border-zinc-200/80 dark:border-zinc-800">
+                <button
+                  onClick={() => setActiveTab('top')}
+                  className={`flex-1 py-3.5 text-center text-sm sm:text-[15px] font-bold transition-colors relative cursor-pointer ${
+                    activeTab === 'top'
+                      ? 'text-black dark:text-white'
+                      : 'text-zinc-500 hover:text-black dark:hover:text-zinc-300'
+                  }`}
+                >
+                  Top
+                  {activeTab === 'top' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-white" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('recent')}
+                  className={`flex-1 py-3.5 text-center text-sm sm:text-[15px] font-bold transition-colors relative cursor-pointer ${
+                    activeTab === 'recent'
+                      ? 'text-black dark:text-white'
+                      : 'text-zinc-500 hover:text-black dark:hover:text-zinc-300'
+                  }`}
+                >
+                  Recent
+                  {activeTab === 'recent' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-white" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('profiles')}
+                  className={`flex-1 py-3.5 text-center text-sm sm:text-[15px] font-bold transition-colors relative cursor-pointer ${
+                    activeTab === 'profiles'
+                      ? 'text-black dark:text-white'
+                      : 'text-zinc-500 hover:text-black dark:hover:text-zinc-300'
+                  }`}
+                >
+                  Profiles
+                  {activeTab === 'profiles' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-white" />
+                  )}
+                </button>
               </div>
 
-              {/* Danh sách người dùng kết quả */}
-              {(activeTab === 'all' || activeTab === 'profiles') &&
-                filteredUsers.length > 0 && (
-                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    <div className="px-5 pt-3 pb-1 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                      Hồ sơ người dùng
-                    </div>
-                    {filteredUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        onClick={() => navigate(`/@${user.username}`)}
-                        className="p-4 sm:p-5 flex items-start justify-between gap-3 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <AvatarWithFallback
-                            src={user.avatar}
-                            name={user.displayName}
-                            username={user.username}
-                          />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-sm sm:text-[15px] text-black dark:text-white hover:underline truncate">
-                                {user.username}
-                              </span>
-                              {user.isVerified && <VerifiedBadge />}
-                            </div>
-                            <p className="text-xs sm:text-sm text-zinc-500 font-normal truncate">
-                              {user.displayName}
-                            </p>
-                            <p className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 mt-1 line-clamp-2 leading-relaxed whitespace-pre-line font-normal">
-                              {user.bio}
-                            </p>
-                            <span className="text-xs text-zinc-400 dark:text-zinc-500 block mt-1">
-                              {user.followers}
-                            </span>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleFollow(user.id);
-                          }}
-                          className={`px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
-                            user.isFollowing
-                              ? 'border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                              : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-90'
-                          }`}
-                        >
-                          {user.isFollowing ? 'Following' : 'Follow'}
-                        </button>
+              {/* Trạng thái Skeleton Loading */}
+              {isLoading ? (
+                <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="p-4 sm:p-5 flex items-start gap-3 animate-pulse">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                      <div className="flex-1 space-y-2 py-1 min-w-0">
+                        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+                        <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-4/5" />
+                        <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
                       </div>
-                    ))}
-                  </div>
-                )}
-
-              {/* Danh sách chủ đề xu hướng kết quả */}
-              {(activeTab === 'all' || activeTab === 'trending') &&
-                filteredTrending.length > 0 && (
-                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    <div className="px-5 pt-4 pb-1 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                      Chủ đề xu hướng
                     </div>
-                    {filteredTrending.map((item) => (
-                      <article
-                        key={item.id}
-                        onClick={() => {
-                          setSearchQuery(item.title);
-                          showToast(`Đang tìm chủ đề: ${item.title}`);
-                        }}
-                        className="p-4 sm:p-5 flex items-start justify-between gap-4 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30 transition-colors cursor-pointer"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-bold text-sm sm:text-[15px] text-black dark:text-white leading-snug hover:underline">
-                            {item.title}
-                          </h4>
-                          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed line-clamp-2 font-normal">
-                            {item.description} ·{' '}
-                            <span className="text-zinc-400">{item.postCount}</span>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {/* TAB TOP HOẶC RECENT: HIỂN THỊ BÀI VIẾT THREADS HOẶC CHỦ ĐỀ */}
+                  {(activeTab === 'top' || activeTab === 'recent') && (
+                    <div>
+                      {sortedPosts.length > 0 ? (
+                        <div>
+                          {sortedPosts.map((post) => (
+                            <PostCard key={post.id} post={post} />
+                          ))}
+                        </div>
+                      ) : searchResults.topics.length > 0 ? (
+                        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                          <div className="px-5 pt-4 pb-1 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                            Chủ đề ({searchResults.topics.length})
+                          </div>
+                          {searchResults.topics.map((topic) => (
+                            <article
+                              key={topic.id}
+                              onClick={() => {
+                                setSearchQuery(topic.name);
+                                showToast(`Khám phá chủ đề: #${topic.name}`);
+                              }}
+                              className="p-4 sm:p-5 flex items-start justify-between gap-4 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30 transition-colors cursor-pointer group"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300">
+                                    <Hash className="w-4 h-4 stroke-2" />
+                                  </div>
+                                  <h4 className="font-bold text-sm sm:text-[15px] text-black dark:text-white leading-snug group-hover:underline">
+                                    #{topic.name}
+                                  </h4>
+                                </div>
+                                {topic.description && (
+                                  <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1.5 leading-relaxed line-clamp-2 font-normal pl-10">
+                                    {topic.description}
+                                  </p>
+                                )}
+                                {topic.postCount && (
+                                  <span className="text-xs text-zinc-400 dark:text-zinc-500 block mt-1 pl-10">
+                                    {topic.postCount}
+                                  </span>
+                                )}
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-12 text-center text-zinc-500">
+                          <p className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
+                            Không tìm thấy bài viết phù hợp cho "{searchQuery}"
+                          </p>
+                          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+                            Hãy thử chuyển sang tab Profiles hoặc tìm bằng từ khoá khác.
                           </p>
                         </div>
-
-                        {item.image && (
-                          <ThumbnailWithFallback
-                            src={item.image}
-                            title={item.title}
-                          />
-                        )}
-                      </article>
-                    ))}
-                  </div>
-                )}
-
-              {/* Danh sách bài viết Threads kết quả */}
-              {(activeTab === 'all' || activeTab === 'posts') &&
-                filteredPosts.length > 0 && (
-                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    <div className="px-5 pt-4 pb-1 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                      Bài viết liên quan
+                      )}
                     </div>
-                    {filteredPosts.map((post) => (
-                      <article
-                        key={post.id}
-                        onClick={() =>
-                          navigate(
-                            `/@${post.author?.username || 'user'}/post/${post.id}`
-                          )
-                        }
-                        className="p-4 sm:p-5 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <AvatarWithFallback
-                            src={post.author?.avatar}
-                            username={post.author?.username}
-                            name={post.author?.name}
-                            className="w-9 h-9"
-                          />
-                          <div className="min-w-0">
-                            <span className="font-bold text-sm text-black dark:text-white">
-                              {post.author?.username}
-                            </span>
-                            <span className="text-xs text-zinc-400 ml-2">
-                              {post.timestamp}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="mt-2 text-sm text-zinc-900 dark:text-zinc-100 line-clamp-3 leading-relaxed">
-                          {post.content}
-                        </p>
-                        <div className="flex items-center gap-4 mt-3 text-zinc-500 text-xs">
-                          <span className="flex items-center gap-1">
-                            <Heart className="w-3.5 h-3.5 stroke-2" /> {post.likes}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="w-3.5 h-3.5 stroke-2" />{' '}
-                            {post.comments}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Repeat2 className="w-3.5 h-3.5 stroke-2" />{' '}
-                            {post.reposts}
-                          </span>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
+                  )}
 
-              {/* Khi không tìm thấy kết quả nào */}
-              {filteredUsers.length === 0 &&
-                filteredTrending.length === 0 &&
-                filteredPosts.length === 0 && (
-                  <div className="p-12 text-center text-zinc-500">
-                    <p className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
-                      Không tìm thấy kết quả phù hợp cho "{searchQuery}"
-                    </p>
-                    <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-                      Hãy thử tìm bằng từ khoá khác hoặc khám phá các chủ đề xu hướng.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSelectedCategory(null);
-                      }}
-                      className="mt-4 px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs sm:text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                    >
-                      Xoá bộ lọc
-                    </button>
-                  </div>
-                )}
+                  {/* TAB PROFILES: HIỂN THỊ HỒ SƠ NGƯỜI DÙNG TỪ API SEARCH */}
+                  {activeTab === 'profiles' && (
+                    <div>
+                      {searchResults.users.length > 0 ? (
+                        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                          {searchResults.users.map((user) => (
+                            <div
+                              key={user.id}
+                              onClick={() => navigate(`/@${user.username}`)}
+                              className="p-4 sm:p-5 flex items-start justify-between gap-3 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30 transition-colors cursor-pointer"
+                            >
+                              <div className="flex items-start gap-3 min-w-0">
+                                <AvatarWithFallback
+                                  src={user.avatar}
+                                  name={user.displayName}
+                                  username={user.username}
+                                />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-sm sm:text-[15px] text-black dark:text-white hover:underline truncate">
+                                      {user.username}
+                                    </span>
+                                    {user.isVerified && <VerifiedBadge />}
+                                  </div>
+                                  <p className="text-xs sm:text-sm text-zinc-500 font-normal truncate">
+                                    {user.displayName}
+                                  </p>
+                                  {user.bio && (
+                                    <p className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 mt-1 line-clamp-2 leading-relaxed whitespace-pre-line font-normal">
+                                      {user.bio}
+                                    </p>
+                                  )}
+                                  <span className="text-xs text-zinc-400 dark:text-zinc-500 block mt-1">
+                                    {user.followers}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleFollow(user);
+                                }}
+                                className={`px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
+                                  user.isFollowing
+                                    ? 'border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95'
+                                }`}
+                              >
+                                {user.isFollowing ? 'Following' : 'Follow'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-12 text-center text-zinc-500">
+                          <p className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
+                            Không tìm thấy hồ sơ người dùng cho "{searchQuery}"
+                          </p>
+                          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+                            Hãy thử tìm kiếm với tên người dùng khác.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ) : isQueryTooShort ? (
+            <div className="p-12 text-center text-zinc-500">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Nhập tối thiểu 2 ký tự để tìm kiếm
+              </p>
             </div>
           ) : (
             /* C. CHẾ ĐỘ MẶC ĐỊNH (GIỐNG 100% ẢNH MẪU 1 VÀ ẢNH MẪU 2) */
@@ -779,64 +1002,82 @@ export default function SearchPage() {
                 </div>
 
                 {/* Danh sách tài khoản gợi ý */}
-                <div className="divide-y divide-zinc-100 dark:divide-zinc-800/70">
-                  {followSuggestions.map((user) => (
-                    <div
-                      key={user.id}
-                      onClick={() => navigate(`/@${user.username}`)}
-                      className="p-4 sm:p-5 flex items-start justify-between gap-3 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30 transition-colors cursor-pointer group"
-                    >
-                      {/* Avatar và thông tin tài khoản */}
-                      <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <AvatarWithFallback
-                          src={user.avatar}
-                          name={user.displayName}
-                          username={user.username}
-                        />
-
-                        <div className="min-w-0 flex-1">
-                          {/* Username & Blue verified badge */}
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-sm sm:text-[15px] text-black dark:text-white group-hover:underline truncate">
-                              {user.username}
-                            </span>
-                            {user.isVerified && <VerifiedBadge />}
-                          </div>
-
-                          {/* Display name / subhead */}
-                          <p className="text-xs sm:text-sm text-zinc-500 font-normal truncate">
-                            {user.displayName}
-                          </p>
-
-                          {/* Bio mô tả (hỗ trợ xuống dòng) */}
-                          <p className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 mt-1.5 line-clamp-3 leading-relaxed whitespace-pre-line font-normal">
-                            {user.bio}
-                          </p>
-
-                          {/* Số lượng follower */}
-                          <span className="text-xs text-zinc-400 dark:text-zinc-500 block mt-1.5">
-                            {user.followers}
-                          </span>
+                {isSuggestionsLoading ? (
+                  <div className="p-4 sm:p-5 space-y-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="flex items-start gap-3 animate-pulse">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                        <div className="flex-1 space-y-2 py-1 min-w-0">
+                          <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+                          <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4" />
+                          <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
                         </div>
+                        <div className="w-20 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-800 shrink-0" />
                       </div>
-
-                      {/* Nút Follow / Following */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleFollow(user.id);
-                        }}
-                        className={`px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
-                          user.isFollowing
-                            ? 'border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                            : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95'
-                        }`}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800/70">
+                    {followSuggestions.map((user) => (
+                      <div
+                        key={user.id}
+                        onClick={() => navigate(`/@${user.username}`)}
+                        className="p-4 sm:p-5 flex items-start justify-between gap-3 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30 transition-colors cursor-pointer group"
                       >
-                        {user.isFollowing ? 'Following' : 'Follow'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                        {/* Avatar và thông tin tài khoản */}
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <AvatarWithFallback
+                            src={user.avatar}
+                            name={user.displayName}
+                            username={user.username}
+                          />
+
+                          <div className="min-w-0 flex-1">
+                            {/* Username & Blue verified badge */}
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-sm sm:text-[15px] text-black dark:text-white group-hover:underline truncate">
+                                {user.username}
+                              </span>
+                              {user.isVerified && <VerifiedBadge />}
+                            </div>
+
+                            {/* Display name / subhead */}
+                            <p className="text-xs sm:text-sm text-zinc-500 font-normal truncate">
+                              {user.displayName}
+                            </p>
+
+                            {/* Bio mô tả (hỗ trợ xuống dòng) */}
+                            {user.bio && (
+                              <p className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 mt-1.5 line-clamp-3 leading-relaxed whitespace-pre-line font-normal">
+                                {user.bio}
+                              </p>
+                            )}
+
+                            {/* Số lượng follower */}
+                            <span className="text-xs text-zinc-400 dark:text-zinc-500 block mt-1.5">
+                              {user.followers}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Nút Follow / Following */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleFollow(user);
+                          }}
+                          className={`px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
+                            user.isFollowing
+                              ? 'border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                              : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95'
+                          }`}
+                        >
+                          {user.isFollowing ? 'Following' : 'Follow'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
             </div>
           )}
