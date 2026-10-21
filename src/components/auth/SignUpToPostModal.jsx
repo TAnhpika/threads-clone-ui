@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, X } from 'lucide-react';
 
 function getLastLoggedInUsername() {
-  if (typeof window === 'undefined') return 'tuananhpika';
+  if (typeof window === 'undefined') return null;
   try {
     const rawAccount = localStorage.getItem('threads_last_login_account');
     if (rawAccount) {
@@ -17,7 +17,7 @@ function getLastLoggedInUsername() {
   } catch (err) {
     console.error('Failed to get last logged in username:', err);
   }
-  return 'tuananhpika';
+  return null;
 }
 
 function InstagramGlyph({ className = 'w-6 h-6 text-white' }) {
@@ -282,14 +282,22 @@ export default function SignUpToPostModal({
               <InstagramGlyph className="w-6 h-6 text-white stroke-[2.2]" />
             </div>
 
-            {/* Thông tin tài khoản - hiển thị username của lần đăng nhập gần nhất */}
+            {/* Thông tin tài khoản - nếu có lastUsername thì hiển thị 2 dòng, nếu chưa từng đăng nhập thì chỉ hiển thị "Continue with Instagram" */}
             <div className="text-left min-w-0">
-              <p className="text-xs text-zinc-400 font-medium">
-                Continue with Instagram
-              </p>
-              <p className="text-sm font-bold text-white group-hover:underline truncate mt-0.5">
-                {lastUsername}
-              </p>
+              {lastUsername ? (
+                <>
+                  <p className="text-xs text-zinc-400 font-medium">
+                    Continue with Instagram
+                  </p>
+                  <p className="text-sm font-bold text-white group-hover:underline truncate mt-0.5">
+                    {lastUsername}
+                  </p>
+                </>
+              ) : (
+                <span className="text-[15px] font-bold text-white group-hover:underline truncate block">
+                  Continue with Instagram
+                </span>
+              )}
             </div>
           </div>
 

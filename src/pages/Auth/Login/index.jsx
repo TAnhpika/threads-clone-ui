@@ -117,7 +117,7 @@ export default function LoginPage() {
     } catch (e) {
       console.error("Failed to parse last login account:", e);
     }
-    return DEFAULT_IG_ACCOUNT;
+    return null;
   });
 
   const handleInputChange = () => {
@@ -257,10 +257,15 @@ export default function LoginPage() {
     }
   };
 
-  // 2. Đăng nhập nhanh qua Instagram: Sử dụng tài khoản và mật khẩu của lần đăng nhập gần nhất
+  // 2. Đăng nhập nhanh qua Instagram: Sử dụng tài khoản và mật khẩu của lần đăng nhập gần nhất (nếu có)
   const handleInstagramLogin = () => {
-    const targetIdentifier = savedAccount?.identifier || savedAccount?.username || DEFAULT_IG_ACCOUNT.identifier;
-    const targetPassword = savedAccount?.password || DEFAULT_IG_ACCOUNT.password;
+    if (!savedAccount?.password) {
+      const input = document.querySelector('input[name="identifier"]');
+      if (input) input.focus();
+      return;
+    }
+    const targetIdentifier = savedAccount?.identifier || savedAccount?.username;
+    const targetPassword = savedAccount?.password;
     setValue("identifier", targetIdentifier);
     setValue("password", targetPassword);
     onSubmit({
@@ -348,12 +353,20 @@ export default function LoginPage() {
               )}
             </div>
             <div className="text-left min-w-0">
-              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 block truncate">
-                Tiếp tục bằng Instagram
-              </span>
-              <span className="text-sm font-bold text-black dark:text-white block tracking-tight truncate">
-                {savedAccount?.username || savedAccount?.identifier || DEFAULT_IG_ACCOUNT.username}
-              </span>
+              {savedAccount?.username || savedAccount?.identifier ? (
+                <>
+                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 block truncate">
+                    Tiếp tục bằng Instagram
+                  </span>
+                  <span className="text-sm font-bold text-black dark:text-white block tracking-tight truncate mt-0.5">
+                    {savedAccount.username || savedAccount.identifier}
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm font-bold text-black dark:text-white block tracking-tight truncate">
+                  Tiếp tục bằng Instagram
+                </span>
+              )}
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-zinc-400 dark:text-zinc-600 group-hover:text-black dark:group-hover:text-zinc-300 transition-colors shrink-0" />
