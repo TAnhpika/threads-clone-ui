@@ -53,7 +53,7 @@ import {
   AuthorProfileModal,
   UnfollowConfirmModal,
 } from '@/components/post';
-import { usePostInteraction } from '@/hooks/usePostInteraction';
+import { usePostInteraction } from '@/hooks';
 import {
   followUserApi,
   unfollowUserApi,

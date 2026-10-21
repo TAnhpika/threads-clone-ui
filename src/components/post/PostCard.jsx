@@ -2,12 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { saveFeedScroll } from "@/features/feed/feedSlice";
 import { getCachedCommentsCount } from "@/services/postService";
-import PostHeader from "@/components/post/PostHeader";
-import PostContent from "@/components/post/PostContent";
-import QuotedPostCard from "@/components/post/QuotedPostCard";
-import InteractionBar from "@/components/post/InteractionBar";
-import PostNoticeCard from "@/components/post/PostNoticeCard";
-import { usePostModeration } from "@/hooks/usePostModeration";
+import PostHeader from "./PostHeader";
+import PostContent from "./PostContent";
+import QuotedPostCard from "./QuotedPostCard";
+import InteractionBar from "./InteractionBar";
+import PostNoticeCard from "./PostNoticeCard";
+import { usePostModeration } from "@/hooks";
 
 /**
  * Component hiển thị thẻ bài viết hoàn chỉnh trên Feed hoặc trang chi tiết.

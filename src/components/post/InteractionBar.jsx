@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Heart, MessageCircle, Repeat2, Send } from 'lucide-react';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { saveFeedScroll } from '@/features/feed/feedSlice';
-import { usePostInteraction } from '@/hooks/usePostInteraction';
+import { usePostInteraction } from '@/hooks';
 import RepostModal from './RepostModal';
 import QuoteModal from './QuoteModal';
 import ShareModal from './ShareModal';

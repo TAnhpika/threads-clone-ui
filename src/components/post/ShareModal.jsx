@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, Link2, Image, Globe } from 'lucide-react';
 import copy from 'copy-to-clipboard';
-import { useShareUrl } from '@/hooks/useShareUrl';
+import { useShareUrl } from '@/hooks';
 import userAvatar from '@/assets/images/default-avatar.svg';
 
 // Icon Instagram Story với dải gradient đặc trưng

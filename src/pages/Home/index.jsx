@@ -8,7 +8,7 @@ import LoginPanel from '@/components/LoginPanel';
 import { PostCard, CreatePostBox, CreatePostModal } from '@/components/post';
 import { CreateFeedModal, SuggestedProfiles } from '@/components/feed';
 import { getFeed, syncFeedRepliesCount } from '@/services/postService';
-import { useInfinityLoad } from '@/hooks/useInfinityLoad';
+import { useInfinityLoad } from '@/hooks';
 import { selectIsAuthenticated, selectCurrentUser } from '@/features/auth/authSlice';
 import {
   selectFeedState,

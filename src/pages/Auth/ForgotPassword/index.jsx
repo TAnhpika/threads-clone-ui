@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { CheckCircle2, X } from "lucide-react";
 import { AuthInput, AuthButton, AuthAlert } from "@/components/common";
-import useEmailCheck from "@/hooks/useEmailCheck";
+import { useEmailCheck } from "@/hooks";
 import { forgotPasswordSchema } from "@/utils/validators";
 import * as authService from "@/services/authService";
 

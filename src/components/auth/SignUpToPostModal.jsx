@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
-import useLastLoginAccount from '@/hooks/useLastLoginAccount';
+import { useLastLoginAccount } from '@/hooks';
 import InstagramAuthCard from './InstagramAuthCard';
 
 const MODAL_CONFIGS = {

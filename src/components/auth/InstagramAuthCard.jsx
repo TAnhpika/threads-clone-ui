@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import InstagramGlyph from "@/components/common/InstagramGlyph";
+import { InstagramGlyph } from "@/components/common";
 
 /**
  * Component hiển thị thẻ hành động "Tiếp tục bằng Instagram" / "Continue with Instagram"

@@ -3,8 +3,7 @@ import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSl
 import { MoreHorizontal, CheckCircle2, Plus, Check } from 'lucide-react';
 import PostMenu from './PostMenu';
 import PostHeaderModals from './PostHeaderModals';
-import { useAuthorRelationship } from '@/hooks/useAuthorRelationship';
-import { usePostMenuActions } from '@/hooks/usePostMenuActions';
+import { useAuthorRelationship, usePostMenuActions } from '@/hooks';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
 

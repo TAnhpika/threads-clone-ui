@@ -10,22 +10,37 @@ import {
   Pencil,
   Check,
   X,
-  Lock,
   Globe,
-  Share2,
-  Copy,
   ArrowLeft,
   ArrowRight,
   ChevronRight,
-  LogOut,
 } from 'lucide-react';
-import { selectCurrentUser, updateCurrentUser, logout } from '@/features/auth/authSlice';
+import { selectCurrentUser, updateCurrentUser } from '@/features/auth/authSlice';
 import { setFeedData } from '@/features/feed/feedSlice';
 import { getFeed } from '@/services/postService';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import { CreatePostBox, CreatePostModal, PostCard } from '@/components/post';
-import { ConfirmDialog } from '@/components/common';
 import { showToast } from '@/utils/toast';
+
+// Add as column icon chuẩn Threads Web
+function AddColumnIcon({ className = 'w-5 h-5 text-white' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="3" y="3.5" width="18" height="17" rx="3.5" />
+      <line x1="8.5" y1="3.5" x2="8.5" y2="20.5" />
+      <line x1="15" y1="9.5" x2="15" y2="14.5" />
+      <line x1="12.5" y1="12" x2="17.5" y2="12" />
+    </svg>
+  );
+}
 
 // Instagram Outline Icon chuẩn Threads
 function InstagramIcon({ className = 'w-5 h-5' }) {
@@ -54,11 +69,24 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('threads');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalPlacement, setCreateModalPlacement] = useState('center');
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [followedIds, setFollowedIds] = useState([]);
+  const moreMenuRef = useRef(null);
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setIsMoreMenuOpen(false);
+      }
+    }
+    if (isMoreMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMoreMenuOpen]);
 
   // Carousel Slider state cho khối 'Finish your profile' (0: 3 thẻ đầu, 1: 3 thẻ sau)
   const [slideIndex, setSlideIndex] = useState(0);
@@ -237,55 +265,34 @@ export default function ProfilePage() {
               <Search className="w-5 h-5 stroke-2" />
             </button>
 
-            <button
-              type="button"
-              onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-              className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
-              title="More options"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+                className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700/80 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+                title="More options"
+                aria-label="More options"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
 
-            {/* Menu More Popup */}
-            {isMoreMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1c1c1c] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    setIsMoreMenuOpen(false);
-                    showToast('Đã sao chép liên kết trang cá nhân');
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-                >
-                  <Copy className="w-4 h-4" />
-                  <span>Sao chép liên kết</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMoreMenuOpen(false);
-                    showToast('Chia sẻ trang cá nhân');
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span>Chia sẻ trang cá nhân</span>
-                </button>
-                <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMoreMenuOpen(false);
-                    setIsLogoutModalOpen(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Đăng xuất</span>
-                </button>
-              </div>
-            )}
+              {/* Menu More Popup: chỉ có duy nhất 'Add as column' chuẩn Threads Web */}
+              {isMoreMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-[#1e1e1e] border border-zinc-200 dark:border-zinc-800/90 rounded-[18px] p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      showToast('Add as column');
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[15px] font-semibold text-black dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer text-left select-none"
+                  >
+                    <span>Add as column</span>
+                    <AddColumnIcon className="w-5 h-5 text-black dark:text-white shrink-0" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -874,22 +881,6 @@ export default function ProfilePage() {
         <Plus className="w-6 h-6 stroke-2" />
       </button>
 
-      {/* 6. MODAL XÁC NHẬN ĐĂNG XUẤT */}
-      <ConfirmDialog
-        isOpen={isLogoutModalOpen}
-        onClose={() => setIsLogoutModalOpen(false)}
-        onConfirm={() => {
-          dispatch(logout());
-          setIsLogoutModalOpen(false);
-          navigate('/login', { replace: true });
-        }}
-        title={`Đăng xuất khỏi @${username}?`}
-        description="Bạn có thể đăng nhập lại bất kỳ lúc nào để tiếp tục sử dụng."
-        confirmText="Đăng xuất"
-        cancelText="Hủy"
-        confirmVariant="danger"
-        icon={LogOut}
-      />
     </div>
   );
 }

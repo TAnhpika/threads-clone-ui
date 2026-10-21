@@ -9,7 +9,7 @@ import { selectIsAuthenticated, loginSuccess } from "@/features/auth/authSlice";
 import * as authService from "@/services/authService";
 import { AuthInput, AuthButton, ThreadsQRCode } from "@/components/common";
 import { InstagramAuthCard } from "@/components/auth";
-import useLastLoginAccount from "@/hooks/useLastLoginAccount";
+import { useLastLoginAccount } from "@/hooks";
 import { showToast } from "@/utils/toast";
 
 // Schema validation kiểm tra form với Yup
