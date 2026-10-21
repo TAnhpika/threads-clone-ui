@@ -183,7 +183,7 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
     const IconComponent = item.isActive ? item.solidIcon : item.outlineIcon;
 
     // w-full tự động ăn theo chiều rộng khung chứa (230px khi mở rộng)
-    const itemBaseClass = `flex items-center h-8 rounded-xl w-full text-sm transition-all duration-150 overflow-hidden text-black dark:text-white group ${
+    const itemBaseClass = `flex items-center h-8 rounded-xl w-full text-sm transition-all duration-150 active:scale-95 overflow-hidden text-black dark:text-white group ${
       item.isActive
         ? 'bg-zinc-100 dark:bg-zinc-800 font-bold'
         : 'font-normal hover:bg-zinc-200 dark:hover:bg-zinc-700/80'

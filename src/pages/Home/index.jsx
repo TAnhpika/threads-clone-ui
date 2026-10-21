@@ -22,7 +22,7 @@ import { showToast } from '@/utils/toast';
 // Skeleton hiển thị khi đang tải danh sách bài viết
 function PostSkeleton() {
   return (
-    <div className="py-4 px-4 sm:px-5 border-b border-zinc-100 dark:border-zinc-800/80 animate-pulse select-none">
+    <div className="py-4 px-4 sm:px-5 border-b border-zinc-100 dark:border-zinc-800/80 animate-shimmer select-none">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
         <div className="space-y-1.5 flex-1 min-w-0">

@@ -141,7 +141,7 @@ export default function CollapsibleSidebar({ className = '' }) {
     const isSearch = item.label === 'Search';
 
     // Item wrapper styling (gọn gàng chuẩn threads mẫu)
-    const baseItemClass = `w-full h-11 rounded-2xl flex items-center px-0 transition-all select-none ${
+    const baseItemClass = `w-full h-11 rounded-2xl flex items-center px-0 transition-all duration-150 active:scale-95 select-none ${
       item.isActive
         ? 'bg-zinc-100 dark:bg-[#1e1e1e] text-black dark:text-white font-bold'
         : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 hover:text-black dark:hover:text-white font-medium'

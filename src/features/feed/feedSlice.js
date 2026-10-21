@@ -209,7 +209,7 @@ export const feedSlice = createSlice({
       const { feedType = 'for_you', post } = action.payload;
       if (!post) return;
       const key = getFeedKey(feedType);
-      state[key].posts = [post, ...state[key].posts];
+      state[key].posts = [{ ...post, isNew: true }, ...state[key].posts];
     },
 
     // Cập nhật tương tác bài viết (like, repost, comments count, save)

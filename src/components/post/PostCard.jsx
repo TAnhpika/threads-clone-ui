@@ -75,6 +75,8 @@ export default function PostCard({
       data-post-id={post.id}
       onClick={handlePostClick}
       className={`py-4 px-4 sm:px-5 ${
+        post.isNew ? "animate-in fade-in slide-in-from-top-4 duration-300 ease-out" : ""
+      } ${
         isDetail
           ? "cursor-default"
           : "border-b border-zinc-100 dark:border-zinc-800/80 hover:bg-zinc-50/40 dark:hover:bg-zinc-900/20 transition-colors cursor-pointer"

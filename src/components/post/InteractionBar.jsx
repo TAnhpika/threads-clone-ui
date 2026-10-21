@@ -116,19 +116,39 @@ export default function InteractionBar({
     return count.toLocaleString('vi-VN');
   };
 
+  const [likeBouncing, setLikeBouncing] = useState(false);
+  const [repostSpinning, setRepostSpinning] = useState(false);
+
+  const handleLikeWithAnimation = (e) => {
+    e?.stopPropagation?.();
+    if (!isLiked) {
+      setLikeBouncing(true);
+      setTimeout(() => setLikeBouncing(false), 400);
+    }
+    toggleLike(e);
+  };
+
+  const handleRepostWithAnimation = (e) => {
+    if (!isReposted) {
+      setRepostSpinning(true);
+      setTimeout(() => setRepostSpinning(false), 450);
+    }
+    toggleRepost();
+  };
+
   return (
     <div className="relative flex items-center gap-1 sm:gap-2 mt-3 -ml-2 text-zinc-600 dark:text-zinc-400">
       {/* 1. Like Button */}
       <button
-        onClick={toggleLike}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+        onClick={handleLikeWithAnimation}
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-100 active:scale-80 cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
           isLiked ? 'text-red-500' : 'hover:text-black dark:hover:text-white'
         }`}
         title={isLiked ? 'Bỏ thích' : 'Thích'}
       >
         <Heart
           className={`w-4 h-4 transition-transform group-hover:scale-110 ${
-            isLiked ? 'fill-red-500 stroke-red-500' : ''
+            likeBouncing ? 'animate-heart-bounce fill-red-500 stroke-red-500' : isLiked ? 'fill-red-500 stroke-red-500' : ''
           }`}
         />
         {likes > 0 && <span>{formatCount(likes)}</span>}
@@ -137,7 +157,7 @@ export default function InteractionBar({
       {/* 2. Comment Button */}
       <button
         onClick={handleComment}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-100 active:scale-80 cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
         title="Bình luận"
       >
         <MessageCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
@@ -148,7 +168,7 @@ export default function InteractionBar({
       <div className="relative">
         <button
           onClick={handleRepostClick}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-100 active:scale-80 cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
             isReposted ? 'text-green-500' : 'hover:text-black dark:hover:text-white'
           }`}
           title={isReposted ? 'Hủy đăng lại' : 'Đăng lại'}
@@ -156,7 +176,11 @@ export default function InteractionBar({
         >
           <Repeat2
             className={`w-4 h-4 transition-transform group-hover:scale-110 ${
-              isReposted ? 'stroke-green-500 stroke-2 text-green-500' : ''
+              repostSpinning
+                ? 'animate-repost-spin stroke-green-500 stroke-2 text-green-500'
+                : isReposted
+                ? 'stroke-green-500 stroke-2 text-green-500'
+                : ''
             }`}
           />
           {reposts > 0 && <span>{formatCount(reposts)}</span>}
@@ -168,7 +192,7 @@ export default function InteractionBar({
             isOpen={isRepostModalOpen}
             onClose={() => setIsRepostModalOpen(false)}
             isReposted={isReposted}
-            onRepost={toggleRepost}
+            onRepost={handleRepostWithAnimation}
             onQuote={handleQuote}
           />
         )}
@@ -178,7 +202,7 @@ export default function InteractionBar({
       <div className="relative">
         <button
           onClick={handleShareClick}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-100 active:scale-80 cursor-pointer group hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white"
           title="Chia sẻ"
         >
           <Send className="w-4 h-4 transition-transform group-hover:scale-110" />

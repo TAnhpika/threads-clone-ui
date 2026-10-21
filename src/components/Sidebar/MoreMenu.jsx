@@ -9,6 +9,7 @@ import {
   Sun,
   Moon,
 } from 'lucide-react';
+import ToggleSwitch from '@/components/ui/ToggleSwitch';
 
 export default function MoreMenu({
   isOpen,
@@ -99,7 +100,7 @@ export default function MoreMenu({
     >
       {/* VIEW 1: MAIN MENU (Appearance, Sounds, Settings, Report a problem, Log out) */}
       {menuView === 'main' && (
-        <div className="space-y-0.5">
+        <div className="space-y-0.5 animate-in fade-in slide-in-from-left-3 duration-200">
           <button
             type="button"
             onClick={() => setMenuView('appearance')}
@@ -166,7 +167,7 @@ export default function MoreMenu({
 
       {/* VIEW 2: APPEARANCE (GIAO DIỆN) */}
       {menuView === 'appearance' && (
-        <div className="p-1">
+        <div className="p-1 animate-in fade-in slide-in-from-right-3 duration-200">
           {/* Header: Nút back mũi tên trái + Tiêu đề căn giữa */}
           <div className="flex items-center justify-between pb-3 relative">
             <button
@@ -241,7 +242,7 @@ export default function MoreMenu({
 
       {/* VIEW 3: SOUNDS (ÂM THANH) */}
       {menuView === 'sounds' && (
-        <div className="p-1">
+        <div className="p-1 animate-in fade-in slide-in-from-right-3 duration-200">
           {/* Header: Nút back mũi tên trái + Tiêu đề căn giữa */}
           <div className="flex items-center justify-between pb-2 relative">
             <button
@@ -269,50 +270,24 @@ export default function MoreMenu({
               <span className="text-xs font-semibold text-black dark:text-white">
                 Activity
               </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={soundActivity}
-                onClick={toggleSoundActivity}
-                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 p-0.5 cursor-pointer ${
-                  soundActivity
-                    ? 'bg-black dark:bg-white'
-                    : 'bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700/80'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-full transition-transform ${
-                    soundActivity
-                      ? 'translate-x-5 bg-white dark:bg-black'
-                      : 'translate-x-0 bg-white dark:bg-zinc-400'
-                  }`}
-                />
-              </button>
+              <ToggleSwitch
+                size="sm"
+                checked={soundActivity}
+                onChange={toggleSoundActivity}
+                ariaLabel="Activity sound"
+              />
             </div>
 
             <div className="flex items-center justify-between py-1">
               <span className="text-xs font-semibold text-black dark:text-white">
                 Messages
               </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={soundMessages}
-                onClick={toggleSoundMessages}
-                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 p-0.5 cursor-pointer ${
-                  soundMessages
-                    ? 'bg-black dark:bg-white'
-                    : 'bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700/80'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-full transition-transform ${
-                    soundMessages
-                      ? 'translate-x-5 bg-white dark:bg-black'
-                      : 'translate-x-0 bg-white dark:bg-zinc-400'
-                  }`}
-                />
-              </button>
+              <ToggleSwitch
+                size="sm"
+                checked={soundMessages}
+                onChange={toggleSoundMessages}
+                ariaLabel="Messages sound"
+              />
             </div>
           </div>
         </div>

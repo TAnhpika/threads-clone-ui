@@ -364,17 +364,32 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Hàng Tabs: Threads, Replies, Media, Reposts */}
-          <div className="flex border-b border-zinc-100 dark:border-zinc-800/80">
+          {/* Hàng Tabs: Threads, Replies, Media, Reposts với gạch chân trượt mượt mà */}
+          <div className="relative flex border-b border-zinc-100 dark:border-zinc-800/80 select-none">
+            {/* Sliding Underline Indicator */}
+            {(() => {
+              const activeIndex = Math.max(0, tabs.findIndex((t) => t.id === activeTab));
+              const tabWidthPercent = tabs.length > 0 ? 100 / tabs.length : 25;
+              return (
+                <div
+                  className="absolute bottom-0 left-0 h-0.5 bg-black dark:bg-white transition-transform duration-300 ease-out pointer-events-none"
+                  style={{
+                    width: `${tabWidthPercent}%`,
+                    transform: `translateX(${activeIndex * 100}%)`,
+                  }}
+                />
+              );
+            })()}
+
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-3 text-sm font-semibold text-center transition-colors cursor-pointer border-b-2 ${
+                className={`flex-1 py-3 text-sm font-semibold text-center transition-colors duration-200 cursor-pointer ${
                   activeTab === tab.id
-                    ? 'border-black dark:border-white text-black dark:text-white'
-                    : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'text-black dark:text-white'
+                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
                 {tab.label}

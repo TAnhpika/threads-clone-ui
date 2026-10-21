@@ -932,7 +932,7 @@ export default function PostDetailPage() {
 // Skeleton loading cho trang chi tiết bài viết
 function PostDetailSkeleton() {
   return (
-    <div className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden p-5 animate-pulse">
+    <div className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-hidden p-5 animate-shimmer">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
         <div className="flex-1 space-y-2">
