@@ -1,42 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, X } from 'lucide-react';
-
-function getLastLoggedInUsername() {
-  if (typeof window === 'undefined') return null;
-  try {
-    const rawAccount = localStorage.getItem('threads_last_login_account');
-    if (rawAccount) {
-      const parsed = JSON.parse(rawAccount);
-      if (parsed?.username) return parsed.username;
-      if (parsed?.identifier) return parsed.identifier;
-      if (parsed?.name) return parsed.name;
-    }
-    const lastUsername = localStorage.getItem('threads_last_username') || localStorage.getItem('last_username');
-    if (lastUsername) return lastUsername;
-  } catch (err) {
-    console.error('Failed to get last logged in username:', err);
-  }
-  return null;
-}
-
-function InstagramGlyph({ className = 'w-6 h-6 text-white' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </svg>
-  );
-}
+import { X } from 'lucide-react';
+import useLastLoginAccount from '@/hooks/useLastLoginAccount';
+import InstagramAuthCard from './InstagramAuthCard';
 
 const MODAL_CONFIGS = {
   post: {
@@ -192,14 +158,14 @@ export default function SignUpToPostModal({
   canClose = true,
 }) {
   const navigate = useNavigate();
-  const [lastUsername, setLastUsername] = useState(getLastLoggedInUsername);
+  const { lastUsername, savedAccount, refresh } = useLastLoginAccount();
 
-  // Cập nhật username của lần đăng nhập gần nhất khi mở modal
+  // Cập nhật thông tin tài khoản đăng nhập gần nhất khi mở modal
   useEffect(() => {
     if (isOpen) {
-      setLastUsername(getLastLoggedInUsername());
+      refresh();
     }
-  }, [isOpen]);
+  }, [isOpen, refresh]);
 
   // Khóa cuộn trang khi modal đang mở
   useEffect(() => {
@@ -271,39 +237,14 @@ export default function SignUpToPostModal({
         </p>
 
         {/* Thẻ hành động Continue with Instagram */}
-        <button
-          type="button"
+        <InstagramAuthCard
+          variant="modal"
+          title="Continue with Instagram"
+          username={lastUsername}
+          avatar={savedAccount?.avatar}
           onClick={handleContinueWithInstagram}
-          className="w-full mt-7 p-4 rounded-2xl bg-[#121212] hover:bg-[#1e1e1e] border border-zinc-800/80 flex items-center justify-between transition-colors group cursor-pointer"
-        >
-          <div className="flex items-center gap-3.5 min-w-0">
-            {/* Logo Instagram vuông gradient */}
-            <div className="w-11 h-11 rounded-xl bg-linear-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center p-2 text-white shrink-0 shadow-xs">
-              <InstagramGlyph className="w-6 h-6 text-white stroke-[2.2]" />
-            </div>
-
-            {/* Thông tin tài khoản - nếu có lastUsername thì hiển thị 2 dòng, nếu chưa từng đăng nhập thì chỉ hiển thị "Continue with Instagram" */}
-            <div className="text-left min-w-0">
-              {lastUsername ? (
-                <>
-                  <p className="text-xs text-zinc-400 font-medium">
-                    Continue with Instagram
-                  </p>
-                  <p className="text-sm font-bold text-white group-hover:underline truncate mt-0.5">
-                    {lastUsername}
-                  </p>
-                </>
-              ) : (
-                <span className="text-[15px] font-bold text-white group-hover:underline truncate block">
-                  Continue with Instagram
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Mũi tên Chevron phải */}
-          <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-white transition-colors shrink-0" />
-        </button>
+          className="mt-7"
+        />
       </div>
     </div>
   );
