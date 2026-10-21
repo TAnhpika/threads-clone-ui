@@ -20,4 +20,5 @@ export { default as EmbedModal } from './EmbedModal';
 export { default as CopyImageModal } from './CopyImageModal';
 export { default as AddToIgStoryModal } from './AddToIgStoryModal';
 export { default as AuthorProfileModal } from './AuthorProfileModal';
+export { default as PostHeaderModals } from './PostHeaderModals';
 export { mockPosts } from './mockPosts';

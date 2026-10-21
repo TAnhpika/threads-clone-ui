@@ -1,5 +1,6 @@
 import { useOptimisticToggle } from './useOptimisticToggle';
 import { likePostApi, repostPostApi } from '@/services/postService';
+import { showToast } from '@/utils/toast';
 
 /**
  * Composite Hook quản lý tương tác Like và Repost của bài viết / bình luận.
@@ -11,7 +12,7 @@ export function usePostInteraction({
   initialIsLiked = false,
   initialReposts = 0,
   initialIsReposted = false,
-  onToast,
+  onToast = showToast,
   syncRedux = true,
 }) {
   const like = useOptimisticToggle({
