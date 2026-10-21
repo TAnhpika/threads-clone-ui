@@ -12,86 +12,12 @@ import {
   Bookmark,
   Lock,
 } from 'lucide-react';
+import { SolidHome, OutlineHome, InsightsIcon, GhostIcon } from '@/components/icons';
 import CollapsibleSidebar from './CollapsibleSidebar';
 import MoreMenu from './MoreMenu';
 import { showToast } from '@/utils/toast';
 
-export { CollapsibleSidebar, MoreMenu };
-
-// 1. Home Icons (Outline & Solid silhouette chuẩn Threads)
-function SolidHome({ className = 'w-5 h-5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M2.5 10.2a2.4 2.4 0 0 1 1.25-2.06l6.6-3.48a3.5 3.5 0 0 1 3.3 0l6.6 3.48a2.4 2.4 0 0 1 1.25 2.06v8.6a2.2 2.2 0 0 1-2.2 2.2h-14.6a2.2 2.2 0 0 1-2.2-2.2v-8.6z" />
-    </svg>
-  );
-}
-
-function OutlineHome({ className = 'w-5 h-5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M2.5 10.2a2.4 2.4 0 0 1 1.25-2.06l6.6-3.48a3.5 3.5 0 0 1 3.3 0l6.6 3.48a2.4 2.4 0 0 1 1.25 2.06v8.6a2.2 2.2 0 0 1-2.2 2.2h-14.6a2.2 2.2 0 0 1-2.2-2.2v-8.6z" />
-    </svg>
-  );
-}
-
-// 2. Insights / Chart Icon
-function InsightsIcon({ className = 'w-5 h-5', active = false }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={active ? 2.5 : 2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <path d="M8 17v-4" strokeWidth={active ? 3 : 2} />
-      <path d="M12 17v-8" strokeWidth={active ? 3 : 2} />
-      <path d="M16 17v-6" strokeWidth={active ? 3 : 2} />
-    </svg>
-  );
-}
-
-// 3. Cute Ghost Icon (cho Ghost posts chuẩn hình mẫu)
-export function GhostIcon({ className = 'w-5 h-5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={className}
-    >
-      <path
-        strokeDasharray="2.5 2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M7 16.5L4 19.5c-.3.3-.8.1-.7-.3l1-4.2A8 8 0 1 1 7.5 17"
-      />
-      <circle cx="10" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
-      <circle cx="14" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
-      <path d="M10.5 14.5c.6.5 1.4.7 2 .7s1.4-.2 2-.7" strokeLinecap="round" strokeWidth="1.8" />
-    </svg>
-  );
-}
+export { CollapsibleSidebar, MoreMenu, GhostIcon };
 
 export default function Sidebar({ collapsed = false, miniOnly = false }) {
   const location = useLocation();

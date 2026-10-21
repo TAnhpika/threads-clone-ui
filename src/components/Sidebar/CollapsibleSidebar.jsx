@@ -10,60 +10,9 @@ import {
   Heart,
   User,
 } from 'lucide-react';
+import { SolidHome, OutlineHome, InsightsIcon } from '@/components/icons';
 import MoreMenu from './MoreMenu';
 import { showToast } from '@/utils/toast';
-
-// 1. Home Icons (Outline & Solid silhouette chuẩn Barcelona / Threads)
-function SolidHome({ className = 'w-5.5 h-5.5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M2.5 10.2a2.4 2.4 0 0 1 1.25-2.06l6.6-3.48a3.5 3.5 0 0 1 3.3 0l6.6 3.48a2.4 2.4 0 0 1 1.25 2.06v8.6a2.2 2.2 0 0 1-2.2 2.2h-14.6a2.2 2.2 0 0 1-2.2-2.2v-8.6z" />
-    </svg>
-  );
-}
-
-function OutlineHome({ className = 'w-5.5 h-5.5' }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M2.5 10.2a2.4 2.4 0 0 1 1.25-2.06l6.6-3.48a3.5 3.5 0 0 1 3.3 0l6.6 3.48a2.4 2.4 0 0 1 1.25 2.06v8.6a2.2 2.2 0 0 1-2.2 2.2h-14.6a2.2 2.2 0 0 1-2.2-2.2v-8.6z" />
-    </svg>
-  );
-}
-
-// 2. Insights Icon
-function InsightsIcon({ className = 'w-5.5 h-5.5', active = false }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={active ? 2.5 : 2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <path d="M8 17v-4" strokeWidth={active ? 3 : 2} />
-      <path d="M12 17v-8" strokeWidth={active ? 3 : 2} />
-      <path d="M16 17v-6" strokeWidth={active ? 3 : 2} />
-    </svg>
-  );
-}
 
 export default function CollapsibleSidebar({ className = '' }) {
   const location = useLocation();

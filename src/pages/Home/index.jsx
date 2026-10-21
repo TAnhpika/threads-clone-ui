@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { Plus, Loader2, Bookmark, Heart } from 'lucide-react';
-import { GhostIcon } from '@/components/Sidebar';
+import { GhostIcon } from '@/components/icons';
 import FeedHeader from '@/components/FeedHeader';
 import LoginPanel from '@/components/LoginPanel';
 import { PostCard, CreatePostBox, CreatePostModal } from '@/components/post';
