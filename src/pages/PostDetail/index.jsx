@@ -1332,15 +1332,17 @@ function ReplyItem({
 
             {/* Nút tuỳ chọn (...) của reply */}
             <div className="relative shrink-0">
-              <button
-                onClick={() => setIsMenuOpen((prev) => !prev)}
-                className="p-1 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-                title="Tuỳ chọn"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
               <PostMenu
+                trigger={
+                  <button
+                    className="p-1 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                    title="Tuỳ chọn"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                }
                 isOpen={isMenuOpen}
+                onOpenChange={setIsMenuOpen}
                 onClose={() => setIsMenuOpen(false)}
                 postUrl={replyShareUrl}
                 isOwnPost={isSelf}

@@ -16,6 +16,13 @@ import {
   Trash2,
   Pencil,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 // Custom Restrict / Unrestrict Icon chuẩn Threads gốc Meta
 function RestrictIcon({ isRestricted = false, className = 'w-5 h-5' }) {
@@ -97,6 +104,8 @@ function InsightsIcon({ className = 'w-5 h-5' }) {
 export default function PostMenu({
   isOpen,
   onClose,
+  onOpenChange = null,
+  trigger = null,
   postUrl = window.location.href,
   onAction,
   isOwnPost = false,
@@ -114,8 +123,36 @@ export default function PostMenu({
   const [view, setView] = useState('main'); // 'main' | 'add_to_feed' | 'post_options'
   const [canEdit, setCanEdit] = useState(false);
   const [remainingText, setRemainingText] = useState(null);
-  const menuRef = useRef(null);
+  const triggerContainerRef = useRef(null);
+  const menuContentRef = useRef(null);
   const { t } = useTranslation();
+
+  // Tự động đóng menu khi phần trên cùng của menu chạm vào top screen hoặc bottom screen
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const checkMenuPosition = () => {
+      const menuEl = menuContentRef.current;
+      if (!menuEl) return;
+
+      const rect = menuEl.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+      // Chỉ cần phần trên cùng của menu chạm vào top screen (rect.top <= 2)
+      // hoặc chạm vào bottom screen (rect.top >= viewportHeight - 2) thì ẩn
+      if (rect.top <= 2 || rect.top >= viewportHeight - 2) {
+        onClose?.();
+      }
+    };
+
+    window.addEventListener('scroll', checkMenuPosition, { passive: true, capture: true });
+    window.addEventListener('resize', checkMenuPosition, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', checkMenuPosition, { capture: true });
+      window.removeEventListener('resize', checkMenuPosition);
+    };
+  }, [isOpen, onClose]);
 
   // Đếm ngược 15 phút chỉnh sửa bài viết của chính mình (quá 15:00 ẩn nút edit)
   useEffect(() => {
@@ -180,36 +217,6 @@ export default function PostMenu({
     }
   }, [isOpen]);
 
-  // Đóng menu khi click ra ngoài hoặc bấm phím Escape
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        onClose();
-      }
-    }
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        if (view !== 'main') {
-          setView('main');
-        } else {
-          onClose();
-        }
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onClose, view]);
-
-  if (!isOpen) return null;
-
   const handleCopyLink = (e) => {
     e?.stopPropagation?.();
     copy(postUrl);
@@ -217,113 +224,127 @@ export default function PostMenu({
       navigator.clipboard.writeText(postUrl).catch(() => {});
     }
     if (onAction) onAction('copy_link');
-    onClose();
+    onClose?.();
   };
 
   const handleItemClick = (e, actionName) => {
     e?.stopPropagation?.();
     if (onAction) onAction(actionName);
-    onClose();
+    onClose?.();
   };
 
-  return (
-    <div
-      ref={menuRef}
-      onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      className="absolute right-0 top-9 w-64 p-1.5 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-60 animate-in fade-in zoom-in-95 duration-150 select-none text-black dark:text-white"
-      role="menu"
-      aria-label="Tùy chọn bài viết"
-    >
-      {view === 'add_to_feed' ? (
-        /* Submenu: Add to feed */
-        <div className="space-y-1 animate-in fade-in slide-in-from-right-2 duration-150">
-          <div className="flex items-center gap-2.5 px-1.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800/80">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setView('main');
-              }}
-              className="p-1 rounded-full text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-              title="Quay lại"
-              aria-label="Quay lại"
-            >
-              <ArrowLeft className="w-5 h-5 stroke-2.2" />
-            </button>
-            <span className="font-bold text-[15px] text-zinc-900 dark:text-zinc-100">
-              {t('postMenu.addToFeed', 'Add to feed')}
-            </span>
-          </div>
+  const isControlled = typeof isOpen === 'boolean';
 
-          <div className="pt-0.5">
-            <button
-              onClick={(e) => handleItemClick(e, 'create_feed')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer group"
-            >
-              <span>{t('postMenu.createNewFeed', 'Create new feed')}</span>
-              <PlusCircle className="w-5 h-5 text-zinc-700 dark:text-zinc-300 group-hover:scale-105 transition-transform stroke-2" />
-            </button>
+  return (
+    <DropdownMenu
+      modal={false}
+      {...(isControlled ? { open: isOpen } : {})}
+      onOpenChange={(nextOpen) => {
+        onOpenChange?.(nextOpen);
+        if (!nextOpen) {
+          onClose?.();
+          setView('main');
+        }
+      }}
+    >
+      {trigger && (
+        <DropdownMenuTrigger
+          render={
+            <span ref={triggerContainerRef} className="inline-flex">
+              {trigger}
+            </span>
+          }
+        />
+      )}
+      <DropdownMenuContent
+        align="end"
+        side="bottom"
+        sideOffset={6}
+        collisionAvoidance={{ side: "none", align: "none", fallbackAxisSide: "none" }}
+        className="w-64 p-1.5 bg-white dark:bg-[#181818] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-70 select-none text-black dark:text-white"
+        aria-label="Tùy chọn bài viết"
+      >
+        <div ref={menuContentRef} className="w-full">
+          {view === 'add_to_feed' ? (
+          /* Submenu: Add to feed */
+          <div className="space-y-1 animate-in fade-in slide-in-from-right-2 duration-150">
+            <div className="flex items-center gap-2.5 px-1.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800/80">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setView('main');
+                }}
+                className="p-1 rounded-full text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Quay lại"
+                aria-label="Quay lại"
+              >
+                <ArrowLeft className="w-5 h-5 stroke-2.2" />
+              </button>
+              <span className="font-bold text-[15px] text-zinc-900 dark:text-zinc-100">
+                {t('postMenu.addToFeed', 'Add to feed')}
+              </span>
+            </div>
+
+            <div className="pt-0.5">
+              <DropdownMenuItem
+                onClick={(e) => handleItemClick(e, 'create_feed')}
+                className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer group"
+              >
+                <span>{t('postMenu.createNewFeed', 'Create new feed')}</span>
+                <PlusCircle className="w-5 h-5 text-zinc-700 dark:text-zinc-300 group-hover:scale-105 transition-transform stroke-2" />
+              </DropdownMenuItem>
+            </div>
           </div>
-        </div>
-      ) : isOwnPost ? (
-        /* ================= BÀI VIẾT CỦA CHÍNH MÌNH (OWN POST) ================= */
-        <>
-          {/* Nhóm 1: Insights & Edit */}
+        ) : isOwnPost ? (
+          /* ================= BÀI VIẾT CỦA CHÍNH MÌNH (OWN POST) ================= */
           <div className="space-y-0.5">
-            <button
-              type="button"
+            {/* Nhóm 1: Insights & Edit */}
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'insights')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.insights', 'Insights')}</span>
               <InsightsIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
+            </DropdownMenuItem>
 
             {canEdit && (
-              <button
-                type="button"
+              <DropdownMenuItem
                 onClick={(e) => handleItemClick(e, 'edit')}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+                className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
               >
                 <span>{t('common.edit', 'Edit')}</span>
                 <span className="text-zinc-400 font-normal text-xs tabular-nums">
                   {remainingText || '15:00'}
                 </span>
-              </button>
+              </DropdownMenuItem>
             )}
-          </div>
 
-          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+            <DropdownMenuSeparator className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
 
-          {/* Nhóm 2: Copy link & Get embed code */}
-          <div className="space-y-0.5">
-            <button
-              type="button"
+            {/* Nhóm 2: Copy link & Get embed code */}
+            <DropdownMenuItem
               onClick={handleCopyLink}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.copyLink', 'Copy link')}</span>
               <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
+            </DropdownMenuItem>
 
-            <button
-              type="button"
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'embed')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.embed', 'Get embed code')}</span>
               <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
-          </div>
+            </DropdownMenuItem>
 
-          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+            <DropdownMenuSeparator className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
 
-          {/* Nhóm 3: Save, Pin, Archive, Hide like/share counts, Post options */}
-          <div className="space-y-0.5">
-            <button
-              type="button"
+            {/* Nhóm 3: Save, Pin, Archive, Hide like/share counts, Post options */}
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, isSaved ? 'unsave' : 'save')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isSaved ? t('postMenu.unsave', 'Unsave') : t('postMenu.save', 'Save')}</span>
               <Bookmark
@@ -333,12 +354,11 @@ export default function PostMenu({
                     : 'text-zinc-700 dark:text-zinc-300'
                 }`}
               />
-            </button>
+            </DropdownMenuItem>
 
-            <button
-              type="button"
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'pin')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>
                 {isReply
@@ -350,81 +370,72 @@ export default function PostMenu({
                     : t('postMenu.pinToProfile', 'Pin to profile')}
               </span>
               <Pin className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2 -rotate-45" />
-            </button>
+            </DropdownMenuItem>
 
-            <button
-              type="button"
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'archive')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isArchived ? t('postMenu.unarchive', 'Unarchive') : t('postMenu.archive', 'Archive')}</span>
               <RotateCcw className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
+            </DropdownMenuItem>
 
-            <button
-              type="button"
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'toggle_hide_counts')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span className="truncate pr-2">
                 {isHideLikes ? t('postMenu.unhideLikeCounts', 'Unhide like and share counts') : t('postMenu.hideLikeCounts', 'Hide like and share counts')}
               </span>
               <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2 shrink-0" />
-            </button>
+            </DropdownMenuItem>
 
-            <button
-              type="button"
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'post_options')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.postOptions', 'Post options')}</span>
               <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-2.5" />
-            </button>
-          </div>
+            </DropdownMenuItem>
 
-          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+            <DropdownMenuSeparator className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
 
-          {/* Nhóm 4: Delete */}
-          <div className="space-y-0.5">
-            <button
-              type="button"
+            {/* Nhóm 4: Delete */}
+            <DropdownMenuItem
+              variant="destructive"
               onClick={(e) => handleItemClick(e, 'delete')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 dark:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
-              <span>{t('common.delete', 'Delete')}</span>
-              <Trash2 className="w-5 h-5 text-red-500 stroke-2.2" />
-            </button>
+              <span className="text-red-500 dark:text-red-500">{t('common.delete', 'Delete')}</span>
+              <Trash2 className="w-5 h-5 text-red-500 dark:text-red-500 stroke-2.2" />
+            </DropdownMenuItem>
           </div>
-        </>
-      ) : (
-        /* ================= BÀI VIẾT CỦA NGƯỜI KHÁC (OTHER'S POST) ================= */
-        <>
-          {/* Nhóm 1: Chia sẻ & Mã nhúng */}
+        ) : (
+          /* ================= BÀI VIẾT CỦA NGƯỜI KHÁC (OTHER'S POST) ================= */
           <div className="space-y-0.5">
-            <button
+            {/* Nhóm 1: Chia sẻ & Mã nhúng */}
+            <DropdownMenuItem
               onClick={handleCopyLink}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.copyLink', 'Copy link')}</span>
               <Link2 className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
+            </DropdownMenuItem>
 
-            <button
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'embed')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.embed', 'Get embed code')}</span>
               <EmbedCodeIcon className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
-          </div>
+            </DropdownMenuItem>
 
-          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+            <DropdownMenuSeparator className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
 
-          {/* Nhóm 2: Tương tác cá nhân */}
-          <div className="space-y-0.5">
-            <button
+            {/* Nhóm 2: Tương tác cá nhân */}
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, isSaved ? 'unsave' : 'save')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isSaved ? t('postMenu.unsave', 'Unsave') : t('postMenu.save', 'Save')}</span>
               <Bookmark
@@ -434,67 +445,68 @@ export default function PostMenu({
                     : 'text-zinc-700 dark:text-zinc-300'
                 }`}
               />
-            </button>
+            </DropdownMenuItem>
 
-            <button
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, 'not_interested')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.notInterested', 'Not interested')}</span>
               <EyeOff className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
-          </div>
+            </DropdownMenuItem>
 
-          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+            <DropdownMenuSeparator className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
 
-          {/* Nhóm 3: Kiểm soát & Quan hệ */}
-          <div className="space-y-0.5">
-            <button
+            {/* Nhóm 3: Kiểm soát & Quan hệ */}
+            <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
                 setView('add_to_feed');
               }}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{t('postMenu.addToFeed', 'Add to feed')}</span>
               <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 stroke-2.5" />
-            </button>
+            </DropdownMenuItem>
 
-            <button
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, isMuted ? 'unmute' : 'mute')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isMuted ? t('postMenu.unmute', 'Unmute') : t('postMenu.mute', 'Mute')}</span>
               <UserX className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
+            </DropdownMenuItem>
 
-            <button
+            <DropdownMenuItem
               onClick={(e) => handleItemClick(e, isRestricted ? 'unrestrict' : 'restrict')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
             >
               <span>{isRestricted ? t('postMenu.unrestrict', 'Unrestrict') : t('postMenu.restrict', 'Restrict')}</span>
               <RestrictIcon isRestricted={isRestricted} className="w-5 h-5 text-zinc-700 dark:text-zinc-300 stroke-2.2" />
-            </button>
+            </DropdownMenuItem>
 
             {/* Các mục cảnh báo màu đỏ */}
-            <button
+            <DropdownMenuItem
+              variant="destructive"
               onClick={(e) => handleItemClick(e, isBlocked ? 'unblock' : 'block')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 dark:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
-              <span>{isBlocked ? t('postMenu.unblock', 'Unblock') : t('postMenu.block', 'Block')}</span>
-              <Ban className="w-5 h-5 text-red-500 stroke-2.2" />
-            </button>
+              <span className="text-red-500 dark:text-red-500">{isBlocked ? t('postMenu.unblock', 'Unblock') : t('postMenu.block', 'Block')}</span>
+              <Ban className="w-5 h-5 text-red-500 dark:text-red-500 stroke-2.2" />
+            </DropdownMenuItem>
 
-            <button
+            <DropdownMenuItem
+              variant="destructive"
               onClick={(e) => handleItemClick(e, 'report')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+              className="w-full justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-500 dark:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             >
-              <span>{t('postMenu.report', 'Report')}</span>
-              <MessageCircleWarning className="w-5 h-5 text-red-500 stroke-2.2" />
-            </button>
+              <span className="text-red-500 dark:text-red-500">{t('postMenu.report', 'Report')}</span>
+              <MessageCircleWarning className="w-5 h-5 text-red-500 dark:text-red-500 stroke-2.2" />
+            </DropdownMenuItem>
           </div>
-        </>
-      )}
-    </div>
+        )}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

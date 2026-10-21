@@ -153,23 +153,22 @@ export default function PostHeader({
 
       {/* Nút tùy chọn More (...) & Menu Modal */}
       <div className="relative shrink-0">
-        <button
-          onClick={() => setIsMenuOpen((prev) => !prev)}
-          className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-            isMenuOpen
-              ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-              : 'text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
-          }`}
-          title="Tùy chọn"
-          aria-label="Tùy chọn bài viết"
-          aria-expanded={isMenuOpen}
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-
-        {/* Post Menu Modal / Dropdown */}
         <PostMenu
+          trigger={
+            <button
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                isMenuOpen
+                  ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+                  : 'text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`}
+              title="Tùy chọn"
+              aria-label="Tùy chọn bài viết"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          }
           isOpen={isMenuOpen}
+          onOpenChange={setIsMenuOpen}
           onClose={() => setIsMenuOpen(false)}
           onAction={handleAction}
           postUrl={shareUrl}
