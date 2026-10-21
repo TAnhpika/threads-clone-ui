@@ -665,7 +665,17 @@ export default function PostHeader({
         })
       );
     } else if (action === 'archive') {
-      setIsArchived((prev) => !prev);
+      const nextArchived = !isArchived;
+      setIsArchived(nextArchived);
+      const targetPostId = postId || post?.id;
+      if (targetPostId) {
+        dispatch(
+          updatePostInteraction({
+            postId: targetPostId,
+            updates: { isArchived: nextArchived },
+          })
+        );
+      }
       window.dispatchEvent(
         new CustomEvent('app-toast', {
           detail: { message: isArchived ? 'Đã khôi phục từ lưu trữ' : 'Đã lưu trữ bài viết' },

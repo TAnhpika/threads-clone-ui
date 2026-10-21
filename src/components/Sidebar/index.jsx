@@ -70,7 +70,7 @@ function InsightsIcon({ className = 'w-5 h-5', active = false }) {
 }
 
 // 3. Cute Ghost Icon (cho Ghost posts chuẩn hình mẫu)
-function GhostIcon({ className = 'w-5 h-5' }) {
+export function GhostIcon({ className = 'w-5 h-5' }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -82,11 +82,12 @@ function GhostIcon({ className = 'w-5 h-5' }) {
       <path
         strokeDasharray="2.5 2"
         strokeLinecap="round"
-        d="M6 7.5L3.5 5M6 7.5A8 8 0 1 1 5 14"
+        strokeLinejoin="round"
+        d="M7 16.5L4 19.5c-.3.3-.8.1-.7-.3l1-4.2A8 8 0 1 1 7.5 17"
       />
-      <circle cx="10.5" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
-      <path d="M11 14.5c.7.5 1.5.7 2.2.7s1.5-.2 2.2-.7" strokeLinecap="round" />
+      <circle cx="10" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="11.5" r="1.1" fill="currentColor" stroke="none" />
+      <path d="M10.5 14.5c.6.5 1.4.7 2 .7s1.4-.2 2-.7" strokeLinecap="round" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -233,12 +234,12 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
     },
     {
       label: 'Ghost posts',
-      path: '/?feed=ghost',
+      path: '/ghost_posts',
       rightIcon: GhostIcon,
     },
     {
       label: 'Archive',
-      path: '/?feed=archive',
+      path: '/archive',
       icon: Lock,
     },
   ];
@@ -444,7 +445,11 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
                     ? location.search === feed.path.replace('/', '')
                     : location.pathname === feed.path ||
                       (feed.path === '/saved' && location.search === '?feed=saved') ||
-                      (feed.path === '/liked' && location.search === '?feed=liked');
+                      (feed.path === '/liked' && location.search === '?feed=liked') ||
+                      (feed.path === '/ghost_posts' &&
+                        (location.search === '?feed=ghost' ||
+                          location.search === '?feed=ghost_posts')) ||
+                      (feed.path === '/archive' && location.search === '?feed=archive');
 
                 if (!isAuthenticated) {
                   return (

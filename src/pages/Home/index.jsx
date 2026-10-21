@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { Plus, Loader2, Bookmark, Heart } from 'lucide-react';
+import { GhostIcon } from '@/components/Sidebar';
 import FeedHeader from '@/components/FeedHeader';
 import LoginPanel from '@/components/LoginPanel';
 import { PostCard, CreatePostBox, CreatePostModal } from '@/components/post';
@@ -79,7 +80,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     return allFeedPosts.some(isOwn);
   }, [allFeedPosts, currentUser]);
 
-  // Xác định active feedType ('for_you' | 'following' | 'saved' | 'liked')
+  // Xác định active feedType ('for_you' | 'following' | 'saved' | 'liked' | 'ghost_posts' | 'archive')
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const feedParam = searchParams.get('feed');
   const feedType =
@@ -89,16 +90,25 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         ? 'saved'
         : location.pathname === '/liked' || feedParam === 'liked'
           ? 'liked'
-          : feedParam || defaultFeedType || 'for_you';
+          : location.pathname === '/ghost_posts' || feedParam === 'ghost' || feedParam === 'ghost_posts'
+            ? 'ghost_posts'
+            : location.pathname === '/archive' || feedParam === 'archive'
+              ? 'archive'
+              : feedParam || defaultFeedType || 'for_you';
 
   // Lấy dữ liệu feed từ Redux store
   const feedState = useSelector(selectFeedState(feedType));
   const rawPosts = feedState.posts;
   const page = feedState.page;
-  const hasMore = feedType === 'saved' || feedType === 'liked' ? false : feedState.hasMore;
+  const isSpecialFeed =
+    feedType === 'saved' ||
+    feedType === 'liked' ||
+    feedType === 'ghost_posts' ||
+    feedType === 'archive';
+  const hasMore = isSpecialFeed ? false : feedState.hasMore;
   const isLoaded = feedState.isLoaded;
 
-  // Với feed 'saved' và 'liked': Tổng hợp từ state riêng + các bài có cờ tương ứng từ mọi feed
+  // Với feed 'saved', 'liked', 'archive': Tổng hợp từ state riêng + các bài có cờ tương ứng từ mọi feed
   const posts = useMemo(() => {
     if (feedType === 'saved') {
       const map = new Map();
@@ -124,6 +134,21 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
       });
       (allFeedPosts || []).forEach((p) => {
         if (p && p.id && p.isLiked && !map.has(String(p.id))) {
+          map.set(String(p.id), p);
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    if (feedType === 'archive') {
+      const map = new Map();
+      (rawPosts || []).forEach((p) => {
+        if (p && p.id && p.isArchived !== false) {
+          map.set(String(p.id), { ...p, isArchived: true });
+        }
+      });
+      (allFeedPosts || []).forEach((p) => {
+        if (p && p.id && p.isArchived && !map.has(String(p.id))) {
           map.set(String(p.id), p);
         }
       });
@@ -161,8 +186,13 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         setIsLoadingMore(true);
       }
 
-      if (targetType === 'saved' || targetType === 'liked') {
-        // Feed 'saved' và 'liked' lấy từ Redux store và local storage, không gọi API /posts/feed?type=... (tránh lỗi 422)
+      if (
+        targetType === 'saved' ||
+        targetType === 'liked' ||
+        targetType === 'ghost_posts' ||
+        targetType === 'archive'
+      ) {
+        // Feed 'saved', 'liked', 'ghost_posts', 'archive' lấy từ Redux store và local storage, không gọi API /posts/feed?type=... (tránh lỗi 422)
         setIsLoadingInitial(false);
         setIsLoadingMore(false);
         isFetchingRef.current = false;
@@ -450,6 +480,35 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
           );
         }
 
+        if (feedType === 'ghost_posts') {
+          return (
+            <div className="py-24 px-6 flex flex-col items-center justify-center text-center select-none">
+              <div className="w-14 h-14 flex items-center justify-center mb-4 text-zinc-500 dark:text-zinc-400">
+                <GhostIcon className="w-12 h-12" />
+              </div>
+              <h3 className="text-base font-bold text-black dark:text-white mb-2">
+                No ghost posts yet
+              </h3>
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm leading-relaxed">
+                Ghost posts are archived after 24 hours. You can choose to get replies as messages or see them on your post.
+              </p>
+            </div>
+          );
+        }
+
+        if (feedType === 'archive') {
+          return (
+            <div className="py-28 px-6 flex flex-col items-center justify-center text-center select-none">
+              <h3 className="text-base font-bold text-black dark:text-white mb-2">
+                No archived posts yet
+              </h3>
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm leading-relaxed">
+                Posts you archive will appear here.
+              </p>
+            </div>
+          );
+        }
+
       return (
         <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
@@ -469,7 +528,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         {posts.flatMap((post, index) => {
           const items = [<PostCard key={post.id} post={post} feedType={feedType} />];
           // Hiển thị gợi ý follow sau bài viết thứ 8 (chỉ áp dụng cho For you / Following)
-          const isTarget = feedType !== 'saved' && feedType !== 'liked' && index === 7;
+          const isTarget = !isSpecialFeed && index === 7;
           if (isTarget) {
             items.push(
               <SuggestedProfiles
@@ -497,7 +556,11 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
                   ? 'Saved'
                   : feedType === 'liked'
                     ? 'Liked'
-                    : 'Home'}
+                    : feedType === 'ghost_posts'
+                      ? 'Ghost posts'
+                      : feedType === 'archive'
+                        ? 'Archive'
+                        : 'Home'}
             </h1>
           </div>
 
@@ -542,7 +605,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     <div className="flex justify-center items-start gap-8 w-full max-w-2xl mx-auto">
       {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}
       <div className="flex-1 max-w-155 min-w-0">
-        {/* Header của Feed: 'For you', 'Following', 'Saved' hoặc 'Liked' chuẩn Threads.com */}
+        {/* Header của Feed: 'For you', 'Following', 'Saved', 'Liked', 'Ghost posts', 'Archive' chuẩn Threads.com */}
         <FeedHeader
           title={
             feedType === 'following'
@@ -551,7 +614,11 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
                 ? 'Saved'
                 : feedType === 'liked'
                   ? 'Liked'
-                  : 'For you'
+                  : feedType === 'ghost_posts'
+                    ? 'Ghost posts'
+                    : feedType === 'archive'
+                      ? 'Archive'
+                      : 'For you'
           }
           isLoggedIn={isAuthenticated}
           onCreateFeed={handleOpenCreateFeed}
@@ -559,8 +626,8 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
 
         {/* Khối Card chính bo góc chứa Composer & Danh sách Post */}
         <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-visible transition-colors">
-          {/* Thanh soạn thảo 'What's new?' - Ẩn khi ở trang Saved hoặc Liked */}
-          {feedType !== 'saved' && feedType !== 'liked' && (
+          {/* Thanh soạn thảo 'What's new?' - Ẩn khi ở trang Saved, Liked, Ghost posts, Archive */}
+          {!isSpecialFeed && (
             <CreatePostBox
               user={currentUser}
               onClick={() => {
@@ -570,8 +637,8 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
             />
           )}
 
-          {/* Dải phân cách '☆ First thread' - chỉ hiển thị nếu người dùng chưa từng đăng bài nào và không ở tab Saved/Liked */}
-          {!hasPosted && feedType !== 'saved' && feedType !== 'liked' && (
+          {/* Dải phân cách '☆ First thread' - chỉ hiển thị nếu người dùng chưa từng đăng bài nào và không ở tab đặc biệt */}
+          {!hasPosted && !isSpecialFeed && (
             <div className="flex items-center gap-1.5 px-6 py-2.5 text-xs font-semibold text-zinc-500 border-b border-zinc-100 dark:border-zinc-800/80">
               <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />

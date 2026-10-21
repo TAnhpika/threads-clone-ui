@@ -40,6 +40,8 @@ export default function AppRoutes() {
                     <Route path="/following" element={<HomePage defaultFeedType="following" />} />
                     <Route path="/saved" element={<HomePage defaultFeedType="saved" />} />
                     <Route path="/liked" element={<HomePage defaultFeedType="liked" />} />
+                    <Route path="/ghost_posts" element={<HomePage defaultFeedType="ghost_posts" />} />
+                    <Route path="/archive" element={<HomePage defaultFeedType="archive" />} />
                     <Route path="/custom_feed/create" element={<HomePage defaultCreateFeedOpen={true} />} />
                     <Route path="/@:username/post/:postId" element={<PostDetailPage />} />
                     <Route path="/:username/post/:postId" element={<PostDetailPage />} />

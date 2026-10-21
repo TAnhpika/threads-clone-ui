@@ -11,6 +11,48 @@ const initialTabState = {
 
 const SAVED_POSTS_STORAGE_KEY = 'threads_saved_posts';
 const LIKED_POSTS_STORAGE_KEY = 'threads_liked_posts';
+const GHOST_POSTS_STORAGE_KEY = 'threads_ghost_posts';
+const ARCHIVE_POSTS_STORAGE_KEY = 'threads_archive_posts';
+
+const getInitialGhostPosts = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(GHOST_POSTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error('Failed to parse ghost posts from storage:', err);
+    return [];
+  }
+};
+
+const saveGhostPostsToStorage = (posts) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(GHOST_POSTS_STORAGE_KEY, JSON.stringify(posts));
+  } catch (err) {
+    console.error('Failed to save ghost posts to storage:', err);
+  }
+};
+
+const getInitialArchivePosts = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(ARCHIVE_POSTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error('Failed to parse archive posts from storage:', err);
+    return [];
+  }
+};
+
+const saveArchivePostsToStorage = (posts) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ARCHIVE_POSTS_STORAGE_KEY, JSON.stringify(posts));
+  } catch (err) {
+    console.error('Failed to save archive posts to storage:', err);
+  }
+};
 
 const getInitialSavedPosts = () => {
   if (typeof window === 'undefined') return [];
@@ -67,7 +109,19 @@ const initialState = {
     isLoaded: true,
     hasMore: false,
   },
-  activeFeedType: 'for_you', // 'for_you' | 'following' | 'saved' | 'liked'
+  ghost_posts: {
+    ...initialTabState,
+    posts: getInitialGhostPosts(),
+    isLoaded: true,
+    hasMore: false,
+  },
+  archive: {
+    ...initialTabState,
+    posts: getInitialArchivePosts(),
+    isLoaded: true,
+    hasMore: false,
+  },
+  activeFeedType: 'for_you', // 'for_you' | 'following' | 'saved' | 'liked' | 'ghost_posts' | 'archive'
 };
 
 // Helper để lấy đúng key state theo feedType
@@ -75,6 +129,8 @@ const getFeedKey = (feedType) => {
   if (feedType === 'following') return 'following';
   if (feedType === 'saved') return 'saved';
   if (feedType === 'liked') return 'liked';
+  if (feedType === 'ghost_posts' || feedType === 'ghost') return 'ghost_posts';
+  if (feedType === 'archive') return 'archive';
   return 'forYou';
 };
 
@@ -162,7 +218,7 @@ export const feedSlice = createSlice({
       let targetPost = null;
 
       // 1. Cập nhật tương tác trên tất cả các tab
-      ['forYou', 'following', 'saved', 'liked'].forEach((key) => {
+      ['forYou', 'following', 'saved', 'liked', 'ghost_posts', 'archive'].forEach((key) => {
         if (!state[key]) return;
         const post = state[key].posts.find((p) => String(p.id) === String(postId));
         if (post) {
@@ -180,7 +236,8 @@ export const feedSlice = createSlice({
               targetPost ||
               state.forYou.posts.find((p) => String(p.id) === String(postId)) ||
               state.following.posts.find((p) => String(p.id) === String(postId)) ||
-              state.liked.posts.find((p) => String(p.id) === String(postId));
+              state.liked.posts.find((p) => String(p.id) === String(postId)) ||
+              state.archive.posts.find((p) => String(p.id) === String(postId));
             if (postToAdd) {
               state.saved.posts.unshift({ ...postToAdd, isSaved: true });
               saveSavedPostsToStorage(state.saved.posts);
@@ -204,7 +261,8 @@ export const feedSlice = createSlice({
               targetPost ||
               state.forYou.posts.find((p) => String(p.id) === String(postId)) ||
               state.following.posts.find((p) => String(p.id) === String(postId)) ||
-              state.saved.posts.find((p) => String(p.id) === String(postId));
+              state.saved.posts.find((p) => String(p.id) === String(postId)) ||
+              state.archive.posts.find((p) => String(p.id) === String(postId));
             if (postToAdd) {
               state.liked.posts.unshift({ ...postToAdd, isLiked: true });
               saveLikedPostsToStorage(state.liked.posts);
@@ -218,12 +276,37 @@ export const feedSlice = createSlice({
           }
         }
       }
+
+      // 4. Xử lý đồng bộ Archive posts khi có thay đổi isArchived
+      if (updates && updates.isArchived !== undefined) {
+        if (updates.isArchived === true) {
+          const exists = state.archive.posts.some((p) => String(p.id) === String(postId));
+          if (!exists) {
+            const postToAdd =
+              targetPost ||
+              state.forYou.posts.find((p) => String(p.id) === String(postId)) ||
+              state.following.posts.find((p) => String(p.id) === String(postId)) ||
+              state.saved.posts.find((p) => String(p.id) === String(postId)) ||
+              state.liked.posts.find((p) => String(p.id) === String(postId));
+            if (postToAdd) {
+              state.archive.posts.unshift({ ...postToAdd, isArchived: true });
+              saveArchivePostsToStorage(state.archive.posts);
+            }
+          }
+        } else if (updates.isArchived === false) {
+          const beforeLen = state.archive.posts.length;
+          state.archive.posts = state.archive.posts.filter((p) => String(p.id) !== String(postId));
+          if (state.archive.posts.length !== beforeLen) {
+            saveArchivePostsToStorage(state.archive.posts);
+          }
+        }
+      }
     },
 
     // Cập nhật nội dung và dữ liệu bài viết sau khi Edit
     updatePostData: (state, action) => {
       const { postId, updates } = action.payload;
-      ['forYou', 'following', 'saved', 'liked'].forEach((key) => {
+      ['forYou', 'following', 'saved', 'liked', 'ghost_posts', 'archive'].forEach((key) => {
         if (!state[key]) return;
         const post = state[key].posts.find((p) => String(p.id) === String(postId));
         if (post) {
@@ -329,7 +412,7 @@ export const feedSlice = createSlice({
     // Ẩn / Xoá bài viết khỏi feed
     removeFeedPost: (state, action) => {
       const postId = action.payload;
-      ['forYou', 'following'].forEach((key) => {
+      ['forYou', 'following', 'saved', 'liked', 'ghost_posts', 'archive'].forEach((key) => {
         state[key].posts = state[key].posts.filter((p) => String(p.id) !== String(postId));
       });
     },
