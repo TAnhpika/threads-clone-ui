@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import AuthProvider from "@/components/AuthProvider";
 import AppRoutes from "@/routes/AppRoutes";
 import ReportProblemModal from "@/components/ReportProblemModal";
-import GlobalToast from "@/components/common/GlobalToast";
+import { GlobalToast } from "@/components/common";
 
 export default function App() {
     return (

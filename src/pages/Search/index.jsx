@@ -14,8 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
-import CreatePostModal from '@/components/post/CreatePostModal';
-import { mockPosts } from '@/components/post/mockPosts';
+import { CreatePostModal, mockPosts } from '@/components/post';
 
 // Meta/Threads Authentic Verified Badge
 function VerifiedBadge({ className = 'w-3.5 h-3.5 text-[#0095f6] shrink-0' }) {

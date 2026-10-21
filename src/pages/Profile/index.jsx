@@ -23,9 +23,7 @@ import { selectCurrentUser, updateCurrentUser, logout } from '@/features/auth/au
 import { setFeedData } from '@/features/feed/feedSlice';
 import { getFeed } from '@/services/postService';
 import userAvatar from '@/assets/images/default-avatar.svg';
-import CreatePostBox from '@/components/post/CreatePostBox';
-import CreatePostModal from '@/components/post/CreatePostModal';
-import PostCard from '@/components/post/PostCard';
+import { CreatePostBox, CreatePostModal, PostCard } from '@/components/post';
 
 // Instagram Outline Icon chuẩn Threads
 function InstagramIcon({ className = 'w-5 h-5' }) {

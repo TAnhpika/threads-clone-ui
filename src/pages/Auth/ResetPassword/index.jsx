@@ -4,9 +4,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { AlertCircle } from "lucide-react";
-import AuthInput from "@/components/common/AuthInput";
-import AuthButton from "@/components/common/AuthButton";
-import AuthAlert from "@/components/common/AuthAlert";
+import { AuthInput, AuthButton, AuthAlert } from "@/components/common";
 import * as authService from "@/services/authService";
 
 // Validation schema tương tự trang Register

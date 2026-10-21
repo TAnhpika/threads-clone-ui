@@ -1,5 +1,5 @@
 import http from "@/utils/http";
-import { mockPosts } from "@/components/post/mockPosts";
+import { mockPosts } from "@/components/post";
 import { getAuthorAvatar } from "@/utils/avatar";
 import { store } from "@/store/store";
 import { updatePostInteraction } from "@/features/feed/feedSlice";

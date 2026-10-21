@@ -5,7 +5,7 @@ import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import Sidebar, { CollapsibleSidebar } from '@/components/Sidebar';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
-import SignUpToPostModal from '@/components/auth/SignUpToPostModal';
+import { SignUpToPostModal } from '@/components/auth';
 
 export default function DefaultLayout() {
   const location = useLocation();

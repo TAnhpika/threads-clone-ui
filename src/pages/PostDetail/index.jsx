@@ -21,7 +21,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import copy from 'copy-to-clipboard';
-import { RadialSpinner } from '@/components/common/GlobalToast';
+import { RadialSpinner } from '@/components/common';
 import {
   getPostByIdApi,
   getRepliesApi,
@@ -34,23 +34,25 @@ import {
   savePostCommentsCount,
   getCachedCommentsCount,
 } from '@/services/postService';
-import ReportModal from '@/components/post/ReportModal';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/default-avatar.svg';
 import { getAuthorAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
-import PostMenu from '@/components/post/PostMenu';
-import CreatePostModal from '@/components/post/CreatePostModal';
-import ReplyModal from '@/components/post/ReplyModal';
-import EditPostModal from '@/components/post/EditPostModal';
-import DeletePostConfirmModal from '@/components/post/DeletePostConfirmModal';
-import EmbedModal from '@/components/post/EmbedModal';
-import BlockConfirmModal from '@/components/post/BlockConfirmModal';
-import PostCard from '@/components/post/PostCard';
-import PostContent from '@/components/post/PostContent';
-import RepostModal from '@/components/post/RepostModal';
-import AuthorProfileModal from '@/components/post/AuthorProfileModal';
-import UnfollowConfirmModal from '@/components/post/UnfollowConfirmModal';
+import {
+  ReportModal,
+  PostMenu,
+  CreatePostModal,
+  ReplyModal,
+  EditPostModal,
+  DeletePostConfirmModal,
+  EmbedModal,
+  BlockConfirmModal,
+  PostCard,
+  PostContent,
+  RepostModal,
+  AuthorProfileModal,
+  UnfollowConfirmModal,
+} from '@/components/post';
 import { usePostInteraction } from '@/hooks/usePostInteraction';
 import {
   followUserApi,

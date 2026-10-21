@@ -9,7 +9,7 @@ import {
   Plus,
   Check,
 } from 'lucide-react';
-import CreatePostModal from '@/components/post/CreatePostModal';
+import { CreatePostModal } from '@/components/post';
 
 const timeRanges = [
   'Last 7 days',

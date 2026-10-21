@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { selectCurrentUser, selectIsAuthenticated } from '@/features/auth/authSlice';
 import userAvatar from '@/assets/images/default-avatar.svg';
-import CreatePostModal from '@/components/post/CreatePostModal';
+import { CreatePostModal } from '@/components/post';
 
 // Meta Infinity SVG icon
 function MetaLogo({ className = 'w-6 h-6' }) {
