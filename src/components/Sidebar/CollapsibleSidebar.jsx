@@ -11,6 +11,7 @@ import {
   User,
 } from 'lucide-react';
 import MoreMenu from './MoreMenu';
+import { showToast } from '@/utils/toast';
 
 // 1. Home Icons (Outline & Solid silhouette chuẩn Barcelona / Threads)
 function SolidHome({ className = 'w-5.5 h-5.5' }) {
@@ -72,7 +73,6 @@ export default function CollapsibleSidebar({ className = '' }) {
 
   const [isHovered, setIsHovered] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
 
   const menuRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
@@ -105,10 +105,6 @@ export default function CollapsibleSidebar({ className = '' }) {
     }, 80);
   };
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
-  };
 
   const handleOpenNewThread = () => {
     if (!isAuthenticated) {
@@ -443,12 +439,6 @@ export default function CollapsibleSidebar({ className = '' }) {
           </div>
         )}
 
-        {/* Toast thông báo nhanh (nếu có) */}
-        {toastMessage && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-xl text-xs font-semibold text-center animate-in fade-in duration-100 shadow-md whitespace-nowrap z-50">
-            {toastMessage}
-          </div>
-        )}
       </div>
     </aside>
   );

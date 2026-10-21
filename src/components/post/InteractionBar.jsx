@@ -11,6 +11,7 @@ import ShareModal from './ShareModal';
 import AddToIgStoryModal from './AddToIgStoryModal';
 import CopyImageModal from './CopyImageModal';
 import EmbedModal from './EmbedModal';
+import { showToast } from '@/utils/toast';
 
 export default function InteractionBar({
   initialLikes = 0,
@@ -35,12 +36,6 @@ export default function InteractionBar({
   const [isIgStoryModalOpen, setIsIgStoryModalOpen] = useState(false);
   const [isCopyImageModalOpen, setIsCopyImageModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
-  };
 
   const {
     isLiked,
@@ -246,12 +241,6 @@ export default function InteractionBar({
         />
       )}
 
-      {/* Toast thông báo nhanh */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
-          {toastMessage}
-        </div>
-      )}
     </div>
   );
 }

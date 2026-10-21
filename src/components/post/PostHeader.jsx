@@ -42,6 +42,7 @@ import EmbedModal from './EmbedModal';
 import ReportModal from './ReportModal';
 import { getAuthorAvatar, defaultAvatar } from '@/utils/avatar';
 import { getShareUrl } from '@/utils/postUrl';
+import { showToast } from '@/utils/toast';
 
 export default function PostHeader({
   author = {},
@@ -64,7 +65,6 @@ export default function PostHeader({
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
   const [isFollowed, setIsFollowed] = useState(Boolean(author?.isFollowed));
   const [isSaved, setIsSaved] = useState(Boolean(post?.isSaved));
   const [isMuted, setIsMuted] = useState(Boolean(author?.isMuted));
@@ -204,8 +204,7 @@ export default function PostHeader({
         isFollowed: true,
       })
     );
-    setToastMessage(`Đang theo dõi @${username}`);
-    setTimeout(() => setToastMessage(null), 2500);
+    showToast(`Đang theo dõi @${username}`);
 
     // 2. Gọi API POST /users/:id/follow
     try {
@@ -224,8 +223,7 @@ export default function PostHeader({
           isFollowed: false,
         })
       );
-      setToastMessage(`Không thể theo dõi @${username}. Vui lòng thử lại.`);
-      setTimeout(() => setToastMessage(null), 3000);
+      showToast(`Không thể theo dõi @${username}. Vui lòng thử lại.`);
     }
   };
 
@@ -255,8 +253,7 @@ export default function PostHeader({
         isFollowed: false,
       })
     );
-    setToastMessage(`Đã bỏ theo dõi @${username}`);
-    setTimeout(() => setToastMessage(null), 2500);
+    showToast(`Đã bỏ theo dõi @${username}`);
 
     // 2. Gọi API huỷ theo dõi (POST /users/:id/follow với body { _method: "DELETE" })
     try {
@@ -274,8 +271,7 @@ export default function PostHeader({
           isFollowed: true,
         })
       );
-      setToastMessage(`Không thể huỷ theo dõi @${username}. Vui lòng thử lại.`);
-      setTimeout(() => setToastMessage(null), 3000);
+      showToast(`Không thể huỷ theo dõi @${username}. Vui lòng thử lại.`);
     }
   };
 
@@ -873,8 +869,7 @@ export default function PostHeader({
         post={post || { id: postId, author, timestamp, tag }}
         postId={postId}
         onSuccessFeedback={(msg) => {
-          setToastMessage(msg);
-          setTimeout(() => setToastMessage(null), 2500);
+          showToast(msg);
         }}
       />
 
@@ -884,25 +879,6 @@ export default function PostHeader({
         onClose={() => setIsReportModalOpen(false)}
         postId={postId || post?.id}
       />
-
-      {/* Toast thông báo tương tác nhanh */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150 flex items-center gap-3">
-          <span>{typeof toastMessage === 'string' ? toastMessage : toastMessage.text}</span>
-          {typeof toastMessage === 'object' && toastMessage?.onUndo && (
-            <button
-              type="button"
-              onClick={() => {
-                toastMessage.onUndo();
-                setToastMessage(null);
-              }}
-              className="underline hover:opacity-80 font-bold cursor-pointer text-blue-400 dark:text-blue-600"
-            >
-              Hoàn tác
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { RadialSpinner } from '@/components/common';
 import { searchApi, getFollowSuggestionsApi } from '@/services/searchService';
 import { followUserApi, unfollowUserApi } from '@/services/userService';
 import { getFeed } from '@/services/postService';
+import { showToast } from '@/utils/toast';
 
 // Meta/Threads Authentic Verified Badge
 function VerifiedBadge({ className = 'w-3.5 h-3.5 text-[#0095f6] shrink-0' }) {
@@ -328,7 +329,6 @@ export default function SearchPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [trendingList] = useState(initialTrendingList);
   const [followSuggestions, setFollowSuggestions] = useState(initialFollowSuggestions);
-  const [toastMessage, setToastMessage] = useState(null);
 
   // Filter & Options menu dropdown
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -350,11 +350,6 @@ export default function SearchPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
-  };
 
   // Đồng bộ URL search params ?q=...
   useEffect(() => {
@@ -1130,13 +1125,6 @@ export default function SearchPage() {
         }}
         placement={createModalPlacement}
       />
-
-      {/* TOAST THÔNG BÁO */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
-          {toastMessage}
-        </div>
-      )}
     </div>
   );
 }

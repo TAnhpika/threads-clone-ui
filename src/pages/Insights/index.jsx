@@ -10,6 +10,7 @@ import {
   Check,
 } from 'lucide-react';
 import { CreatePostModal } from '@/components/post';
+import { showToast } from '@/utils/toast';
 
 const timeRanges = [
   'Last 7 days',
@@ -31,7 +32,6 @@ export default function InsightsPage() {
   const [selectedPostSort, setSelectedPostSort] = useState('Latest posts');
   const [isPostSortOpen, setIsPostSortOpen] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
 
   // Floating create modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -56,11 +56,6 @@ export default function InsightsPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
-  };
 
   return (
     <div className="h-full w-full flex bg-white dark:bg-black text-black dark:text-white overflow-hidden select-none">
@@ -395,13 +390,6 @@ export default function InsightsPage() {
           onSubmitPost={() => showToast('Đã đăng bài viết mới thành công ✨')}
           placement="bottom-right"
         />
-
-        {/* Toast thông báo */}
-        {toastMessage && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
-            {toastMessage}
-          </div>
-        )}
       </main>
     </div>
   );

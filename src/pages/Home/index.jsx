@@ -17,6 +17,7 @@ import {
   saveFeedScroll,
   prependFeedPost,
 } from '@/features/feed/feedSlice';
+import { showToast } from '@/utils/toast';
 
 // Skeleton hiển thị khi đang tải danh sách bài viết
 function PostSkeleton() {
@@ -167,7 +168,6 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
   const [isCreateFeedOpen, setIsCreateFeedOpen] = useState(
     defaultCreateFeedOpen || location.pathname === '/custom_feed/create'
   );
-  const [toastMessage, setToastMessage] = useState(null);
 
   // Tránh fetch trùng lặp trong React StrictMode
   const isFetchingRef = useRef(false);
@@ -386,8 +386,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
   };
 
   const handleFeedCreated = (newFeed) => {
-    setToastMessage(`Đã tạo bảng tin "${newFeed.name}" thành công ✨`);
-    setTimeout(() => setToastMessage(null), 3500);
+    showToast(`Đã tạo bảng tin "${newFeed.name}" thành công ✨`);
   };
 
   // Xử lý tạo bài viết mới từ modal
@@ -415,8 +414,7 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     };
 
     dispatch(prependFeedPost({ feedType, post: newPost }));
-    setToastMessage('Đã đăng bài viết mới thành công ✨');
-    setTimeout(() => setToastMessage(null), 3000);
+    showToast('Đã đăng bài viết mới thành công ✨');
   };
 
   // Khối danh sách bài viết dùng chung cho cả 2 view (Authenticated & Unauthenticated)
@@ -723,13 +721,6 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         onClose={handleCloseCreateFeed}
         onFeedCreated={handleFeedCreated}
       />
-
-      {/* Toast thông báo */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs sm:text-sm font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
-          {toastMessage}
-        </div>
-      )}
     </div>
   );
 }

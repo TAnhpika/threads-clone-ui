@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import CollapsibleSidebar from './CollapsibleSidebar';
 import MoreMenu from './MoreMenu';
+import { showToast } from '@/utils/toast';
 
 export { CollapsibleSidebar, MoreMenu };
 
@@ -99,7 +100,6 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
   const { isDark, setTheme } = useTheme();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [showMenu, setShowMenu] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
   const menuRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
@@ -157,10 +157,6 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
     window.dispatchEvent(new CustomEvent('open-say-more'));
   };
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
-  };
 
   const primaryNavItems = [
     {
@@ -558,12 +554,6 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
         </div>
       )}
 
-      {/* Toast thông báo nhanh (nếu có) */}
-      {toastMessage && (
-        <div className="mt-2 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-xl text-xs font-semibold text-center animate-in fade-in duration-100 shadow-md">
-          {toastMessage}
-        </div>
-      )}
     </div>
   );
 
