@@ -9,15 +9,45 @@ const initialTabState = {
   isLoaded: false,
 };
 
+const SAVED_POSTS_STORAGE_KEY = 'threads_saved_posts';
+
+const getInitialSavedPosts = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(SAVED_POSTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error('Failed to parse saved posts from storage:', err);
+    return [];
+  }
+};
+
+const saveSavedPostsToStorage = (posts) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SAVED_POSTS_STORAGE_KEY, JSON.stringify(posts));
+  } catch (err) {
+    console.error('Failed to save saved posts to storage:', err);
+  }
+};
+
 const initialState = {
   forYou: { ...initialTabState },
   following: { ...initialTabState },
-  activeFeedType: 'for_you', // 'for_you' | 'following'
+  saved: {
+    ...initialTabState,
+    posts: getInitialSavedPosts(),
+    isLoaded: true,
+    hasMore: false,
+  },
+  activeFeedType: 'for_you', // 'for_you' | 'following' | 'saved'
 };
 
 // Helper để lấy đúng key state theo feedType
 const getFeedKey = (feedType) => {
-  return feedType === 'following' ? 'following' : 'forYou';
+  if (feedType === 'following') return 'following';
+  if (feedType === 'saved') return 'saved';
+  return 'forYou';
 };
 
 export const feedSlice = createSlice({
@@ -32,6 +62,23 @@ export const feedSlice = createSlice({
       state[key].page = page;
       state[key].hasMore = hasMore;
       state[key].isLoaded = true;
+
+      // Đồng bộ các bài có isSaved: true vào tab saved nếu chưa có
+      if (feedType !== 'saved' && Array.isArray(posts)) {
+        let hasChanges = false;
+        posts.forEach((p) => {
+          if (p && p.isSaved) {
+            const exists = state.saved.posts.some((sp) => String(sp.id) === String(p.id));
+            if (!exists) {
+              state.saved.posts.push({ ...p });
+              hasChanges = true;
+            }
+          }
+        });
+        if (hasChanges) {
+          saveSavedPostsToStorage(state.saved.posts);
+        }
+      }
     },
 
     // Nối thêm bài viết khi cuộn chạm đáy (Infinite load)
@@ -64,21 +111,50 @@ export const feedSlice = createSlice({
       state[key].posts = [post, ...state[key].posts];
     },
 
-    // Cập nhật tương tác bài viết (like, repost, comments count)
+    // Cập nhật tương tác bài viết (like, repost, comments count, save)
     updatePostInteraction: (state, action) => {
       const { postId, updates } = action.payload;
-      ['forYou', 'following'].forEach((key) => {
+      let targetPost = null;
+
+      // 1. Cập nhật tương tác trên tất cả các tab
+      ['forYou', 'following', 'saved'].forEach((key) => {
+        if (!state[key]) return;
         const post = state[key].posts.find((p) => String(p.id) === String(postId));
         if (post) {
           Object.assign(post, updates);
+          if (!targetPost) targetPost = post;
         }
       });
+
+      // 2. Xử lý đồng bộ Saved posts khi có thay đổi isSaved
+      if (updates && updates.isSaved !== undefined) {
+        if (updates.isSaved === true) {
+          const exists = state.saved.posts.some((p) => String(p.id) === String(postId));
+          if (!exists) {
+            const postToAdd =
+              targetPost ||
+              state.forYou.posts.find((p) => String(p.id) === String(postId)) ||
+              state.following.posts.find((p) => String(p.id) === String(postId));
+            if (postToAdd) {
+              state.saved.posts.unshift({ ...postToAdd, isSaved: true });
+              saveSavedPostsToStorage(state.saved.posts);
+            }
+          }
+        } else if (updates.isSaved === false) {
+          const beforeLen = state.saved.posts.length;
+          state.saved.posts = state.saved.posts.filter((p) => String(p.id) !== String(postId));
+          if (state.saved.posts.length !== beforeLen) {
+            saveSavedPostsToStorage(state.saved.posts);
+          }
+        }
+      }
     },
 
     // Cập nhật nội dung và dữ liệu bài viết sau khi Edit
     updatePostData: (state, action) => {
       const { postId, updates } = action.payload;
-      ['forYou', 'following'].forEach((key) => {
+      ['forYou', 'following', 'saved'].forEach((key) => {
+        if (!state[key]) return;
         const post = state[key].posts.find((p) => String(p.id) === String(postId));
         if (post) {
           Object.assign(post, updates);

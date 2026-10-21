@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Bookmark } from 'lucide-react';
 import FeedHeader from '@/components/FeedHeader';
 import LoginPanel from '@/components/LoginPanel';
 import { PostCard, CreatePostBox, CreatePostModal } from '@/components/post';
@@ -79,15 +79,39 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     return allFeedPosts.some(isOwn);
   }, [allFeedPosts, currentUser]);
 
-  // Xác định active feedType ('for_you' | 'following')
-  const feedType = location.pathname === '/following' ? 'following' : (defaultFeedType || 'for_you');
+  // Xác định active feedType ('for_you' | 'following' | 'saved')
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const feedParam = searchParams.get('feed');
+  const feedType =
+    location.pathname === '/following'
+      ? 'following'
+      : location.pathname === '/saved' || feedParam === 'saved'
+        ? 'saved'
+        : feedParam || defaultFeedType || 'for_you';
 
   // Lấy dữ liệu feed từ Redux store
   const feedState = useSelector(selectFeedState(feedType));
-  const posts = feedState.posts;
+  const rawPosts = feedState.posts;
   const page = feedState.page;
-  const hasMore = feedState.hasMore;
+  const hasMore = feedType === 'saved' ? false : feedState.hasMore;
   const isLoaded = feedState.isLoaded;
+
+  // Với feed 'saved': Tổng hợp các bài viết đã lưu từ state.saved + các bài có isSaved: true từ mọi feed
+  const posts = useMemo(() => {
+    if (feedType !== 'saved') return rawPosts;
+    const map = new Map();
+    (rawPosts || []).forEach((p) => {
+      if (p && p.id && p.isSaved !== false) {
+        map.set(String(p.id), { ...p, isSaved: true });
+      }
+    });
+    (allFeedPosts || []).forEach((p) => {
+      if (p && p.id && p.isSaved && !map.has(String(p.id))) {
+        map.set(String(p.id), p);
+      }
+    });
+    return Array.from(map.values());
+  }, [feedType, rawPosts, allFeedPosts]);
 
   const [isLoadingInitial, setIsLoadingInitial] = useState(!isLoaded);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -115,6 +139,14 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
         setError(null);
       } else {
         setIsLoadingMore(true);
+      }
+
+      if (targetType === 'saved') {
+        // Feed 'saved' lấy từ Redux store và local storage, không gọi API /posts/feed?type=saved (tránh lỗi 422)
+        setIsLoadingInitial(false);
+        setIsLoadingMore(false);
+        isFetchingRef.current = false;
+        return;
       }
 
       try {
@@ -366,6 +398,22 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     }
 
     if (posts.length === 0) {
+      if (feedType === 'saved') {
+        return (
+          <div className="py-20 px-6 flex flex-col items-center justify-center text-center select-none">
+            <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800/80 flex items-center justify-center mb-4 text-zinc-500 dark:text-zinc-400">
+              <Bookmark className="w-8 h-8 stroke-[1.75]" />
+            </div>
+            <h3 className="text-base font-bold text-black dark:text-white mb-1.5">
+              Chưa có bài viết đã lưu
+            </h3>
+            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm leading-relaxed">
+              Khi bạn lưu bài viết từ menu ba chấm, các bài viết đó sẽ xuất hiện tại đây để bạn có thể xem lại bất cứ lúc nào.
+            </p>
+          </div>
+        );
+      }
+
       return (
         <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
@@ -384,8 +432,8 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
         {posts.flatMap((post, index) => {
           const items = [<PostCard key={post.id} post={post} feedType={feedType} />];
-          // Hiển thị sau bài viết thứ 8 (index === 7)
-          const isTarget = index === 7;
+          // Hiển thị gợi ý follow sau bài viết thứ 8 (chỉ áp dụng cho For you / Following)
+          const isTarget = feedType !== 'saved' && index === 7;
           if (isTarget) {
             items.push(
               <SuggestedProfiles
@@ -404,10 +452,10 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     return (
       <div className="w-full flex justify-center">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,620px)_350px] gap-x-8 gap-y-3 w-full max-w-260 justify-center items-start">
-          {/* Row 1, Col 1: Tiêu đề 'Home' hoặc 'Following' */}
+          {/* Row 1, Col 1: Tiêu đề 'Home', 'Following' hoặc 'Saved' */}
           <div className="col-span-1 px-1">
             <h1 className="text-xl font-bold text-black dark:text-white tracking-tight">
-              {feedType === 'following' ? 'Following' : 'Home'}
+              {feedType === 'following' ? 'Following' : feedType === 'saved' ? 'Saved' : 'Home'}
             </h1>
           </div>
 
@@ -452,26 +500,28 @@ export default function HomePage({ defaultCreateFeedOpen = false, defaultFeedTyp
     <div className="flex justify-center items-start gap-8 w-full max-w-2xl mx-auto">
       {/* Cột giữa: Feed Header nằm ngoài, và Card chứa What's new & Posts */}
       <div className="flex-1 max-w-155 min-w-0">
-        {/* Header của Feed: 'For you' hoặc 'Following' chuẩn Threads.com */}
+        {/* Header của Feed: 'For you', 'Following', hoặc 'Saved' chuẩn Threads.com */}
         <FeedHeader
-          title={feedType === 'following' ? 'Following' : 'For you'}
+          title={feedType === 'following' ? 'Following' : feedType === 'saved' ? 'Saved' : 'For you'}
           isLoggedIn={isAuthenticated}
           onCreateFeed={handleOpenCreateFeed}
         />
 
         {/* Khối Card chính bo góc chứa Composer & Danh sách Post */}
         <section className="w-full bg-white dark:bg-[#121212] border border-zinc-200/90 dark:border-zinc-800/80 rounded-3xl shadow-xs overflow-visible transition-colors">
-          {/* Thanh soạn thảo 'What's new?' */}
-          <CreatePostBox
-            user={currentUser}
-            onClick={() => {
-              setCreateModalPlacement('center');
-              setIsCreateModalOpen(true);
-            }}
-          />
+          {/* Thanh soạn thảo 'What's new?' - Ẩn khi ở trang Saved */}
+          {feedType !== 'saved' && (
+            <CreatePostBox
+              user={currentUser}
+              onClick={() => {
+                setCreateModalPlacement('center');
+                setIsCreateModalOpen(true);
+              }}
+            />
+          )}
 
-          {/* Dải phân cách '☆ First thread' - chỉ hiển thị nếu người dùng chưa từng đăng bài nào */}
-          {!hasPosted && (
+          {/* Dải phân cách '☆ First thread' - chỉ hiển thị nếu người dùng chưa từng đăng bài nào và không ở tab Saved */}
+          {!hasPosted && feedType !== 'saved' && (
             <div className="flex items-center gap-1.5 px-6 py-2.5 text-xs font-semibold text-zinc-500 border-b border-zinc-100 dark:border-zinc-800/80">
               <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
