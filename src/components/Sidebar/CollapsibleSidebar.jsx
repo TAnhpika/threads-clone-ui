@@ -264,6 +264,11 @@ export default function CollapsibleSidebar({ className = '' }) {
         key={item.label}
         to={item.path}
         title={item.label}
+        onClick={() => {
+          if (item.isActive) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
         className={baseItemClass}
       >
         {iconElement}
@@ -289,6 +294,11 @@ export default function CollapsibleSidebar({ className = '' }) {
           <div className="flex items-center justify-between h-10 w-full relative shrink-0">
             <Link
               to="/"
+              onClick={() => {
+                if (location.pathname === '/' && !location.search) {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
               className="flex items-center text-black dark:text-white hover:opacity-85 transition-opacity group"
               title="Threads"
             >

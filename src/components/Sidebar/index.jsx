@@ -256,6 +256,11 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
       <div className="flex items-center justify-between h-9 w-full relative shrink-0 mb-3 overflow-visible">
         <Link
           to="/"
+          onClick={() => {
+            if (location.pathname === '/' && !location.search) {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
           className="flex items-center text-black dark:text-white hover:opacity-85 transition-opacity group"
           title="Threads"
         >
@@ -401,6 +406,11 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
                 key={item.label}
                 to={item.path}
                 title={item.label}
+                onClick={() => {
+                  if (item.isActive) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }}
                 className={itemBaseClass}
               >
                 {iconElement}
@@ -457,6 +467,11 @@ export default function Sidebar({ collapsed = false, miniOnly = false }) {
                   <Link
                     key={feed.label}
                     to={feed.path}
+                    onClick={() => {
+                      if (isActive) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    }}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors ${
                       isActive
                         ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-semibold'

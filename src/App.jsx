@@ -4,13 +4,14 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import AuthProvider from "@/components/AuthProvider";
 import AppRoutes from "@/routes/AppRoutes";
 import ReportProblemModal from "@/components/ReportProblemModal";
-import { GlobalToast } from "@/components/common";
+import { GlobalToast, ScrollToTop } from "@/components/common";
 
 export default function App() {
     return (
         <ErrorBoundary>
             <ThemeProvider defaultTheme="system" storageKey="theme">
                 <BrowserRouter>
+                    <ScrollToTop />
                     <AuthProvider>
                         <AppRoutes />
                         <ReportProblemModal />
